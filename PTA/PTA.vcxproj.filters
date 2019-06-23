@@ -42,12 +42,27 @@
     <ClCompile Include="runguard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="pitem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itemparser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="papi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="pta.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="logwindow.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="itemparser.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="papi.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -69,6 +84,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="runguard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pitem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

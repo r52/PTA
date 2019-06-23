@@ -6,6 +6,8 @@
 #include <QtWidgets/QMainWindow>
 
 QT_FORWARD_DECLARE_CLASS(LogWindow)
+QT_FORWARD_DECLARE_CLASS(ItemParser)
+QT_FORWARD_DECLARE_CLASS(PAPI)
 
 class PTA : public QMainWindow
 {
@@ -41,6 +43,12 @@ private:
     QAction* m_aboutAction;
     QAction* m_aboutQtAction;
     QAction* m_quitAction;
+
+    //
+    PAPI*       m_api;
+    ItemParser* m_parser;
+
+    bool m_blockHotkeys;
 
     Q_DISABLE_COPY(PTA);
 };

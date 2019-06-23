@@ -1,6 +1,8 @@
 #include "pta.h"
 
+#include "itemparser.h"
 #include "logwindow.h"
+#include "papi.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -12,7 +14,7 @@
 
 #include <Windows.h>
 
-PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log)
+PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log), m_blockHotkeys(false)
 {
     if (nullptr == m_logWindow)
     {
@@ -117,6 +119,12 @@ void PTA::createActions()
 
 void PTA::setupFunctionality()
 {
+    // Initialize API
+    m_api = new PAPI(this);
+
+    // Initialize parser
+    m_parser = new ItemParser(this);
+
     // Price Check
     auto hotkey = new QHotkey(QKeySequence("ctrl+D"), true, this);
     qDebug() << "Price Check Hotkey Registered:" << hotkey->isRegistered();
@@ -126,8 +134,15 @@ void PTA::setupFunctionality()
 
 void PTA::priceCheckActivated()
 {
-    // Check for PoE window
+    if (m_blockHotkeys)
+    {
+        // Currently blocked
+        return;
+    }
 
+    m_blockHotkeys = true;
+
+    // Check for PoE window
     HWND hwnd = GetForegroundWindow();
 
     if (nullptr == hwnd)
@@ -141,8 +156,6 @@ void PTA::priceCheckActivated()
     GetClassName(hwnd, const_cast<WCHAR*>(t.c_str()), t.capacity());
 
     QString wcls = QString::fromWCharArray(t.c_str());
-
-    qDebug() << "Active Window:" << wcls;
 
     if ("POEWindowClass" != wcls)
     {
@@ -158,9 +171,10 @@ void PTA::priceCheckActivated()
         delete clip;
 
         QString itemText = QGuiApplication::clipboard()->text();
-        qDebug() << itemText;
 
         // TODO: Parse item, send query
+        auto item = m_parser->parse(itemText);
+        m_api->simplePriceCheck(item);
     });
 
     // Send ctrl-c
@@ -186,4 +200,6 @@ void PTA::priceCheckActivated()
     ip.ki.wVk     = VK_CONTROL;
     ip.ki.dwFlags = KEYEVENTF_KEYUP;
     SendInput(1, &ip, sizeof(INPUT));
+
+    m_blockHotkeys = false;
 }
