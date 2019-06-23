@@ -173,7 +173,7 @@ void PTA::priceCheckActivated()
         QString itemText = QGuiApplication::clipboard()->text();
 
         // TODO: Parse item, send query
-        auto item = m_parser->parse(itemText);
+        std::shared_ptr<PItem> item(m_parser->parse(itemText));
         m_api->simplePriceCheck(item);
     });
 

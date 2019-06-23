@@ -1,12 +1,14 @@
 #pragma once
 
+#include "pitem.h"
+
+#include <memory>
+
 #include <QJsonObject>
 #include <QObject>
 #include <QVariant>
 
 QT_FORWARD_DECLARE_CLASS(QNetworkAccessManager)
-
-class PItem;
 
 class PAPI : public QObject
 {
@@ -17,7 +19,7 @@ public:
 
     QVariantMap& getStats() { return m_stats; }
 
-    void simplePriceCheck(PItem* item);
+    void simplePriceCheck(std::shared_ptr<PItem> item);
 
 private:
     QNetworkAccessManager* m_manager;

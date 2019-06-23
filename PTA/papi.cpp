@@ -73,9 +73,17 @@ PAPI::PAPI(QObject* parent) : QObject(parent)
                 {
                     m_uniques[etob["name"].toString()] = etob;
                 }
+                else if (etob.contains("disc"))
+                {
+                    // only check against newest maps
+                    if (etob["disc"].toString() == "warfortheatlas")
+                    {
+                        m_uniques[etob["type"].toString()] = etob;
+                    }
+                }
                 else
                 {
-                    // type only (maps)
+                    // gems and stuff
                     m_uniques[etob["type"].toString()] = etob;
                 }
             }
@@ -83,7 +91,7 @@ PAPI::PAPI(QObject* parent) : QObject(parent)
     });
 }
 
-void PAPI::simplePriceCheck(PItem* item)
+void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 {
     QByteArray q = QByteArrayLiteral("{"
                                      "\"query\": {"
@@ -163,6 +171,13 @@ void PAPI::simplePriceCheck(PItem* item)
             QStringList fetchcodes;
             auto        flist = resp["result"].toArray();
             auto        len   = flist.count();
+
+            if (len == 0)
+            {
+                // TODO humour no results
+                qDebug() << "No results";
+                return;
+            }
 
             if (len > 10)
             {
