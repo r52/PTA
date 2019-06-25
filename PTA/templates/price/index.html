@@ -110,8 +110,7 @@
             if (dif < 86400)
                 return Math.floor(dif / 3600).toString() + " hours";
 
-            if (dif < 604800)
-                return Math.floor(dif / 86400).toString() + " days";
+            return Math.floor(dif / 86400).toString() + " days";
         }
 
         document.getElementById("item-header").classList.add(item["class"]);
@@ -121,7 +120,7 @@
             document.getElementById("item-type").innerText = item["type"];
         }
 
-        document.getElementById("search-options").innerText = item["options"];
+        document.getElementById("search-options").innerText = "Search Options: " + item["options"];
 
         var now = Date.now();
 

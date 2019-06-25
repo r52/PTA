@@ -2,11 +2,13 @@
 
 #include "pitem.h"
 
+#include <nlohmann/json.hpp>
+
 #include <QDebug>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QRegularExpression>
 #include <QTextStream>
+
+using json = nlohmann::json;
 
 ItemParser::ItemParser(QObject* parent) : QObject(parent)
 {
@@ -334,8 +336,11 @@ PItem* ItemParser::parse(QString itemText)
 
     PItem* item = new PItem();
 
+    // Full original text
+    item->m_itemtext = itemText.toStdString();
+
     // Rarity
-    item->f_type.rarity = line.section(": ", 1, 1);
+    item->f_type.rarity = line.section(": ", 1, 1).toStdString();
 
     // Read name/type
     QString nametype, type;
@@ -345,13 +350,13 @@ PItem* ItemParser::parse(QString itemText)
     if (type.startsWith("-"))
     {
         // nametype has to be item type and not name
-        item->m_name = nametype;
-        item->setType(nametype);
+        item->m_name = nametype.toStdString();
+        item->setType(nametype.toStdString());
     }
     else
     {
-        item->m_name = nametype;
-        item->setType(type);
+        item->m_name = nametype.toStdString();
+        item->setType(type.toStdString());
     }
 
     // Process category
@@ -361,10 +366,10 @@ PItem* ItemParser::parse(QString itemText)
     }
     else if ("Divination Card" == item->f_type.rarity)
     {
-        item->f_type.category = "Card";
+        item->f_type.category = item->f_type.rarity = "Card";
     }
 
-    if (item->m_type.endsWith("Map"))
+    if (item->m_type.ends_with("Map"))
     {
         item->f_type.category = "Map";
     }
@@ -397,11 +402,11 @@ PItem* ItemParser::parse(QString itemText)
 
 QString ItemParser::toJson(PItem* item)
 {
-    QJsonObject json;
+    json j;
 
-    json["name"] = item->m_name;
+    j["name"] = item->m_name;
 
-    QString cls = item->f_type.rarity;
+    auto cls = item->f_type.rarity;
 
     // process category
     if (item->f_type.category == "Gem" || item->f_type.category == "Card" || item->f_type.category == "Prophecy")
@@ -409,22 +414,40 @@ QString ItemParser::toJson(PItem* item)
         cls = item->f_type.category;
     }
 
-    json["class"] = cls;
+    j["class"] = cls;
 
     if (item->m_name != item->m_type)
     {
-        json["type"] = item->m_type;
+        j["type"] = item->m_type;
     }
 
-    json["sockets"] = item->f_socket.sockets.total();
-    json["links"]   = item->f_socket.links;
+    j["sockets"] = item->f_socket.sockets.total();
+    j["links"]   = item->f_socket.links;
 
-    json["ilvl"] = item->f_misc.ilvl;
+    j["ilvl"]    = item->f_misc.ilvl;
+    j["quality"] = item->f_misc.quality;
 
-    if (!item->m_options.isEmpty())
+    if (item->f_type.category == "Gem")
     {
-        json["options"] = item->m_options;
+        j["gem_level"] = item->f_misc.gem_level;
     }
 
-    return QString::fromUtf8(QJsonDocument(json).toJson());
+    if (item->f_misc.elder_item)
+    {
+        j["elder_item"] = true;
+    }
+
+    if (item->f_misc.shaper_item)
+    {
+        j["shaper_item"] = true;
+    }
+
+    j["identified"] = item->f_misc.identified;
+
+    if (!item->m_options.empty())
+    {
+        j["options"] = item->m_options;
+    }
+
+    return QString::fromStdString(j.dump());
 }

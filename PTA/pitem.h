@@ -22,8 +22,8 @@ Q_DECLARE_METATYPE(mmv_t)
 
 struct type_filters_t
 {
-    QString category;
-    QString rarity;
+    std::string category;
+    std::string rarity;
 };
 
 struct weapon_filters_t
@@ -88,10 +88,12 @@ struct misc_filters_t
 
 struct PItem
 {
-    void setType(QString type);
+    void setType(std::string type);
 
-    QString m_name;
-    QString m_type;
+    std::string m_itemtext; // original item text;
+
+    std::string m_name;
+    std::string m_type;
 
     type_filters_t   f_type;
     weapon_filters_t f_weapon;
@@ -102,5 +104,5 @@ struct PItem
 
     QMap<QString, QVariant> m_filters;
 
-    QString m_options; // search options
+    std::string m_options; // search options
 };

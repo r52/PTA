@@ -4,8 +4,6 @@
 
 #include <QApplication>
 #include <QClipboard>
-#include <QJsonArray>
-#include <QJsonDocument>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
@@ -25,7 +23,7 @@ PAPI::PAPI(QObject* parent) : QObject(parent)
             return;
         }
 
-        m_leagues = QJsonDocument::fromJson(rp_league->readAll()).object().toVariantMap();
+        m_leagues = json::parse(rp_league->readAll().toStdString());
     });
 
     // Download stats
@@ -40,7 +38,7 @@ PAPI::PAPI(QObject* parent) : QObject(parent)
             return;
         }
 
-        m_stats = QJsonDocument::fromJson(rp_stats->readAll()).object().toVariantMap();
+        m_stats = json::parse(rp_stats->readAll().toStdString());
     });
 
     // Download unique items
@@ -56,35 +54,32 @@ PAPI::PAPI(QObject* parent) : QObject(parent)
         }
 
         // Process data
-        auto obj = QJsonDocument::fromJson(rp_uniq->readAll()).object();
+        auto obj = json::parse(rp_uniq->readAll().toStdString());
 
-        auto ll = obj["result"].toArray();
+        auto& ll = obj["result"];
 
-        for (auto type : ll)
+        for (auto& type : ll)
         {
-            auto tob = type.toObject();
-            auto el  = tob["entries"].toArray();
+            auto& el = type["entries"];
 
-            for (auto et : el)
+            for (auto& et : el)
             {
-                auto etob = et.toObject();
-
-                if (etob.contains("name"))
+                if (et.contains("name"))
                 {
-                    m_uniques[etob["name"].toString()] = etob;
+                    m_uniques[et["name"]] = et;
                 }
-                else if (etob.contains("disc"))
+                else if (et.contains("disc"))
                 {
                     // only check against newest maps
-                    if (etob["disc"].toString() == "warfortheatlas")
+                    if (et["disc"] == "warfortheatlas")
                     {
-                        m_uniques[etob["type"].toString()] = etob;
+                        m_uniques[et["type"]] = et;
                     }
                 }
                 else
                 {
                     // gems and stuff
-                    m_uniques[etob["type"].toString()] = etob;
+                    m_uniques[et["type"]] = et;
                 }
             }
         }
@@ -93,25 +88,25 @@ PAPI::PAPI(QObject* parent) : QObject(parent)
 
 void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 {
-    QByteArray q = QByteArrayLiteral("{"
-                                     "\"query\": {"
-                                     "\"status\": {"
-                                     "\"option\": \"online\""
-                                     "},"
-                                     "\"stats\": [{"
-                                     "\"type\": \"and\","
-                                     "\"filters\": []"
-                                     "}]"
-                                     "},"
-                                     "\"sort\": {"
-                                     "\"price\" : \"asc\""
-                                     "}"
-                                     "}");
+    auto query = R"(
+    {
+        "query": {
+            "status": {
+                "option": "online"
+            },
+            "stats": [{
+                "type": "and",
+                "filters": []
+            }]
+        },
+        "sort": {
+            "price": "asc"
+        }
+    }
+    )"_json;
 
-    QJsonObject query = QJsonDocument::fromJson(q).object();
-
-    bool    is_unique = false;
-    QString searchToken;
+    bool        is_unique = false;
+    std::string searchToken;
 
     if (item->f_type.category == "Map" && item->f_type.rarity != "Unique")
     {
@@ -124,33 +119,51 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         searchToken = item->m_name;
     }
 
+    // Force rarity
+    if (item->f_type.rarity == "Unique" || item->f_type.rarity == "Magic" || item->f_type.rarity == "Normal")
+    {
+        std::string rarity = item->f_type.rarity;
+        std::transform(rarity.begin(), rarity.end(), rarity.begin(), ::tolower);
+
+        query["query"]["filters"]["type_filters"]["filters"]["rarity"]["option"] = rarity;
+    }
+
+    // Force category
+    if (!item->f_type.category.empty())
+    {
+        std::string category = item->f_type.category;
+        std::transform(category.begin(), category.end(), category.begin(), ::tolower);
+
+        query["query"]["filters"]["type_filters"]["filters"]["category"]["option"] = category;
+    }
+
     // Check for unique items
     if (is_unique)
     {
-        auto entry = m_uniques[searchToken];
+        auto& entry = m_uniques[searchToken];
 
-        auto qe = query["query"].toObject();
+        auto& qe = query["query"];
 
         if (entry.contains("disc"))
         {
             // map entry
             if (entry.contains("name"))
             {
-                qe["name"] = QJsonObject{{"discriminator", entry["disc"].toString()}, {"option", entry["name"].toString()}};
+                qe["name"] = {{"discriminator", entry["disc"]}, {"option", entry["name"]}};
             }
 
-            qe["type"] = QJsonObject{{"discriminator", entry["disc"].toString()}, {"option", entry["type"].toString()}};
+            qe["type"] = {{"discriminator", entry["disc"]}, {"option", entry["type"]}};
         }
         else if (entry.contains("name"))
         {
             // generic unique with name
-            qe["name"] = entry["name"].toString();
-            qe["type"] = entry["type"].toString();
+            qe["name"] = entry["name"];
+            qe["type"] = entry["type"];
         }
         else
         {
             // only type
-            qe["type"] = entry["type"].toString();
+            qe["type"] = entry["type"];
         }
 
         // TODO default search options
@@ -158,31 +171,25 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         // TODO league
         item->m_options = "Legion";
 
-        item->m_options += ", iLvl=50, Corrupted=any";
+        // TODO: gem options
 
-        if (item->f_socket.links > 0)
+        if (item->f_socket.links > 4)
         {
-            QJsonObject links   = QJsonObject{{"min", item->f_socket.links}};
-            QJsonObject filters = QJsonObject{{"links", links}};
-            QJsonObject sf      = QJsonObject{{"filters", filters}};
-            QJsonObject tf      = QJsonObject{{"socket_filters", sf}};
+            qe["filters"]["socket_filters"]["filters"]["links"]["min"] = item->f_socket.links;
 
-            qe["filters"] = tf;
-
-            item->m_options += QString(", %1L").arg(QString::number(item->f_socket.links));
+            item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
         }
 
-        query["query"] = qe;
+        item->m_options += ", Corrupted=any, Mods ignored";
 
-        // auto qba = QJsonDocument(query).toJson();
-        auto qba = QJsonDocument(query).toJson();
+        auto qba = query.dump();
 
         // TODO: Fix league
         QNetworkRequest request;
         request.setUrl(QUrl("https://www.pathofexile.com/api/trade/search/Legion"));
         request.setRawHeader("Content-Type", "application/json");
 
-        auto req = m_manager->post(request, qba);
+        auto req = m_manager->post(request, QByteArray::fromStdString(qba));
         connect(req, &QNetworkReply::finished, [=]() {
             req->deleteLater();
 
@@ -193,7 +200,7 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             }
 
             auto respdata = req->readAll();
-            auto resp     = QJsonDocument::fromJson(respdata).object();
+            auto resp     = json::parse(respdata.toStdString());
             if (!resp.contains("result") || !resp.contains("id"))
             {
                 qWarning() << "PAPI: Error querying trade site";
@@ -202,8 +209,8 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             }
 
             QStringList fetchcodes;
-            auto        flist = resp["result"].toArray();
-            auto        len   = flist.count();
+            auto&       flist = resp["result"];
+            auto        len   = flist.size();
 
             if (len == 0)
             {
@@ -220,12 +227,12 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
             for (int i = 0; i < len; i++)
             {
-                fetchcodes.append(flist.at(i).toString());
+                fetchcodes.append(QString::fromStdString(flist.at(i)));
             }
 
             QString fcode = fetchcodes.join(',');
 
-            QString resUrl = QString("https://www.pathofexile.com/api/trade/fetch/%1?query=%2").arg(fcode).arg(resp["id"].toString());
+            QString resUrl = QString("https://www.pathofexile.com/api/trade/fetch/%1?query=%2").arg(fcode).arg(QString::fromStdString(resp["id"]));
 
             auto pricereq = m_manager->get(QNetworkRequest(QUrl(resUrl)));
             connect(pricereq, &QNetworkReply::finished, [=]() {

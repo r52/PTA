@@ -2,13 +2,17 @@
 
 #include "pitem.h"
 
+#include <map>
 #include <memory>
 
-#include <QJsonObject>
+#include <nlohmann/json.hpp>
+
 #include <QObject>
 #include <QVariant>
 
 QT_FORWARD_DECLARE_CLASS(QNetworkAccessManager)
+
+using json = nlohmann::json;
 
 class PAPI : public QObject
 {
@@ -17,7 +21,7 @@ class PAPI : public QObject
 public:
     PAPI(QObject* parent = nullptr);
 
-    QVariantMap& getStats() { return m_stats; }
+    json& getStats() { return m_stats; }
 
     void simplePriceCheck(std::shared_ptr<PItem> item);
 
@@ -28,7 +32,7 @@ signals:
 private:
     QNetworkAccessManager* m_manager;
 
-    QVariantMap                m_leagues;
-    QVariantMap                m_stats;
-    QMap<QString, QJsonObject> m_uniques;
+    json                        m_leagues;
+    json                        m_stats;
+    std::map<std::string, json> m_uniques;
 };
