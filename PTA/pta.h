@@ -9,12 +9,18 @@ QT_FORWARD_DECLARE_CLASS(LogWindow)
 QT_FORWARD_DECLARE_CLASS(ItemParser)
 QT_FORWARD_DECLARE_CLASS(PAPI)
 
+struct PItem;
+
 class PTA : public QMainWindow
 {
     Q_OBJECT
 
 public:
     explicit PTA(LogWindow* log, QWidget* parent = Q_NULLPTR);
+
+public slots:
+    void showToolTip(QString message);
+    void showPriceResults(std::shared_ptr<PItem> item, QString results);
 
 private:
     void createTrayIcon();
@@ -24,7 +30,6 @@ private:
 
 private slots:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
-
     void priceCheckActivated();
 
 private:

@@ -352,6 +352,17 @@ PItem* ItemParser::parse(QString itemText)
         item->setType(type);
     }
 
+    // Process category
+    if ("Gem" == item->f_type.rarity)
+    {
+        item->f_type.category = "Gem";
+    }
+
+    if (item->m_name.endsWith("Map"))
+    {
+        item->f_type.category = "Map";
+    }
+
     // Read the rest of the crap
 
     while (stream.readLineInto(&line))
@@ -376,4 +387,10 @@ PItem* ItemParser::parse(QString itemText)
     }
 
     return item;
+}
+
+QString ItemParser::toJson(PItem* item)
+{
+    // TODO
+    return QString();
 }

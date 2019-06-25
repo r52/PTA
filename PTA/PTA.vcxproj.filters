@@ -51,6 +51,9 @@
     <ClCompile Include="papi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="webwidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="pta.h">
@@ -63,6 +66,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="papi.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="webwidget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

@@ -21,6 +21,10 @@ public:
 
     void simplePriceCheck(std::shared_ptr<PItem> item);
 
+signals:
+    void humour(QString msg);
+    void priceCheckFinished(std::shared_ptr<PItem> item, QString results);
+
 private:
     QNetworkAccessManager* m_manager;
 

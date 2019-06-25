@@ -1,0 +1,148 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Price Check</title>
+    <style>
+        html,
+        body {
+            font-family: 'Fontin-Regular', Verdana, Arial, Helvetica, sans-serif;
+            font-weight: 400;
+            font-style: normal;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            border: solid #75693c;
+            border-width: thick;
+            overflow: hidden;
+            display: block;
+            box-sizing: border-box;
+            background-color: #1c1b19;
+            color: #a38d6d;
+        }
+
+        .priceTable {
+            width: 100%;
+            text-align: center;
+        }
+
+        .itemHeader {
+            border: solid;
+            border-width: thick;
+            text-align: center;
+        }
+
+        .Unique {
+            border-color: #af6025;
+            color: #af6025;
+        }
+
+        .Magic {
+            border-color: #88f;
+            color: #88f;
+        }
+
+        .Normal {
+            border-color: #c8c8c8;
+            color: #c8c8c8;
+        }
+
+        .Prophecy {
+            border-color: #b54bff;
+            color: #b54bff;
+        }
+
+        .Gem {
+            border-color: #1ba29b;
+            color: #1ba29b;
+        }
+
+        .Card {
+            border-color: #111;
+            color: #eee;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="item-header" class="itemHeader">
+        <div>
+            <span id="item-name"></span>
+        </div>
+        <div>
+            <span id="item-type"></span>
+        </div>
+    </div>
+    <table id="prices" class="priceTable">
+        <tr>
+            <th>Account Name</th>
+            <th>Price</th>
+            <th>Time</th>
+        </tr>
+    </table>
+    <script>
+        function reltime(t1, t2) {
+            var dif = t1 - t2;
+
+            // convert to seconds
+            dif = Math.floor(dif / 1000);
+
+            if (dif < 60)
+                return dif.toString() + " seconds";
+
+            // minutes
+            if (dif < 3600)
+                return Math.floor(dif / 60).toString() + " minutes";
+
+            if (dif < 86400)
+                return Math.floor(dif / 3600).toString() + " hours";
+
+            if (dif < 604800)
+                return Math.floor(dif / 86400).toString() + " days";
+        }
+
+        document.getElementById("item-header").classList.add(item["class"]);
+        document.getElementById("item-name").innerText = item["name"];
+
+        if (item["type"]) {
+            document.getElementById("item-type").innerText = item["type"];
+        }
+
+        var now = Date.now();
+
+        var accounts = [];
+
+        var dat = data["result"];
+        dat.forEach(function (e, i) {
+            var listing = e["listing"];
+            var accname = listing["account"]["name"];
+
+            // Ignore duplicate entries from the same account
+            if (!accounts.includes(accname)) {
+                var price_amount = listing["price"]["amount"];
+                var price_currency = listing["price"]["currency"];
+                var indexed = Date.parse(listing["indexed"]);
+
+                // craft table
+                var table = document.getElementById("prices");
+
+                var tr = table.insertRow(-1);
+                var a_cell = tr.insertCell(-1);
+                a_cell.innerText = accname;
+
+                var c_cell = tr.insertCell(-1);
+                c_cell.innerText = price_amount.toString() + " " + price_currency;
+
+                var t_cell = tr.insertCell(-1);
+                t_cell.innerText = reltime(now, indexed);
+            }
+        });
+
+    </script>
+</body>
+
+</html>

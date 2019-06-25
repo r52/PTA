@@ -3,6 +3,7 @@
 #include "itemparser.h"
 #include "logwindow.h"
 #include "papi.h"
+#include "webwidget.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -10,6 +11,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QTextEdit>
+#include <QToolTip>
 #include <QVBoxLayout>
 
 #include <Windows.h>
@@ -63,6 +65,21 @@ void PTA::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
             break;
         }
     }
+}
+
+void PTA::showToolTip(QString message)
+{
+    QToolTip::showText(QCursor::pos() + QPoint(5, 5), message);
+}
+
+void PTA::showPriceResults(std::shared_ptr<PItem> item, QString results)
+{
+    showToolTip(QString());
+
+    QString itemjson = m_parser->toJson(item.get());
+
+    auto pricedlg = new WebWidget(itemjson, results);
+    pricedlg->show();
 }
 
 void PTA::createTrayIcon()
@@ -122,6 +139,9 @@ void PTA::setupFunctionality()
     // Initialize API
     m_api = new PAPI(this);
 
+    connect(m_api, &PAPI::humour, this, &PTA::showToolTip);
+    connect(m_api, &PAPI::priceCheckFinished, this, &PTA::showPriceResults);
+
     // Initialize parser
     m_parser = new ItemParser(this);
 
@@ -172,7 +192,8 @@ void PTA::priceCheckActivated()
 
         QString itemText = QGuiApplication::clipboard()->text();
 
-        // TODO: Parse item, send query
+        showToolTip("Searching...");
+
         std::shared_ptr<PItem> item(m_parser->parse(itemText));
         m_api->simplePriceCheck(item);
     });

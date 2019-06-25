@@ -16,6 +16,8 @@ public:
 
     PItem* parse(QString itemText);
 
+    QString toJson(PItem* item);
+
 private:
     enum filter_type_e : uint8_t
     {

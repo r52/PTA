@@ -174,7 +174,7 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
             if (len == 0)
             {
-                // TODO humour no results
+                emit humour("No results found.");
                 qDebug() << "No results";
                 return;
             }
@@ -205,10 +205,9 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
                 }
 
                 auto pricesj = pricereq->readAll();
+                auto res     = QString::fromUtf8(pricesj);
 
-                QGuiApplication::clipboard()->setText(QString::fromUtf8(pricesj));
-
-                qDebug() << "Successfully got prices. Copied to clipboard";
+                emit priceCheckFinished(item, res);
             });
         });
     }
