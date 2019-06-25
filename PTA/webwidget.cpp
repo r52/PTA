@@ -2,15 +2,6 @@
 
 #include "pitem.h"
 
-#include <QAbstractButton>
-#include <QAction>
-#include <QDialog>
-#include <QDialogButtonBox>
-#include <QFormLayout>
-#include <QLabel>
-#include <QMenu>
-#include <QMessageBox>
-#include <QSpinBox>
 #include <QtWebEngineWidgets/QWebEngineCertificateError>
 #include <QtWebEngineWidgets/QWebEngineScriptCollection>
 #include <QtWebEngineWidgets/QWebEngineSettings>

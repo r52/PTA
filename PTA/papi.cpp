@@ -110,10 +110,24 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
     QJsonObject query = QJsonDocument::fromJson(q).object();
 
-    // Check for unique items
-    if (m_uniques.contains(item->m_name))
+    bool    is_unique = false;
+    QString searchToken;
+
+    if (item->f_type.category == "Map" && item->f_type.rarity != "Unique")
     {
-        auto entry = m_uniques[item->m_name];
+        is_unique   = m_uniques.contains(item->m_type);
+        searchToken = item->m_type;
+    }
+    else
+    {
+        is_unique   = m_uniques.contains(item->m_name);
+        searchToken = item->m_name;
+    }
+
+    // Check for unique items
+    if (is_unique)
+    {
+        auto entry = m_uniques[searchToken];
 
         auto qe = query["query"].toObject();
 
@@ -137,6 +151,25 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         {
             // only type
             qe["type"] = entry["type"].toString();
+        }
+
+        // TODO default search options
+
+        // TODO league
+        item->m_options = "Legion";
+
+        item->m_options += ", iLvl=50, Corrupted=any";
+
+        if (item->f_socket.links > 0)
+        {
+            QJsonObject links   = QJsonObject{{"min", item->f_socket.links}};
+            QJsonObject filters = QJsonObject{{"links", links}};
+            QJsonObject sf      = QJsonObject{{"filters", filters}};
+            QJsonObject tf      = QJsonObject{{"socket_filters", sf}};
+
+            qe["filters"] = tf;
+
+            item->m_options += QString(", %1L").arg(QString::number(item->f_socket.links));
         }
 
         query["query"] = qe;

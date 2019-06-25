@@ -3,6 +3,8 @@
 #include "pitem.h"
 
 #include <QDebug>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QTextStream>
 
@@ -357,8 +359,12 @@ PItem* ItemParser::parse(QString itemText)
     {
         item->f_type.category = "Gem";
     }
+    else if ("Divination Card" == item->f_type.rarity)
+    {
+        item->f_type.category = "Card";
+    }
 
-    if (item->m_name.endsWith("Map"))
+    if (item->m_type.endsWith("Map"))
     {
         item->f_type.category = "Map";
     }
@@ -391,6 +397,34 @@ PItem* ItemParser::parse(QString itemText)
 
 QString ItemParser::toJson(PItem* item)
 {
-    // TODO
-    return QString();
+    QJsonObject json;
+
+    json["name"] = item->m_name;
+
+    QString cls = item->f_type.rarity;
+
+    // process category
+    if (item->f_type.category == "Gem" || item->f_type.category == "Card" || item->f_type.category == "Prophecy")
+    {
+        cls = item->f_type.category;
+    }
+
+    json["class"] = cls;
+
+    if (item->m_name != item->m_type)
+    {
+        json["type"] = item->m_type;
+    }
+
+    json["sockets"] = item->f_socket.sockets.total();
+    json["links"]   = item->f_socket.links;
+
+    json["ilvl"] = item->f_misc.ilvl;
+
+    if (!item->m_options.isEmpty())
+    {
+        json["options"] = item->m_options;
+    }
+
+    return QString::fromUtf8(QJsonDocument(json).toJson());
 }

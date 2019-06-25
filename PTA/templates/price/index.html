@@ -35,6 +35,12 @@
             text-align: center;
         }
 
+        .modBox {
+            border: solid #fff;
+            border-width: thin;
+            text-align: center;
+        }
+
         .Unique {
             border-color: #af6025;
             color: #af6025;
@@ -77,6 +83,9 @@
             <span id="item-type"></span>
         </div>
     </div>
+    <div id="search-options-div" class="modBox">
+        <span id="search-options"></span>
+    </div>
     <table id="prices" class="priceTable">
         <tr>
             <th>Account Name</th>
@@ -111,6 +120,8 @@
         if (item["type"]) {
             document.getElementById("item-type").innerText = item["type"];
         }
+
+        document.getElementById("search-options").innerText = item["options"];
 
         var now = Date.now();
 

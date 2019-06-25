@@ -49,6 +49,8 @@ struct socket_type_t
     int b;
     int w;
     int a;
+
+    int total() { return r + g + b + w + a; }
 };
 
 struct socket_filters_t
@@ -99,4 +101,6 @@ struct PItem
     misc_filters_t   f_misc;
 
     QMap<QString, QVariant> m_filters;
+
+    QString m_options; // search options
 };
