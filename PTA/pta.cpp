@@ -69,11 +69,16 @@ void PTA::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 
 void PTA::showToolTip(QString message)
 {
-    QToolTip::showText(QCursor::pos() + QPoint(5, 5), message);
+    QToolTip::showText(QCursor::pos() + QPoint(5, 20), message);
 }
 
 void PTA::showPriceResults(std::shared_ptr<PItem> item, QString results)
 {
+#ifndef NDEBUG
+    qDebug() << "Prices copied to clipboard";
+    QGuiApplication::clipboard()->setText(results);
+#endif
+
     showToolTip(QString());
 
     QString itemjson = m_parser->toJson(item.get());
@@ -87,6 +92,7 @@ void PTA::createTrayIcon()
     m_trayIconMenu = new QMenu(this);
     m_trayIconMenu->addAction(m_settingsAction);
     m_trayIconMenu->addAction(m_logAction);
+    m_trayIconMenu->addAction(m_suspendAction);
     m_trayIconMenu->addSeparator();
     m_trayIconMenu->addAction(m_aboutAction);
     m_trayIconMenu->addAction(m_aboutQtAction);
@@ -108,6 +114,11 @@ void PTA::createActions()
 
     m_logAction = new QAction(tr("L&og"), this);
     connect(m_logAction, &QAction::triggered, this, &QWidget::showNormal);
+
+    m_suspendAction = new QAction(tr("Sus&pend Hotkeys"), this);
+    m_suspendAction->setCheckable(true);
+    m_suspendAction->setChecked(m_blockHotkeys);
+    connect(m_suspendAction, &QAction::triggered, [&](bool checked) { m_blockHotkeys = checked; });
 
     m_aboutAction = new QAction(tr("&About PTA"), this);
 
@@ -167,6 +178,7 @@ void PTA::priceCheckActivated()
 
     if (nullptr == hwnd)
     {
+        m_blockHotkeys = false;
         qDebug() << "Null active window.";
         return;
     }
@@ -179,6 +191,7 @@ void PTA::priceCheckActivated()
 
     if ("POEWindowClass" != wcls)
     {
+        m_blockHotkeys = false;
         qDebug() << "Active window not PoE";
         return;
     }

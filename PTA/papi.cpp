@@ -58,6 +58,7 @@ PAPI::PAPI(QObject* parent) : QObject(parent)
 
         auto& ll = obj["result"];
 
+        // TODO FIX THIS FOR DUPLICATES
         for (auto& type : ll)
         {
             auto& el = type["entries"];
@@ -66,6 +67,12 @@ PAPI::PAPI(QObject* parent) : QObject(parent)
             {
                 if (et.contains("name"))
                 {
+                    if (m_uniques.contains(et["name"]))
+                    {
+                        // Debug: Entry already exists???
+                        qDebug() << "Duplicate unique entry:" << QString::fromStdString(et["name"].get<std::string>());
+                    }
+
                     m_uniques[et["name"]] = et;
                 }
                 else if (et.contains("disc"))
@@ -73,11 +80,23 @@ PAPI::PAPI(QObject* parent) : QObject(parent)
                     // only check against newest maps
                     if (et["disc"] == "warfortheatlas")
                     {
+                        if (m_uniques.contains(et["type"]))
+                        {
+                            // Debug: Entry already exists???
+                            qDebug() << "Duplicate unique entry:" << QString::fromStdString(et["type"].get<std::string>());
+                        }
+
                         m_uniques[et["type"]] = et;
                     }
                 }
                 else
                 {
+                    if (m_uniques.contains(et["type"]))
+                    {
+                        // Debug: Entry already exists???
+                        qDebug() << "Duplicate unique entry:" << QString::fromStdString(et["type"].get<std::string>());
+                    }
+
                     // gems and stuff
                     m_uniques[et["type"]] = et;
                 }
@@ -120,7 +139,7 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
     }
 
     // Force rarity
-    if (item->f_type.rarity == "Unique" || item->f_type.rarity == "Magic" || item->f_type.rarity == "Normal")
+    if (item->f_type.rarity == "Unique")
     {
         std::string rarity = item->f_type.rarity;
         std::transform(rarity.begin(), rarity.end(), rarity.begin(), ::tolower);
@@ -166,13 +185,27 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             qe["type"] = entry["type"];
         }
 
-        // TODO default search options
-
         // TODO league
         item->m_options = "Legion";
 
-        // TODO: gem options
+        // Default Gem options
+        if (item->f_type.category == "Gem")
+        {
+            qe["filters"]["misc_filters"]["filters"]["gem_level"]["min"] = item->f_misc.gem_level;
+            qe["filters"]["misc_filters"]["filters"]["quality"]["min"]   = item->f_misc.quality;
 
+            item->m_options += ", Lv" + std::to_string(item->f_misc.gem_level) + "/" + std::to_string(item->f_misc.quality) + "%";
+        }
+
+        // Default socket options
+        if (item->f_socket.sockets.total() == 6)
+        {
+            qe["filters"]["socket_filters"]["filters"]["sockets"]["min"] = item->f_socket.sockets.total();
+
+            item->m_options += ", " + std::to_string(item->f_socket.sockets.total()) + "S";
+        }
+
+        // Default link options
         if (item->f_socket.links > 4)
         {
             qe["filters"]["socket_filters"]["filters"]["links"]["min"] = item->f_socket.links;
@@ -254,6 +287,7 @@ void PAPI::simplePriceCheck(std::shared_ptr<PItem> item)
     else
     {
         // TODO
+        emit humour("Simple price check for rare items is unimplemented");
         qWarning() << "Unimplemented";
     }
 }

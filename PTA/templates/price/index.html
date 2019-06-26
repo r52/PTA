@@ -24,6 +24,11 @@
             color: #a38d6d;
         }
 
+        th {
+            font-weight:bold;
+            border-bottom: 1px solid #a38d6d;
+        }
+
         .priceTable {
             width: 100%;
             text-align: center;
@@ -87,13 +92,10 @@
         <span id="search-options"></span>
     </div>
     <table id="prices" class="priceTable">
-        <tr>
-            <th>Account Name</th>
-            <th>Price</th>
-            <th>Time</th>
-        </tr>
     </table>
     <script>
+        var now = Date.now();
+
         function reltime(t1, t2) {
             var dif = t1 - t2;
 
@@ -113,6 +115,88 @@
             return Math.floor(dif / 86400).toString() + " days";
         }
 
+        var columns = {
+            "Default": [{
+                    "title": "Account Name",
+                    "field": function (entry) {
+                        return entry["listing"]["account"]["name"];
+                    }
+                },
+                {
+                    "title": "Price",
+                    "field": function (entry) {
+                        var amount = entry["listing"]["price"]["amount"];
+                        var currency = entry["listing"]["price"]["currency"];
+
+                        return amount.toString() + " " + currency;
+                    }
+                },
+                {
+                    "title": "Age",
+                    "field": function (entry) {
+                        return reltime(now, Date.parse(entry["listing"]["indexed"]));
+                    }
+                }
+            ],
+            "Gem": [{
+                    "title": "Account Name",
+                    "field": function (entry) {
+                        return entry["listing"]["account"]["name"];
+                    }
+                },
+                {
+                    "title": "Price",
+                    "field": function (entry) {
+                        var amount = entry["listing"]["price"]["amount"];
+                        var currency = entry["listing"]["price"]["currency"];
+
+                        return amount.toString() + " " + currency;
+                    }
+                },
+                {
+                    "title": "Q%",
+                    "field": function (entry) {
+                        var q = "0%";
+
+                        let prop = entry["item"]["properties"];
+
+                        for (let p of prop) {
+                            if (p["name"] == "Quality") {
+                                var val = p["values"][0][0];
+                                q = val.replace(/^\D+/g, '');
+                                break;
+                            }
+                        }
+
+                        return q;
+                    }
+                },
+                {
+                    "title": "Lvl",
+                    "field": function (entry) {
+                        var lvl = "1";
+
+                        let prop = entry["item"]["properties"];
+
+                        for (let p of prop) {
+                            if (p["name"] == "Level") {
+                                lvl = p["values"][0][0];
+                                break;
+                            }
+                        }
+
+                        return lvl;
+                    }
+                },
+                {
+                    "title": "Age",
+                    "field": function (entry) {
+                        return reltime(now, Date.parse(entry["listing"]["indexed"]));
+                    }
+                }
+            ]
+        };
+
         document.getElementById("item-header").classList.add(item["class"]);
         document.getElementById("item-name").innerText = item["name"];
 
@@ -122,33 +206,39 @@
 
         document.getElementById("search-options").innerText = "Search Options: " + item["options"];
 
-        var now = Date.now();
-
         var accounts = [];
+
+        // craft table
+        var table = document.getElementById("prices");
+
+        // Add column headers
+
+        var clm = "Default"
+
+        if (item["class"] == "Gem") {
+            clm = "Gem";
+        }
+
+        var tr = table.insertRow(-1);
+
+        columns[clm].forEach(function (c) {
+            var th = document.createElement("th");
+            th.innerHTML = c["title"];
+            tr.appendChild(th);
+        });
 
         var dat = data["result"];
         dat.forEach(function (e, i) {
-            var listing = e["listing"];
-            var accname = listing["account"]["name"];
+            var accname = e["listing"]["account"]["name"];
 
             // Ignore duplicate entries from the same account
             if (!accounts.includes(accname)) {
-                var price_amount = listing["price"]["amount"];
-                var price_currency = listing["price"]["currency"];
-                var indexed = Date.parse(listing["indexed"]);
+                tr = table.insertRow(-1);
 
-                // craft table
-                var table = document.getElementById("prices");
-
-                var tr = table.insertRow(-1);
-                var a_cell = tr.insertCell(-1);
-                a_cell.innerText = accname;
-
-                var c_cell = tr.insertCell(-1);
-                c_cell.innerText = price_amount.toString() + " " + price_currency;
-
-                var t_cell = tr.insertCell(-1);
-                t_cell.innerText = reltime(now, indexed);
+                columns[clm].forEach(function (c) {
+                    var tc = tr.insertCell(-1);
+                    tc.innerHTML = c["field"](e);
+                });
             }
         });
 

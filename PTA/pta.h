@@ -45,6 +45,7 @@ private:
     // Actions/menus
     QAction* m_settingsAction;
     QAction* m_logAction;
+    QAction* m_suspendAction;
     QAction* m_aboutAction;
     QAction* m_aboutQtAction;
     QAction* m_quitAction;
