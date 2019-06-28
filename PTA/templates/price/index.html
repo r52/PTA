@@ -25,7 +25,7 @@
         }
 
         th {
-            font-weight:bold;
+            font-weight: bold;
             border-bottom: 1px solid #a38d6d;
         }
 
@@ -197,7 +197,13 @@
             ]
         };
 
-        document.getElementById("item-header").classList.add(item["class"]);
+        var itemclass = item["rarity"];
+
+        if (item["category"]) {
+            itemclass = item["category"];
+        }
+
+        document.getElementById("item-header").classList.add(itemclass);
         document.getElementById("item-name").innerText = item["name"];
 
         if (item["type"]) {
@@ -205,8 +211,6 @@
         }
 
         document.getElementById("search-options").innerText = "Search Options: " + item["options"];
-
-        var accounts = [];
 
         // craft table
         var table = document.getElementById("prices");
@@ -229,17 +233,12 @@
 
         var dat = data["result"];
         dat.forEach(function (e, i) {
-            var accname = e["listing"]["account"]["name"];
+            tr = table.insertRow(-1);
 
-            // Ignore duplicate entries from the same account
-            if (!accounts.includes(accname)) {
-                tr = table.insertRow(-1);
-
-                columns[clm].forEach(function (c) {
-                    var tc = tr.insertCell(-1);
-                    tc.innerHTML = c["field"](e);
-                });
-            }
+            columns[clm].forEach(function (c) {
+                var tc = tr.insertCell(-1);
+                tc.innerHTML = c["field"](e);
+            });
         });
 
     </script>

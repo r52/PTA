@@ -2,21 +2,36 @@
 
 #include "pitem.h"
 
+#include <map>
+#include <unordered_map>
+
+#include <nlohmann/json.hpp>
+
 #include <QObject>
 
 #include <QMap>
 #include <QVector>
 
-class ItemParser : public QObject
+QT_FORWARD_DECLARE_CLASS(QNetworkAccessManager)
+
+using json = nlohmann::json;
+
+class ItemAPI : public QObject
 {
     Q_OBJECT
 
 public:
-    ItemParser(QObject* parent = nullptr);
+    ItemAPI(QObject* parent = nullptr);
 
     PItem* parse(QString itemText);
 
     QString toJson(PItem* item);
+
+    void simplePriceCheck(std::shared_ptr<PItem> item);
+
+signals:
+    void humour(QString msg);
+    void priceCheckFinished(std::shared_ptr<PItem> item, QString results);
 
 private:
     enum filter_type_e : uint8_t
@@ -100,5 +115,15 @@ private:
     void parseProp(PItem* item, QString prop);
     void parseStat(PItem* item, QString stat);
 
+    void processPriceResults(std::shared_ptr<PItem> item, json results);
+
     QString m_section;
+
+    QNetworkAccessManager* m_manager;
+
+    json                                       m_leagues;
+    json                                       m_stats;
+    std::unordered_multimap<std::string, json> m_uniques;
+
+    std::string m_mapdisc = "warfortheatlas"; // default map discriminator
 };

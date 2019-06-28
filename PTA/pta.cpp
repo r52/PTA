@@ -1,8 +1,7 @@
 #include "pta.h"
 
-#include "itemparser.h"
+#include "itemapi.h"
 #include "logwindow.h"
-#include "papi.h"
 #include "webwidget.h"
 
 #include <QApplication>
@@ -81,7 +80,7 @@ void PTA::showPriceResults(std::shared_ptr<PItem> item, QString results)
 
     showToolTip(QString());
 
-    QString itemjson = m_parser->toJson(item.get());
+    QString itemjson = m_api->toJson(item.get());
 
     auto pricedlg = new WebWidget(itemjson, results);
     pricedlg->show();
@@ -148,13 +147,10 @@ void PTA::createActions()
 void PTA::setupFunctionality()
 {
     // Initialize API
-    m_api = new PAPI(this);
+    m_api = new ItemAPI(this);
 
-    connect(m_api, &PAPI::humour, this, &PTA::showToolTip);
-    connect(m_api, &PAPI::priceCheckFinished, this, &PTA::showPriceResults);
-
-    // Initialize parser
-    m_parser = new ItemParser(this);
+    connect(m_api, &ItemAPI::humour, this, &PTA::showToolTip);
+    connect(m_api, &ItemAPI::priceCheckFinished, this, &PTA::showPriceResults);
 
     // Price Check
     auto hotkey = new QHotkey(QKeySequence("ctrl+D"), true, this);
@@ -207,7 +203,7 @@ void PTA::priceCheckActivated()
 
         showToolTip("Searching...");
 
-        std::shared_ptr<PItem> item(m_parser->parse(itemText));
+        std::shared_ptr<PItem> item(m_api->parse(itemText));
         m_api->simplePriceCheck(item);
     });
 

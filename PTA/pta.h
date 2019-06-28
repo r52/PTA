@@ -6,8 +6,7 @@
 #include <QtWidgets/QMainWindow>
 
 QT_FORWARD_DECLARE_CLASS(LogWindow)
-QT_FORWARD_DECLARE_CLASS(ItemParser)
-QT_FORWARD_DECLARE_CLASS(PAPI)
+QT_FORWARD_DECLARE_CLASS(ItemAPI)
 
 struct PItem;
 
@@ -51,8 +50,7 @@ private:
     QAction* m_quitAction;
 
     //
-    PAPI*       m_api;
-    ItemParser* m_parser;
+    ItemAPI* m_api;
 
     bool m_blockHotkeys;
 

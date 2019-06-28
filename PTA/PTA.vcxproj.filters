@@ -45,13 +45,10 @@
     <ClCompile Include="pitem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="itemparser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="papi.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="webwidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="itemapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,13 +59,10 @@
     <QtMoc Include="logwindow.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="itemparser.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="papi.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
     <QtMoc Include="webwidget.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="itemapi.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

@@ -88,12 +88,12 @@ struct misc_filters_t
 
 struct PItem
 {
-    void setType(std::string type);
+    void setType(std::string t);
 
     std::string m_itemtext; // original item text;
 
-    std::string m_name;
-    std::string m_type;
+    std::string name;
+    std::string type;
 
     type_filters_t   f_type;
     weapon_filters_t f_weapon;
