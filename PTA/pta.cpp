@@ -4,6 +4,8 @@
 #include "logwindow.h"
 #include "webwidget.h"
 
+#include <once/once.h>
+
 #include <QApplication>
 #include <QClipboard>
 #include <QHotkey>
@@ -193,12 +195,7 @@ void PTA::priceCheckActivated()
     }
 
     // Set up clipboard signal
-    QMetaObject::Connection* clip = new QMetaObject::Connection;
-
-    *clip = connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, [=]() {
-        disconnect(*clip);
-        delete clip;
-
+    Once::connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, [=]() {
         QString itemText = QGuiApplication::clipboard()->text();
 
         showToolTip("Searching...");

@@ -78,22 +78,10 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
             {
                 if (et.contains("name"))
                 {
-                    if (m_uniques.contains(et["name"]))
-                    {
-                        // Debug: Entry already exists
-                        qDebug() << "Duplicate unique entry:" << QString::fromStdString(et["name"].get<std::string>());
-                    }
-
                     m_uniques.insert({{et["name"].get<std::string>(), et}});
                 }
                 else if (et.contains("type"))
                 {
-                    if (m_uniques.contains(et["type"]))
-                    {
-                        // Debug: Entry already exists
-                        qDebug() << "Duplicate unique entry:" << QString::fromStdString(et["type"].get<std::string>());
-                    }
-
                     m_uniques.insert({{et["type"].get<std::string>(), et}});
                 }
                 else
