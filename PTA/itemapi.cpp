@@ -527,7 +527,7 @@ PItem* ItemAPI::parse(QString itemText)
     }
     else
     {
-        item->name = nametype.toStdString();
+        item->setName(nametype.toStdString());
         item->setType(type.toStdString());
     }
 
