@@ -30,6 +30,7 @@ private:
 private slots:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void priceCheckActivated();
+    void advancedPriceCheckActivated();
 
 private:
     Ui::PTAClass ui;

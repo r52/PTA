@@ -1,7 +1,8 @@
 #pragma once
 
-#include <QMap>
-#include <QObject>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 struct mmv_t
 {
@@ -17,8 +18,6 @@ struct mmv_t
 
     mmv_t operator+(const mmv_t& b) const { return mmv_t{min + b.min, max + b.max}; }
 };
-
-Q_DECLARE_METATYPE(mmv_t)
 
 struct type_filters_t
 {
@@ -103,7 +102,10 @@ struct PItem
     req_filters_t    f_req;
     misc_filters_t   f_misc;
 
-    QMap<QString, QVariant> m_filters;
+    bool is_weapon;
+    bool is_armour;
+
+    std::map<std::string, json> filters;
 
     std::string m_options; // search options
 };

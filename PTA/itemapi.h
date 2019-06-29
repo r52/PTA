@@ -28,6 +28,7 @@ public:
     QString toJson(PItem* item);
 
     void simplePriceCheck(std::shared_ptr<PItem> item);
+    void advancedPriceCheck(std::shared_ptr<PItem> item);
 
 signals:
     void humour(QString msg);
@@ -122,7 +123,8 @@ private:
     QNetworkAccessManager* m_manager;
 
     json                                       m_leagues;
-    json                                       m_stats;
+    std::unordered_multimap<std::string, json> m_stats_by_text;
+    std::unordered_multimap<std::string, json> m_stats_by_id;
     std::unordered_multimap<std::string, json> m_uniques;
 
     std::string m_mapdisc = "warfortheatlas"; // default map discriminator

@@ -46,6 +46,15 @@
             text-align: center;
         }
 
+        .dismissBox {
+            position: fixed;
+            left: 0;
+            bottom: 1em;
+            width: 100%;
+            text-align: center;
+            font-style: italic;
+        }
+
         .Unique {
             border-color: #af6025;
             color: #af6025;
@@ -93,6 +102,9 @@
     </div>
     <table id="prices" class="priceTable">
     </table>
+    <div class="dismissBox">
+        <span>Right-click to dismiss</span>
+    </div>
     <script>
         var now = Date.now();
 

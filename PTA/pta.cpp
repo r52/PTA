@@ -17,6 +17,18 @@
 
 #include <Windows.h>
 
+INPUT createInput(WORD vk, bool isDown)
+{
+    INPUT input          = {};
+    input.type           = INPUT_KEYBOARD;
+    input.ki.wVk         = vk;
+    input.ki.wScan       = 0;
+    input.ki.dwFlags     = (isDown ? 0 : KEYEVENTF_KEYUP);
+    input.ki.time        = 0;
+    input.ki.dwExtraInfo = 0;
+    return input;
+}
+
 PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log), m_blockHotkeys(false)
 {
     if (nullptr == m_logWindow)
@@ -155,10 +167,15 @@ void PTA::setupFunctionality()
     connect(m_api, &ItemAPI::priceCheckFinished, this, &PTA::showPriceResults);
 
     // Price Check
-    auto hotkey = new QHotkey(QKeySequence("ctrl+D"), true, this);
+    auto hotkey = new QHotkey(QKeySequence("Ctrl+D"), true, this);
     qDebug() << "Price Check Hotkey Registered:" << hotkey->isRegistered();
 
     connect(hotkey, &QHotkey::activated, this, &PTA::priceCheckActivated);
+
+    auto advhotkey = new QHotkey(QKeySequence("Ctrl+Alt+D"), true, this);
+    qDebug() << "Advanced Price Check Hotkey Registered:" << advhotkey->isRegistered();
+
+    connect(advhotkey, &QHotkey::activated, this, &PTA::advancedPriceCheckActivated);
 }
 
 void PTA::priceCheckActivated()
@@ -205,28 +222,73 @@ void PTA::priceCheckActivated()
     });
 
     // Send ctrl-c
+    std::vector<INPUT> keystroke;
 
-    INPUT ip;
-    ip.type           = INPUT_KEYBOARD;
-    ip.ki.wScan       = 0;
-    ip.ki.time        = 0;
-    ip.ki.dwExtraInfo = 0;
+    keystroke.push_back(createInput(VK_CONTROL, true));
+    keystroke.push_back(createInput('C', true));
+    keystroke.push_back(createInput('C', false));
+    keystroke.push_back(createInput(VK_CONTROL, false));
 
-    ip.ki.wVk     = VK_CONTROL;
-    ip.ki.dwFlags = 0;
-    SendInput(1, &ip, sizeof(INPUT));
+    SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
 
-    ip.ki.wVk     = 'C';
-    ip.ki.dwFlags = 0;
-    SendInput(1, &ip, sizeof(INPUT));
+    m_blockHotkeys = false;
+}
 
-    ip.ki.wVk     = 'C';
-    ip.ki.dwFlags = KEYEVENTF_KEYUP;
-    SendInput(1, &ip, sizeof(INPUT));
+void PTA::advancedPriceCheckActivated()
+{
+    if (m_blockHotkeys)
+    {
+        // Currently blocked
+        return;
+    }
 
-    ip.ki.wVk     = VK_CONTROL;
-    ip.ki.dwFlags = KEYEVENTF_KEYUP;
-    SendInput(1, &ip, sizeof(INPUT));
+    m_blockHotkeys = true;
+
+    // Check for PoE window
+    HWND hwnd = GetForegroundWindow();
+
+    if (nullptr == hwnd)
+    {
+        m_blockHotkeys = false;
+        qDebug() << "Null active window.";
+        return;
+    }
+
+    std::wstring t;
+    t.reserve(64);
+    GetClassName(hwnd, const_cast<WCHAR*>(t.c_str()), t.capacity());
+
+    QString wcls = QString::fromWCharArray(t.c_str());
+
+    if ("POEWindowClass" != wcls)
+    {
+        m_blockHotkeys = false;
+        qDebug() << "Active window not PoE";
+        return;
+    }
+
+    // Set up clipboard signal
+    Once::connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, [=]() {
+        QString itemText = QGuiApplication::clipboard()->text();
+
+        showToolTip("Searching...");
+
+        std::shared_ptr<PItem> item(m_api->parse(itemText));
+        m_api->advancedPriceCheck(item);
+    });
+
+    // Send ctrl-c
+    std::vector<INPUT> keystroke;
+
+    // ensure alt is up
+    keystroke.push_back(createInput(VK_MENU, false));
+
+    keystroke.push_back(createInput(VK_CONTROL, true));
+    keystroke.push_back(createInput('C', true));
+    keystroke.push_back(createInput('C', false));
+    keystroke.push_back(createInput(VK_CONTROL, false));
+
+    SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
 
     m_blockHotkeys = false;
 }

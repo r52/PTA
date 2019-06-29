@@ -50,15 +50,15 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
     // Overlay for catching drag and drop events
     overlay = new OverlayWidget(this);
 
-    // resize (TODO custom size?)
-    QSize defaultsize = {600, 400};
-
-    webview->resize(defaultsize);
-    resize(defaultsize);
-
     // Restore settings
     QSettings settings;
     restoreGeometry(settings.value(getSettingKey("geometry")).toByteArray());
+
+    // resize (TODO custom size?)
+    QSize defaultsize = {600, 450};
+
+    webview->resize(defaultsize);
+    resize(defaultsize);
 
     overlay->setVisible(true);
 

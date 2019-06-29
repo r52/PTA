@@ -50,7 +50,20 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
             return;
         }
 
-        m_stats = json::parse(rp_stats->readAll().toStdString());
+        auto obj = json::parse(rp_stats->readAll().toStdString());
+
+        auto& ll = obj["result"];
+
+        for (auto& type : ll)
+        {
+            auto& el = type["entries"];
+
+            for (auto& et : el)
+            {
+                m_stats_by_text.insert({{et["text"].get<std::string>(), et}});
+                m_stats_by_id.insert({{et["id"].get<std::string>(), et}});
+            }
+        }
     });
 
     // Download unique items
@@ -259,6 +272,8 @@ void ItemAPI::parseProp(PItem* item, QString prop)
                 }
             }
 
+            item->is_weapon = true;
+
             break;
         }
 
@@ -290,6 +305,8 @@ void ItemAPI::parseProp(PItem* item, QString prop)
                     break;
                 }
             }
+
+            item->is_armour = true;
 
             break;
         }
@@ -395,7 +412,145 @@ void ItemAPI::parseProp(PItem* item, QString prop)
 
 void ItemAPI::parseStat(PItem* item, QString stat)
 {
-    // TODO
+    // Make a copy
+    QString orig_stat = stat;
+
+    if (stat == "Unidentified")
+    {
+        item->f_misc.identified = false;
+        return;
+    }
+
+    if (stat == "Shaper Item")
+    {
+        item->f_misc.shaper_item = true;
+        return;
+    }
+
+    if (stat == "Elder Item")
+    {
+        item->f_misc.elder_item = true;
+        return;
+    }
+
+    if (stat == "Corrupted")
+    {
+        item->f_misc.corrupted = true;
+        return;
+    }
+
+    bool stat_is_crafted = false;
+
+    if (stat.endsWith("(crafted)"))
+    {
+        stat_is_crafted = true;
+    }
+
+    stat.replace(" (crafted)", "");
+
+    // Get numeric values from stat
+    json val = json::array();
+
+    QRegularExpression              re("\\+?(\\d+)");
+    QRegularExpressionMatchIterator it = re.globalMatch(stat);
+
+    while (it.hasNext())
+    {
+        QRegularExpressionMatch match = it.next();
+        QString                 word  = match.captured(1);
+
+        val.push_back(word.toInt());
+    }
+
+    if (!val.size())
+    {
+        // If stat has no values, then it has no variance. Skip
+        qDebug() << "Static stat line" << orig_stat;
+        return;
+    }
+
+    // Craft search token
+    stat.replace(re, "#");
+
+    auto stoken = stat.toStdString();
+
+    if (!m_stats_by_text.contains(stoken))
+    {
+        // Ignored line
+        qDebug() << "Ignored/unprocessed line" << orig_stat;
+        return;
+    }
+
+    json filter;
+
+    auto range = m_stats_by_text.equal_range(stoken);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        auto& entry = it->second;
+
+        if (stat_is_crafted)
+        {
+            if (entry["type"] != "crafted")
+            {
+                // skip this entry
+                continue;
+            }
+
+            // use crafted stat
+            filter["id"]    = entry["id"];
+            filter["type"]  = entry["type"];
+            filter["value"] = val;
+            break;
+        }
+        else
+        {
+            if (entry["type"] == "pseudo")
+            {
+                // skip pseudos
+                continue;
+            }
+
+            if (!filter.empty() && filter["type"] == "implicit" && entry["type"] == "explicit")
+            {
+                // prefer explicit?
+                filter["id"]    = entry["id"];
+                filter["type"]  = entry["type"];
+                filter["value"] = val;
+            }
+            else if (filter.empty())
+            {
+                filter["id"]    = entry["id"];
+                filter["type"]  = entry["type"];
+                filter["value"] = val;
+            }
+            // else skip
+        }
+    }
+
+    if (filter.empty())
+    {
+        qDebug() << "Error parsing stat line" << orig_stat;
+        return;
+    }
+
+    // TODO: process special/pseudo rules here
+
+    // If the item already has this filter, merge them
+    if (item->filters.contains(filter["id"].get<std::string>()))
+    {
+        auto& efil = item->filters[filter["id"].get<std::string>()];
+
+        auto count = efil["value"].size();
+
+        for (size_t i = 0; i < count; i++)
+        {
+            efil["value"][i] += filter["value"][i];
+        }
+    }
+    else
+    {
+        item->filters.insert({filter["id"].get<std::string>(), filter});
+    }
 }
 
 void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results)
@@ -766,6 +921,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
         }
 
+        // TODO make corrupted an option
         item->m_options += ", Corrupted=any, Mods ignored";
 
         auto qba = query.dump();
@@ -812,4 +968,17 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         emit humour("Simple price check for rare items is unimplemented");
         qWarning() << "Unimplemented";
     }
+}
+
+void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
+{
+    if (item->filters.empty())
+    {
+        // Cannot advanced search items with no filters
+        emit humour("Advanced search is unavailable for this item type");
+        return;
+    }
+
+    emit humour("Advanced search is unimplemented");
+    qWarning() << "Unimplemented";
 }
