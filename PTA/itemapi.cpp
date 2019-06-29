@@ -111,7 +111,7 @@ int ItemAPI::readPropInt(QString prop)
     // Remove augmented tag
     prop.replace(" (augmented)", "");
 
-    QRegularExpression      re("^\\+?(\\d+)%?");
+    QRegularExpression      re("^([\\+\\-]?[\\d\\.]+)%?");
     QRegularExpressionMatch match = re.match(prop);
 
     if (match.hasMatch())
@@ -166,7 +166,7 @@ double ItemAPI::readPropFloat(QString prop)
     // Remove augmented tag
     prop.replace(" (augmented)", "");
 
-    QRegularExpression      re("^\\+?([\\d\\.]+)%?");
+    QRegularExpression      re("^([\\+\\-]?[\\d\\.]+)%?");
     QRegularExpressionMatch match = re.match(prop);
 
     if (match.hasMatch())
@@ -451,7 +451,7 @@ void ItemAPI::parseStat(PItem* item, QString stat)
     // Get numeric values from stat
     json val = json::array();
 
-    QRegularExpression              re("\\+?(\\d+)");
+    QRegularExpression              re("([\\+\\-]?[\\d\\.]+)");
     QRegularExpressionMatchIterator it = re.globalMatch(stat);
 
     while (it.hasNext())
@@ -459,7 +459,17 @@ void ItemAPI::parseStat(PItem* item, QString stat)
         QRegularExpressionMatch match = it.next();
         QString                 word  = match.captured(1);
 
-        val.push_back(word.toInt());
+        // Process floats
+        if (word.contains('.'))
+        {
+            double numval = word.toDouble();
+            val.push_back(numval);
+        }
+        else
+        {
+            int numval = word.toInt();
+            val.push_back(numval);
+        }
     }
 
     if (!val.size())
@@ -544,7 +554,14 @@ void ItemAPI::parseStat(PItem* item, QString stat)
 
         for (size_t i = 0; i < count; i++)
         {
-            efil["value"][i] += filter["value"][i];
+            if (efil["value"][i].is_number_float())
+            {
+                efil["value"][i] = efil["value"][i].get<double>() + filter["value"][i].get<double>();
+            }
+            else
+            {
+                efil["value"][i] = efil["value"][i].get<int>() + filter["value"][i].get<int>();
+            }
         }
     }
     else
@@ -721,7 +738,7 @@ PItem* ItemAPI::parse(QString itemText)
     while (stream.readLineInto(&line))
     {
         // Skip
-        if (line.startsWith('-'))
+        if (line.startsWith("---"))
         {
             m_section.clear();
             continue;
