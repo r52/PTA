@@ -55,6 +55,18 @@
             font-style: italic;
         }
 
+        .corruptedItem, .unidentifiedItem {
+            color: #d20000;
+        }
+
+        .shaperItem {
+            color: #8e44ad;
+        }
+
+        .elderItem {
+            color:  #3498db;
+        }
+
         .Unique {
             border-color: #af6025;
             color: #af6025;
@@ -95,6 +107,18 @@
         </div>
         <div>
             <span id="item-type"></span>
+        </div>
+        <div class="shaperItem">
+            <span id="shaper"></span>
+        </div>
+        <div class="elderItem">
+            <span id="elder"></span>
+        </div>
+        <div class="corruptedItem">
+            <span id="corrupted"></span>
+        </div>
+        <div class="unidentifiedItem">
+            <span id="identified"></span>
         </div>
     </div>
     <div id="search-options-div" class="modBox">
@@ -220,6 +244,26 @@
 
         if (item["type"]) {
             document.getElementById("item-type").innerText = item["type"];
+        }
+
+        if (item["shaper_item"])
+        {
+            document.getElementById("shaper").innerText  = "Shaper Item";
+        }
+
+        if (item["elder_item"])
+        {
+            document.getElementById("elder").innerText  = "Elder Item";
+        }
+
+        if (!item["identified"])
+        {
+            document.getElementById("identified").innerText  = "Unidentified";
+        }
+
+        if (item["corrupted"])
+        {
+            document.getElementById("corrupted").innerText  = "Corrupted";
         }
 
         document.getElementById("search-options").innerText = "Search Options: " + item["options"];

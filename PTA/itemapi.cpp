@@ -772,17 +772,10 @@ QString ItemAPI::toJson(PItem* item)
         j["gem_level"] = item->f_misc.gem_level;
     }
 
-    if (item->f_misc.elder_item)
-    {
-        j["elder_item"] = true;
-    }
-
-    if (item->f_misc.shaper_item)
-    {
-        j["shaper_item"] = true;
-    }
-
-    j["identified"] = item->f_misc.identified;
+    j["elder_item"]  = item->f_misc.elder_item;
+    j["shaper_item"] = item->f_misc.shaper_item;
+    j["identified"]  = item->f_misc.identified;
+    j["corrupted"]   = item->f_misc.corrupted;
 
     if (!item->m_options.empty())
     {
@@ -799,6 +792,8 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         emit humour("Currency search is unimplemented");
         return;
     }
+
+    QSettings settings;
 
     // TODO: default settings
     auto query = R"(
@@ -921,8 +916,32 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
         }
 
-        // TODO make corrupted an option
-        item->m_options += ", Corrupted=any, Mods ignored";
+        bool corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
+
+        if (corrupt_override)
+        {
+            QString corrupt_search = settings.value(PTA_CONFIG_CORRUPTSEARCH, PTA_CONFIG_DEFAULT_CORRUPTSEARCH).toString();
+
+            if (corrupt_search != "Any")
+            {
+                qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = (corrupt_search == "Yes");
+
+                item->m_options += ", Corrupted=" + corrupt_search.toStdString();
+            }
+            else
+            {
+                item->m_options += ", Corrupted=Any";
+            }
+        }
+        else
+        {
+            qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item->f_misc.corrupted;
+
+            item->m_options += ", Corrupted=";
+            item->m_options += item->f_misc.corrupted ? "Yes" : "No";
+        }
+
+        item->m_options += ", Mods ignored";
 
         auto qba = query.dump();
 
