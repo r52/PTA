@@ -51,6 +51,9 @@
     <ClCompile Include="itemapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="statdialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="pta.h">
@@ -63,6 +66,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="itemapi.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="statdialog.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

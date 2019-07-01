@@ -1,6 +1,7 @@
 #include "itemapi.h"
 #include "pitem.h"
 #include "pta_types.h"
+#include "statdialog.h"
 
 #include <unordered_set>
 
@@ -8,6 +9,7 @@
 
 #include <QDebug>
 #include <QEventLoop>
+#include <QFileInfo>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QRegularExpression>
@@ -104,6 +106,18 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
             }
         }
     });
+
+    // Load weapon categories
+    QFile wc("data/weapon_categories.json");
+
+    if (!wc.open(QIODevice::ReadOnly))
+    {
+        throw std::runtime_error("Cannot open weapon_categories.json");
+    }
+
+    QByteArray wdat = wc.readAll();
+
+    c_weaponMap = json::parse(wdat.toStdString());
 }
 
 int ItemAPI::readPropInt(QString prop)
@@ -439,6 +453,12 @@ void ItemAPI::parseStat(PItem* item, QString stat)
         return;
     }
 
+    if (c_weaponMap.contains(stat.toStdString()))
+    {
+        item->f_type.category = c_weaponMap[stat.toStdString()].get<std::string>();
+        return;
+    }
+
     bool stat_is_crafted = false;
 
     if (stat.endsWith("(crafted)"))
@@ -509,6 +529,7 @@ void ItemAPI::parseStat(PItem* item, QString stat)
             // use crafted stat
             filter["id"]    = entry["id"];
             filter["type"]  = entry["type"];
+            filter["text"]  = entry["text"];
             filter["value"] = val;
             break;
         }
@@ -525,12 +546,14 @@ void ItemAPI::parseStat(PItem* item, QString stat)
                 // prefer explicit?
                 filter["id"]    = entry["id"];
                 filter["type"]  = entry["type"];
+                filter["text"]  = entry["text"];
                 filter["value"] = val;
             }
             else if (filter.empty())
             {
                 filter["id"]    = entry["id"];
                 filter["type"]  = entry["type"];
+                filter["text"]  = entry["text"];
                 filter["value"] = val;
             }
             // else skip
@@ -756,6 +779,8 @@ PItem* ItemAPI::parse(QString itemText)
         }
     }
 
+    // TODO: Process base type/category
+
     return item;
 }
 
@@ -806,7 +831,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 {
     if (item->f_type.rarity == "Currency")
     {
-        emit humour("Currency search is unimplemented");
+        emit humour(tr("Currency search is unimplemented"));
         return;
     }
 
@@ -981,7 +1006,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             auto resp     = json::parse(respdata.toStdString());
             if (!resp.contains("result") || !resp.contains("id"))
             {
-                emit humour("Error querying trade site");
+                emit humour(tr("Error querying trade site. See log for details"));
                 qWarning() << "PAPI: Error querying trade site";
                 qWarning() << "PAPI: Site responded with" << respdata;
                 return;
@@ -989,7 +1014,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
             if (resp["result"].size() == 0)
             {
-                emit humour("No results found.");
+                emit humour(tr("No results found."));
                 qDebug() << "No results";
                 return;
             }
@@ -1001,7 +1026,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
     else
     {
         // TODO
-        emit humour("Simple price check for rare items is unimplemented");
+        emit humour(tr("Simple price check for rare items is unimplemented"));
         qWarning() << "Unimplemented";
     }
 }
@@ -1011,10 +1036,16 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
     if (item->filters.empty())
     {
         // Cannot advanced search items with no filters
-        emit humour("Advanced search is unavailable for this item type");
+        emit humour(tr("Advanced search is unavailable for this item type"));
         return;
     }
 
-    emit humour("Advanced search is unimplemented");
-    qWarning() << "Unimplemented";
+    if (!item->f_misc.identified)
+    {
+        emit humour(tr("Advanced search is unavailable for unidentified items"));
+        return;
+    }
+
+    StatDialog dlg(item.get());
+    dlg.exec();
 }

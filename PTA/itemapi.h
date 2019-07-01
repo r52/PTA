@@ -107,6 +107,8 @@ private:
                                                        {"Elemental Damage", {weapon_filter, weapon_filter_edps}},
                                                        {"Experience", {misc_filter, misc_filter_gem_level_progress}}};
 
+    json c_weaponMap;
+
     int              readPropInt(QString prop);
     mmv_t            readPropIntRange(QString prop);
     double           readPropFloat(QString prop);

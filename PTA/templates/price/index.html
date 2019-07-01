@@ -235,7 +235,7 @@
 
         var itemclass = item["rarity"];
 
-        if (item["category"]) {
+        if (item["category"] == "Gem" || item["category"] == "Prophecy" || item["category"] == "Card") {
             itemclass = item["category"];
         }
 
@@ -275,7 +275,7 @@
 
         var clm = "Default"
 
-        if (item["class"] == "Gem") {
+        if (itemclass == "Gem") {
             clm = "Gem";
         }
 
