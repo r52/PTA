@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 
 #include <QDebug>
+#include <QDesktopServices>
 #include <QEventLoop>
 #include <QFileInfo>
 #include <QNetworkAccessManager>
@@ -958,6 +959,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
         }
 
+        // Default corrupt options
         bool corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
 
         if (corrupt_override)
@@ -1033,7 +1035,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
 void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
 {
-    if (item->filters.empty())
+    if (item->filters.empty() || item->f_type.category == "Map")
     {
         // Cannot advanced search items with no filters
         emit humour(tr("Advanced search is unavailable for this item type"));
@@ -1047,5 +1049,180 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
     }
 
     StatDialog dlg(item.get());
-    dlg.exec();
+    auto       result = dlg.exec();
+
+    if (result == QDialog::Rejected)
+    {
+        // cancelled
+        return;
+    }
+
+    bool searchonsite = (result == SEARCH_ON_SITE);
+
+    json filters = dlg.filters;
+    json misc    = dlg.misc;
+
+    auto query = R"(
+    {
+        "query": {
+            "status": {
+                "option": "online"
+            },
+            "stats": [{
+                "type": "and",
+                "filters": []
+            }]
+        },
+        "sort": {
+            "price": "asc"
+        }
+    }
+    )"_json;
+
+    QSettings settings;
+    auto&     qe = query["query"];
+
+    // TODO weapon/armour base mods
+
+    // Checked mods
+    for (auto& [k, e] : filters.items())
+    {
+        // set id
+        e["id"] = k;
+
+        if (e["disabled"] == false)
+        {
+            qe["stats"][0]["filters"].push_back(e);
+        }
+    }
+
+    // Force category
+    if (!item->f_type.category.empty())
+    {
+        std::string category = item->f_type.category;
+        std::transform(category.begin(), category.end(), category.begin(), ::tolower);
+
+        query["query"]["filters"]["type_filters"]["filters"]["category"]["option"] = category;
+    }
+
+    // TODO league
+    item->m_options = "Legion";
+
+    // Use sockets
+    if (misc.contains("use_sockets") && misc["use_sockets"])
+    {
+        qe["filters"]["socket_filters"]["filters"]["sockets"]["min"] = item->f_socket.sockets.total();
+
+        item->m_options += ", " + std::to_string(item->f_socket.sockets.total()) + "S";
+    }
+
+    // Use links
+    if (misc.contains("use_links") && misc["use_links"])
+    {
+        qe["filters"]["socket_filters"]["filters"]["links"]["min"] = item->f_socket.links;
+
+        item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
+    }
+
+    // Use iLvl
+    if (misc.contains("use_ilvl") && misc["use_ilvl"])
+    {
+        qe["filters"]["misc_filters"]["filters"]["ilvl"]["min"] = misc["ilvl"];
+
+        item->m_options += ", iLvl=" + std::to_string(misc["ilvl"].get<int>());
+    }
+
+    // Use item base
+    if (misc.contains("use_item_base") && misc["use_item_base"])
+    {
+        qe["type"] = item->type;
+
+        item->m_options += ", Use Base Type";
+    }
+
+    // Shaper
+    if (misc.contains("use_shaper_base") && misc["use_shaper_base"])
+    {
+        qe["filters"]["misc_filters"]["filters"]["shaper_item"]["option"] = true;
+        item->m_options += ", Shaper Base";
+    }
+
+    // Elder
+    if (misc.contains("use_elder_base") && misc["use_elder_base"])
+    {
+        qe["filters"]["misc_filters"]["filters"]["elder_item"]["option"] = true;
+        item->m_options += ", Elder Base";
+    }
+
+    // Default corrupt options
+    bool corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
+
+    if (corrupt_override)
+    {
+        QString corrupt_search = settings.value(PTA_CONFIG_CORRUPTSEARCH, PTA_CONFIG_DEFAULT_CORRUPTSEARCH).toString();
+
+        if (corrupt_search != "Any")
+        {
+            qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = (corrupt_search == "Yes");
+
+            item->m_options += ", Corrupted=" + corrupt_search.toStdString();
+        }
+        else
+        {
+            item->m_options += ", Corrupted=Any";
+        }
+    }
+    else
+    {
+        qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item->f_misc.corrupted;
+
+        item->m_options += ", Corrupted=";
+        item->m_options += item->f_misc.corrupted ? "Yes" : "No";
+    }
+
+    auto qba = query.dump();
+
+    // TODO: Fix league
+    QNetworkRequest request;
+    request.setUrl(QUrl("https://www.pathofexile.com/api/trade/search/Legion"));
+    request.setRawHeader("Content-Type", "application/json");
+
+    auto req = m_manager->post(request, QByteArray::fromStdString(qba));
+    connect(req, &QNetworkReply::finished, [=]() {
+        req->deleteLater();
+
+        if (req->error() != QNetworkReply::NoError)
+        {
+            qWarning() << "PAPI: Error querying trade site" << req->error() << req->errorString();
+            return;
+        }
+
+        auto respdata = req->readAll();
+        auto resp     = json::parse(respdata.toStdString());
+        if (!resp.contains("result") || !resp.contains("id"))
+        {
+            emit humour(tr("Error querying trade site. See log for details"));
+            qWarning() << "PAPI: Error querying trade site";
+            qWarning() << "PAPI: Site responded with" << respdata;
+            return;
+        }
+
+        if (resp["result"].size() == 0)
+        {
+            emit humour(tr("No results found."));
+            qDebug() << "No results";
+            return;
+        }
+
+        // TODO:  Fix league
+        if (searchonsite)
+        {
+            QDesktopServices::openUrl(QUrl("https://www.pathofexile.com/trade/search/Legion/" + QString::fromStdString(resp["id"].get<std::string>())));
+        }
+        else
+        {
+            // else process the results
+            processPriceResults(item, resp);
+        }
+    });
 }

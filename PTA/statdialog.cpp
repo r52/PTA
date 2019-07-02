@@ -2,15 +2,18 @@
 
 #include <QtWidgets>
 
-const QMap<std::string, QString> g_labelStyles = {{"Unique", "QLabel { background-color: #0f0f0f; color : #af6025; }"},
-                                                  {"Rare", "QLabel { background-color: #0f0f0f; color : #ff7; }"},
-                                                  {"Magic", "QLabel { background-color: #0f0f0f; color : #88f; }"}};
+const QMap<std::string, QString> g_labelStyles = {{"Unique", "color: #af6025;"}, {"Rare", "color: #ff7;"}, {"Magic", "color: #88f;"}};
 
 StatDialog::StatDialog(PItem* item)
 {
+    // TODO prefill options
     int current_row = 0;
 
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+    Qt::WindowFlags flags = Qt::WindowTitleHint | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint;
+
+    setWindowFlags(flags);
+
+    setStyleSheet("background-color: #1c1b19; color: #a38d6d;");
 
     QGridLayout* layout = new QGridLayout();
 
@@ -60,11 +63,16 @@ StatDialog::StatDialog(PItem* item)
 
     current_row++;
 
+    // TODO weapon/armour base mods
+
     // mods
 
     for (auto [f, e] : item->filters)
     {
+        std::string id = e["id"].get<std::string>();
+
         QCheckBox* elab = new QCheckBox(QString::fromStdString(e["text"].get<std::string>()));
+        connect(elab, &QCheckBox::stateChanged, [=](int checked) { filters[id]["disabled"] = !(checked == Qt::Checked); });
 
         layout->addWidget(elab, current_row, 0);
 
@@ -80,6 +88,9 @@ StatDialog::StatDialog(PItem* item)
                 curr_val_int += e["value"][i].get<int>();
                 curr_val_dbl += e["value"][i].get<double>();
             }
+
+            curr_val_int /= val_count;
+            curr_val_dbl /= val_count;
         }
 
         // min box
@@ -95,6 +106,19 @@ StatDialog::StatDialog(PItem* item)
             minEdit->setValidator(new QIntValidator(this));
         }
 
+        connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
+            if (val_is_float)
+            {
+                double val                  = text.toDouble();
+                filters[id]["value"]["min"] = val;
+            }
+            else
+            {
+                int val                     = text.toInt();
+                filters[id]["value"]["min"] = val;
+            }
+        });
+
         layout->addWidget(minEdit, current_row, 1);
 
         // current value
@@ -104,6 +128,18 @@ StatDialog::StatDialog(PItem* item)
         // max box
         QLineEdit* maxEdit = new QLineEdit();
         maxEdit->setMaximumWidth(30);
+        connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
+            if (val_is_float)
+            {
+                double val                  = text.toDouble();
+                filters[id]["value"]["max"] = val;
+            }
+            else
+            {
+                int val                     = text.toInt();
+                filters[id]["value"]["max"] = val;
+            }
+        });
 
         if (val_is_float)
         {
@@ -132,26 +168,51 @@ StatDialog::StatDialog(PItem* item)
     // Misc options
     QHBoxLayout* miscLayout = new QHBoxLayout();
 
-    QCheckBox* ilvlCB   = new QCheckBox(tr("iLvl:"));
+    if (item->f_socket.sockets.total() > 0)
+    {
+        QCheckBox* socketCB = new QCheckBox(tr("Use Sockets") + QString(" (%1)").arg(item->f_socket.sockets.total()));
+        connect(socketCB, &QCheckBox::stateChanged, [=](int checked) { misc["use_sockets"] = !(checked == Qt::Checked); });
+
+        miscLayout->addWidget(socketCB);
+    }
+
+    if (item->f_socket.links > 0)
+    {
+        QCheckBox* linkCB = new QCheckBox(tr("Use Links") + QString(" (%1)").arg(item->f_socket.links));
+        connect(linkCB, &QCheckBox::stateChanged, [=](int checked) { misc["use_links"] = !(checked == Qt::Checked); });
+        miscLayout->addWidget(linkCB);
+    }
+
+    QCheckBox* ilvlCB = new QCheckBox(tr("iLvl (min):"));
+    connect(ilvlCB, &QCheckBox::stateChanged, [=](int checked) { misc["use_ilvl"] = !(checked == Qt::Checked); });
+
     QLineEdit* ilvlEdit = new QLineEdit();
     ilvlEdit->setValidator(new QIntValidator(1, 100, this));
     ilvlEdit->setMaximumWidth(30);
+
+    connect(ilvlEdit, &QLineEdit::textChanged, [=](const QString& text) {
+        int val      = text.toInt();
+        misc["ilvl"] = val;
+    });
 
     miscLayout->addWidget(ilvlCB);
     miscLayout->addWidget(ilvlEdit);
 
     QCheckBox* itembaseCB = new QCheckBox(tr("Use Item Base"));
+    connect(itembaseCB, &QCheckBox::stateChanged, [=](int checked) { misc["use_item_base"] = !(checked == Qt::Checked); });
     miscLayout->addWidget(itembaseCB);
 
     if (item->f_misc.shaper_item)
     {
         QCheckBox* shaperBase = new QCheckBox(tr("Shaper Base"));
+        connect(shaperBase, &QCheckBox::stateChanged, [=](int checked) { misc["use_shaper_base"] = !(checked == Qt::Checked); });
         miscLayout->addWidget(shaperBase);
     }
 
     if (item->f_misc.elder_item)
     {
         QCheckBox* elderBase = new QCheckBox(tr("Elder Base"));
+        connect(elderBase, &QCheckBox::stateChanged, [=](int checked) { misc["use_elder_base"] = !(checked == Qt::Checked); });
         miscLayout->addWidget(elderBase);
     }
 

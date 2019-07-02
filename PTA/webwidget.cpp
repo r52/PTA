@@ -31,7 +31,7 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
     setAttribute(Qt::WA_DeleteOnClose);
 
     // No frame/border, no taskbar button
-    Qt::WindowFlags flags = Qt::FramelessWindowHint | Qt::Tool;
+    Qt::WindowFlags flags = Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint;
 
     webview = new PWebView(this);
 
@@ -61,8 +61,6 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
     resize(defaultsize);
 
     overlay->setVisible(true);
-
-    flags |= Qt::WindowStaysOnTopHint;
 
     // No context menu
     setContextMenuPolicy(Qt::PreventContextMenu);

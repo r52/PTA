@@ -12,4 +12,7 @@ class StatDialog : public QDialog
 
 public:
     StatDialog(PItem* item);
+
+    json filters;
+    json misc;
 };
