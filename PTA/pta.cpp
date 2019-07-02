@@ -218,6 +218,14 @@ void PTA::priceCheckActivated()
         showToolTip("Searching...");
 
         std::shared_ptr<PItem> item(m_api->parse(itemText));
+
+        if (!item)
+        {
+            showToolTip("Error parsing item text. Check log for more details.");
+            qWarning() << "Error parsing item" << itemText;
+            return;
+        }
+
         m_api->simplePriceCheck(item);
     });
 
@@ -274,6 +282,14 @@ void PTA::advancedPriceCheckActivated()
         showToolTip("Searching...");
 
         std::shared_ptr<PItem> item(m_api->parse(itemText));
+
+        if (!item)
+        {
+            showToolTip("Error parsing item text. Check log for more details.");
+            qWarning() << "Error parsing item text" << itemText;
+            return;
+        }
+
         m_api->advancedPriceCheck(item);
     });
 
