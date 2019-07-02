@@ -23,6 +23,9 @@ class ItemAPI : public QObject
 public:
     ItemAPI(QObject* parent = nullptr);
 
+    json    getLeagues() { return m_leagues; }
+    QString getLeague();
+
     PItem* parse(QString itemText);
 
     QString toJson(PItem* item);
@@ -133,5 +136,5 @@ private:
     std::unordered_multimap<std::string, json> m_stats_by_id;
     std::unordered_multimap<std::string, json> m_uniques;
 
-    std::string m_mapdisc = "warfortheatlas"; // default map discriminator
+    const std::string m_mapdisc = "warfortheatlas"; // default map discriminator
 };

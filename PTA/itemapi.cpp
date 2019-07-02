@@ -22,13 +22,21 @@ using json = nlohmann::json;
 // PoE trade api only allows 10 items at once
 constexpr size_t papi_query_limit = 10;
 
+// API URLs
+const QUrl    leagueApiUrl("https://www.pathofexile.com/api/trade/data/leagues");
+const QUrl    modsApiUrl("https://www.pathofexile.com/api/trade/data/stats");
+const QUrl    itemsApiUrl("https://www.pathofexile.com/api/trade/data/items");
+const QUrl    repoeBaseUrl("https://raw.githubusercontent.com/brather1ng/RePoE/master/data/base_items.min.json");
+const QString tradeFetchUrl("https://www.pathofexile.com/api/trade/fetch/%1?query=%2");
+const QString tradeSearchUrl("https://www.pathofexile.com/api/trade/search/");
+
 ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 {
     m_manager = new QNetworkAccessManager(this);
 
     // Download leagues
 
-    auto rp_league = m_manager->get(QNetworkRequest(QUrl("https://www.pathofexile.com/api/trade/data/leagues")));
+    auto rp_league = m_manager->get(QNetworkRequest(leagueApiUrl));
     connect(rp_league, &QNetworkReply::finished, [=]() {
         rp_league->deleteLater();
 
@@ -38,14 +46,23 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
             return;
         }
 
-        m_leagues = json::parse(rp_league->readAll().toStdString());
+        auto  obj = json::parse(rp_league->readAll().toStdString());
+        auto& rs  = obj["result"];
 
-        qInfo() << "League data loaded";
+        m_leagues = json::array();
+        for (size_t i = 0; i < rs.size(); i++)
+        {
+            m_leagues.push_back(rs[i]["id"].get<std::string>());
+        }
+
+        QString setlg = getLeague();
+
+        qInfo() << "League data loaded. Setting league to" << setlg;
     });
 
     // Download stats
 
-    auto rp_stats = m_manager->get(QNetworkRequest(QUrl("https://www.pathofexile.com/api/trade/data/stats")));
+    auto rp_stats = m_manager->get(QNetworkRequest(modsApiUrl));
     connect(rp_stats, &QNetworkReply::finished, [=]() {
         rp_stats->deleteLater();
 
@@ -75,7 +92,7 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     // Download unique items
 
-    auto rp_uniq = m_manager->get(QNetworkRequest(QUrl("https://www.pathofexile.com/api/trade/data/items")));
+    auto rp_uniq = m_manager->get(QNetworkRequest(itemsApiUrl));
     connect(rp_uniq, &QNetworkReply::finished, [=]() {
         rp_uniq->deleteLater();
 
@@ -130,7 +147,7 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     // Load RePoE base data
 
-    auto rp_base = m_manager->get(QNetworkRequest(QUrl("https://raw.githubusercontent.com/brather1ng/RePoE/master/data/base_items.min.json")));
+    auto rp_base = m_manager->get(QNetworkRequest(repoeBaseUrl));
     connect(rp_base, &QNetworkReply::finished, [=]() {
         rp_base->deleteLater();
 
@@ -689,12 +706,12 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results)
 
         QString fcode = fetchcodes.join(',');
 
-        QString resUrl = QString("https://www.pathofexile.com/api/trade/fetch/%1?query=%2").arg(fcode).arg(QString::fromStdString(results["id"]));
+        QUrl resUrl = tradeFetchUrl.arg(fcode).arg(QString::fromStdString(results["id"]));
 
         QEventLoop loop;
         connect(m_manager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
 
-        auto pricereq = m_manager->get(QNetworkRequest(QUrl(resUrl)));
+        auto pricereq = m_manager->get(QNetworkRequest(resUrl));
         loop.exec();
 
         pricereq->deleteLater();
@@ -749,6 +766,24 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results)
     }
 
     emit priceCheckFinished(item, QString::fromStdString(endRes.dump()));
+}
+
+QString ItemAPI::getLeague()
+{
+    QSettings settings;
+    int       league = settings.value(PTA_CONFIG_LEAGUE, PTA_CONFIG_DEFAULT_LEAGUE).toInt();
+
+    if (league > m_leagues.size())
+    {
+        QString defleag = QString::fromStdString(m_leagues[PTA_CONFIG_DEFAULT_LEAGUE].get<std::string>());
+
+        qWarning() << "Previously set league no longer available. Resetting to default league" << defleag;
+
+        league = PTA_CONFIG_DEFAULT_LEAGUE;
+        settings.setValue(PTA_CONFIG_LEAGUE, PTA_CONFIG_DEFAULT_LEAGUE);
+    }
+
+    return QString::fromStdString(m_leagues[league].get<std::string>());
 }
 
 PItem* ItemAPI::parse(QString itemText)
@@ -1000,8 +1035,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             }
         }
 
-        // TODO league
-        item->m_options = "Legion";
+        item->m_options = getLeague().toStdString();
 
         // Default Gem options
         if (item->f_type.category == "gem")
@@ -1058,9 +1092,8 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
         auto qba = query.dump();
 
-        // TODO: Fix league
         QNetworkRequest request;
-        request.setUrl(QUrl("https://www.pathofexile.com/api/trade/search/Legion"));
+        request.setUrl(QUrl(tradeSearchUrl + getLeague()));
         request.setRawHeader("Content-Type", "application/json");
 
         auto req = m_manager->post(request, QByteArray::fromStdString(qba));
@@ -1096,7 +1129,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
     }
     else
     {
-        // TODO
+        // TODO: poeprices.info?
         emit humour(tr("Simple price check for rare items is unimplemented"));
         qWarning() << "Unimplemented";
     }
@@ -1220,8 +1253,7 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
         }
     }
 
-    // TODO league
-    item->m_options = "Legion";
+    item->m_options = getLeague().toStdString();
 
     // Use sockets
     if (misc.contains("use_sockets") && misc["use_sockets"])
@@ -1297,9 +1329,8 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
 
     auto qba = query.dump();
 
-    // TODO: Fix league
     QNetworkRequest request;
-    request.setUrl(QUrl("https://www.pathofexile.com/api/trade/search/Legion"));
+    request.setUrl(QUrl(tradeSearchUrl + getLeague()));
     request.setRawHeader("Content-Type", "application/json");
 
     auto req = m_manager->post(request, QByteArray::fromStdString(qba));
@@ -1329,10 +1360,9 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
             return;
         }
 
-        // TODO: Fix league
         if (searchonsite)
         {
-            QDesktopServices::openUrl(QUrl("https://www.pathofexile.com/trade/search/Legion/" + QString::fromStdString(resp["id"].get<std::string>())));
+            QDesktopServices::openUrl(QUrl(tradeSearchUrl + getLeague() + QString::fromStdString(resp["id"].get<std::string>())));
         }
         else
         {
