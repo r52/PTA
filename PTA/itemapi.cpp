@@ -1151,6 +1151,38 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
     QSettings settings;
     auto&     qe = query["query"];
 
+    bool        is_unique_base = false;
+    std::string searchToken;
+
+    if (!item->name.empty())
+    {
+        is_unique_base = m_uniques.contains(item->name);
+        searchToken    = item->name;
+    }
+    else
+    {
+        is_unique_base = m_uniques.contains(item->type);
+        searchToken    = item->type;
+    }
+
+    // Force rarity if unique
+    if (item->f_type.rarity == "Unique")
+    {
+        std::string rarity = item->f_type.rarity;
+        std::transform(rarity.begin(), rarity.end(), rarity.begin(), ::tolower);
+
+        query["query"]["filters"]["type_filters"]["filters"]["rarity"]["option"] = rarity;
+    }
+
+    // Force category
+    if (!item->f_type.category.empty())
+    {
+        std::string category = item->f_type.category;
+        std::transform(category.begin(), category.end(), category.begin(), ::tolower);
+
+        query["query"]["filters"]["type_filters"]["filters"]["category"]["option"] = category;
+    }
+
     // TODO weapon/armour base mods
 
     // Checked mods
@@ -1165,13 +1197,27 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
         }
     }
 
-    // Force category
-    if (!item->f_type.category.empty())
+    // Check for unique items
+    if (is_unique_base)
     {
-        std::string category = item->f_type.category;
-        std::transform(category.begin(), category.end(), category.begin(), ::tolower);
+        auto range = m_uniques.equal_range(searchToken);
+        for (auto it = range.first; it != range.second; ++it)
+        {
+            auto& entry = it->second;
 
-        query["query"]["filters"]["type_filters"]["filters"]["category"]["option"] = category;
+            // For everything else, match type
+            if (entry["type"] == item->type)
+            {
+                qe["type"] = entry["type"];
+
+                if (entry.contains("name"))
+                {
+                    qe["name"] = entry["name"];
+                }
+
+                break;
+            }
+        }
     }
 
     // TODO league
@@ -1283,7 +1329,7 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
             return;
         }
 
-        // TODO:  Fix league
+        // TODO: Fix league
         if (searchonsite)
         {
             QDesktopServices::openUrl(QUrl("https://www.pathofexile.com/trade/search/Legion/" + QString::fromStdString(resp["id"].get<std::string>())));
