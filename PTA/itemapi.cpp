@@ -935,7 +935,7 @@ QString ItemAPI::toJson(PItem* item)
 
 void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 {
-    if (item->f_type.rarity == "currency")
+    if (item->f_type.category == "currency")
     {
         emit humour(tr("Currency search is unimplemented"));
         return;
@@ -964,15 +964,16 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
     bool        is_unique_base = false;
     std::string searchToken;
 
-    if (!item->name.empty())
-    {
-        is_unique_base = m_uniques.contains(item->name);
-        searchToken    = item->name;
-    }
-    else
+    // Search by type if rare map, or if it has no name
+    if ((item->f_type.category == "map" && item->f_type.rarity == "Rare") || item->name.empty())
     {
         is_unique_base = m_uniques.contains(item->type);
         searchToken    = item->type;
+    }
+    else
+    {
+        is_unique_base = m_uniques.contains(item->name);
+        searchToken    = item->name;
     }
 
     // Force rarity if unique
@@ -1003,12 +1004,11 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         {
             auto& entry = it->second;
 
+            // If map, match default map discriminator and type
             if (item->f_type.category == "map")
             {
-                // Use default map discriminator
-                if (entry["disc"] == m_mapdisc)
+                if (entry["disc"] == m_mapdisc && entry["type"] == item->type)
                 {
-                    // use this entry
                     if (entry.contains("name"))
                     {
                         qe["name"] = {{"discriminator", entry["disc"]}, {"option", entry["name"]}};
@@ -1019,20 +1019,17 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
                     break;
                 }
             }
-            else
+            else if (entry["type"] == item->type)
             {
-                // For everything else, match type
-                if (entry["type"] == item->type)
+                // For everything else, just match type
+                qe["type"] = entry["type"];
+
+                if (entry.contains("name"))
                 {
-                    qe["type"] = entry["type"];
-
-                    if (entry.contains("name"))
-                    {
-                        qe["name"] = entry["name"];
-                    }
-
-                    break;
+                    qe["name"] = entry["name"];
                 }
+
+                break;
             }
         }
 
@@ -1080,6 +1077,8 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             {
                 item->m_options += ", Corrupted=Any";
             }
+
+            item->m_options += " (override)";
         }
         else
         {
