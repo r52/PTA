@@ -29,6 +29,7 @@ const QUrl    itemsApiUrl("https://www.pathofexile.com/api/trade/data/items");
 const QUrl    repoeBaseUrl("https://raw.githubusercontent.com/brather1ng/RePoE/master/data/base_items.min.json");
 const QString tradeFetchUrl("https://www.pathofexile.com/api/trade/fetch/%1?query=%2");
 const QString tradeSearchUrl("https://www.pathofexile.com/api/trade/search/");
+const QString tradeSiteUrl("https://www.pathofexile.com/trade/search/");
 
 ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 {
@@ -1362,7 +1363,7 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
 
         if (searchonsite)
         {
-            QDesktopServices::openUrl(QUrl(tradeSearchUrl + getLeague() + QString::fromStdString(resp["id"].get<std::string>())));
+            QDesktopServices::openUrl(QUrl(tradeSiteUrl + getLeague() + "/" + QString::fromStdString(resp["id"].get<std::string>())));
         }
         else
         {
