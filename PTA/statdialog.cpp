@@ -83,34 +83,27 @@ StatDialog::StatDialog(PItem* item)
 
         layout->addWidget(elab, current_row, 0);
 
-        auto   val_count    = e["value"].size();
-        bool   val_is_float = e["value"][0].is_number_float();
-        int    curr_val_int = e["value"][0].get<int>();
-        double curr_val_dbl = e["value"][0].get<double>();
-
-        if (val_count > 1)
-        {
-            for (size_t i = 1; i < val_count; i++)
-            {
-                curr_val_int += e["value"][i].get<int>();
-                curr_val_dbl += e["value"][i].get<double>();
-            }
-
-            curr_val_int /= val_count;
-            curr_val_dbl /= val_count;
-        }
+        auto val_count    = e["value"].size();
+        bool val_is_float = val_count ? e["value"][0].is_number_float() : false;
 
         // min box
         QLineEdit* minEdit = new QLineEdit();
         minEdit->setMaximumWidth(30);
 
-        if (val_is_float)
+        if (val_count)
         {
-            minEdit->setValidator(new QDoubleValidator(this));
+            if (val_is_float)
+            {
+                minEdit->setValidator(new QDoubleValidator(this));
+            }
+            else
+            {
+                minEdit->setValidator(new QIntValidator(this));
+            }
         }
         else
         {
-            minEdit->setValidator(new QIntValidator(this));
+            minEdit->setEnabled(false);
         }
 
         connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
@@ -129,12 +122,51 @@ StatDialog::StatDialog(PItem* item)
         layout->addWidget(minEdit, current_row, 1);
 
         // current value
-        QLabel* curvalLabel = new QLabel(val_is_float ? QString::number(curr_val_dbl) : QString::number(curr_val_int));
+        QString currval("");
+
+        if (val_count)
+        {
+            int    curr_val_int = e["value"][0].get<int>();
+            double curr_val_dbl = e["value"][0].get<double>();
+
+            if (val_count > 1)
+            {
+                for (size_t i = 1; i < val_count; i++)
+                {
+                    curr_val_int += e["value"][i].get<int>();
+                    curr_val_dbl += e["value"][i].get<double>();
+                }
+
+                curr_val_int /= val_count;
+                curr_val_dbl /= val_count;
+            }
+
+            currval = val_is_float ? QString::number(curr_val_dbl) : QString::number(curr_val_int);
+        }
+
+        QLabel* curvalLabel = new QLabel(currval);
         layout->addWidget(curvalLabel, current_row, 2);
 
         // max box
         QLineEdit* maxEdit = new QLineEdit();
         maxEdit->setMaximumWidth(30);
+
+        if (val_count)
+        {
+            if (val_is_float)
+            {
+                maxEdit->setValidator(new QDoubleValidator(this));
+            }
+            else
+            {
+                maxEdit->setValidator(new QIntValidator(this));
+            }
+        }
+        else
+        {
+            maxEdit->setEnabled(false);
+        }
+
         connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
             if (val_is_float)
             {
@@ -147,15 +179,6 @@ StatDialog::StatDialog(PItem* item)
                 filters[id]["value"]["max"] = val;
             }
         });
-
-        if (val_is_float)
-        {
-            maxEdit->setValidator(new QDoubleValidator(this));
-        }
-        else
-        {
-            maxEdit->setValidator(new QIntValidator(this));
-        }
 
         layout->addWidget(maxEdit, current_row, 3);
 
