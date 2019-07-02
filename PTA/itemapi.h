@@ -107,13 +107,17 @@ private:
                                                        {"Elemental Damage", {weapon_filter, weapon_filter_edps}},
                                                        {"Experience", {misc_filter, misc_filter_gem_level_progress}}};
 
-    json c_weaponMap;
+    json c_baseCat;
+
+    std::map<std::string, std::string> c_baseMap;
 
     int              readPropInt(QString prop);
     mmv_t            readPropIntRange(QString prop);
     double           readPropFloat(QString prop);
     socket_filters_t readSockets(QString prop);
     int              readPropExp(QString prop);
+    std::string      readName(QString name);
+    std::string      readType(PItem* item, QString type);
 
     void parseProp(PItem* item, QString prop);
     void parseStat(PItem* item, QString stat);

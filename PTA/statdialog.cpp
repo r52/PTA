@@ -71,7 +71,14 @@ StatDialog::StatDialog(PItem* item)
     {
         std::string id = e["id"].get<std::string>();
 
-        QCheckBox* elab = new QCheckBox(QString::fromStdString(e["text"].get<std::string>()));
+        QString modLabel = QString::fromStdString(e["text"].get<std::string>());
+
+        if (e["type"] == "crafted")
+        {
+            modLabel += " (crafted)";
+        }
+
+        QCheckBox* elab = new QCheckBox(modLabel);
         connect(elab, &QCheckBox::stateChanged, [=](int checked) { filters[id]["disabled"] = !(checked == Qt::Checked); });
 
         layout->addWidget(elab, current_row, 0);

@@ -34,11 +34,13 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
         if (rp_league->error() != QNetworkReply::NoError)
         {
-            qWarning() << "PAPI: Error downloading leagues" << rp_league->error() << rp_league->errorString();
+            qWarning() << "PAPI: Error downloading league data" << rp_league->error() << rp_league->errorString();
             return;
         }
 
         m_leagues = json::parse(rp_league->readAll().toStdString());
+
+        qInfo() << "League data loaded";
     });
 
     // Download stats
@@ -49,7 +51,7 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
         if (rp_stats->error() != QNetworkReply::NoError)
         {
-            qWarning() << "PAPI: Error downloading stats" << rp_stats->error() << rp_stats->errorString();
+            qWarning() << "PAPI: Error downloading mod data" << rp_stats->error() << rp_stats->errorString();
             return;
         }
 
@@ -67,6 +69,8 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
                 m_stats_by_id.insert({{et["id"].get<std::string>(), et}});
             }
         }
+
+        qInfo() << "Mod data loaded";
     });
 
     // Download unique items
@@ -77,7 +81,7 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
         if (rp_uniq->error() != QNetworkReply::NoError)
         {
-            qWarning() << "PAPI: Error downloading unique items" << rp_uniq->error() << rp_uniq->errorString();
+            qWarning() << "PAPI: Error downloading unique item data" << rp_uniq->error() << rp_uniq->errorString();
             return;
         }
 
@@ -106,19 +110,55 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
                 }
             }
         }
+
+        qInfo() << "Unique item data loaded";
     });
 
-    // Load weapon categories
-    QFile wc("data/weapon_categories.json");
+    // Load base categories
+    QFile bc("data/base_categories.json");
 
-    if (!wc.open(QIODevice::ReadOnly))
+    if (!bc.open(QIODevice::ReadOnly))
     {
-        throw std::runtime_error("Cannot open weapon_categories.json");
+        throw std::runtime_error("Cannot open base_categories.json");
     }
 
-    QByteArray wdat = wc.readAll();
+    QByteArray bdat = bc.readAll();
 
-    c_weaponMap = json::parse(wdat.toStdString());
+    c_baseCat = json::parse(bdat.toStdString());
+
+    qInfo() << "Base categories loaded";
+
+    // Load RePoE base data
+
+    auto rp_base = m_manager->get(QNetworkRequest(QUrl("https://raw.githubusercontent.com/brather1ng/RePoE/master/data/base_items.min.json")));
+    connect(rp_base, &QNetworkReply::finished, [=]() {
+        rp_base->deleteLater();
+
+        if (rp_base->error() != QNetworkReply::NoError)
+        {
+            qWarning() << "PAPI: Error downloading item base data" << rp_base->error() << rp_base->errorString();
+            return;
+        }
+
+        // Process data
+        auto obj = json::parse(rp_base->readAll().toStdString());
+
+        for (auto& [k, o] : obj.items())
+        {
+            std::string typeName  = o["name"].get<std::string>();
+            std::string itemClass = o["item_class"].get<std::string>();
+
+            auto search = c_baseCat.find(itemClass);
+            if (search != c_baseCat.end())
+            {
+                std::string itemCat = search.value().get<std::string>();
+
+                c_baseMap.insert({{typeName, itemCat}});
+            }
+        }
+
+        qInfo() << "Item base data loaded";
+    });
 }
 
 int ItemAPI::readPropInt(QString prop)
@@ -239,8 +279,36 @@ socket_filters_t ItemAPI::readSockets(QString prop)
 
 int ItemAPI::readPropExp(QString prop)
 {
-    // TODO
+    // TODO: read exp
     return 0;
+}
+
+std::string ItemAPI::readName(QString name)
+{
+    name.replace("<<set:MS>><<set:M>><<set:S>>", "");
+
+    return name.toStdString();
+}
+
+std::string ItemAPI::readType(PItem* item, QString type)
+{
+    type.replace("<<set:MS>><<set:M>><<set:S>>", "");
+    type.replace("Superior ", "");
+
+    if (item->f_type.rarity == "Magic")
+    {
+        // Parse out magic affixes
+
+        QRegularExpression      re("^\\S+ ([\\w\\s]+) of \\w+$");
+        QRegularExpressionMatch match = re.match(type);
+
+        if (match.hasMatch())
+        {
+            type = match.captured(1);
+        }
+    }
+
+    return type.toStdString();
 }
 
 void ItemAPI::parseProp(PItem* item, QString prop)
@@ -451,12 +519,6 @@ void ItemAPI::parseStat(PItem* item, QString stat)
     if (stat == "Corrupted")
     {
         item->f_misc.corrupted = true;
-        return;
-    }
-
-    if (c_weaponMap.contains(stat.toStdString()))
-    {
-        item->f_type.category = c_weaponMap[stat.toStdString()].get<std::string>();
         return;
     }
 
@@ -716,30 +778,30 @@ PItem* ItemAPI::parse(QString itemText)
     stream.readLineInto(&nametype);
     stream.readLineInto(&type);
 
-    if (type.startsWith("-"))
+    if (type.startsWith("---"))
     {
         // nametype has to be item type and not name
-        item->setType(nametype.toStdString());
+        item->type = readType(item, nametype);
     }
     else
     {
-        item->setName(nametype.toStdString());
-        item->setType(type.toStdString());
+        item->name = readName(nametype);
+        item->type = readType(item, type);
     }
 
     // Process category
     if ("Gem" == item->f_type.rarity)
     {
-        item->f_type.category = "Gem";
+        item->f_type.category = "gem";
     }
     else if ("Divination Card" == item->f_type.rarity)
     {
-        item->f_type.category = item->f_type.rarity = "Card";
+        item->f_type.category = item->f_type.rarity = "card";
     }
 
     if (item->type.ends_with("Map"))
     {
-        item->f_type.category = "Map";
+        item->f_type.category = "map";
     }
 
     if (item->f_type.category.empty() && m_uniques.contains(item->type))
@@ -752,7 +814,7 @@ PItem* ItemAPI::parse(QString itemText)
             {
                 // this is a prophecy
                 item->name = item->type;
-                item->type = item->f_type.category = "Prophecy";
+                item->type = item->f_type.category = "prophecy";
             }
         }
     }
@@ -780,7 +842,14 @@ PItem* ItemAPI::parse(QString itemText)
         }
     }
 
-    // TODO: Process base type/category
+    if (item->f_type.category.empty())
+    {
+        auto base = c_baseMap.find(item->type);
+        if (base != c_baseMap.end())
+        {
+            item->f_type.category = base->second;
+        }
+    }
 
     return item;
 }
@@ -810,7 +879,7 @@ QString ItemAPI::toJson(PItem* item)
     j["ilvl"]    = item->f_misc.ilvl;
     j["quality"] = item->f_misc.quality;
 
-    if (item->f_type.category == "Gem")
+    if (item->f_type.category == "gem")
     {
         j["gem_level"] = item->f_misc.gem_level;
     }
@@ -830,7 +899,7 @@ QString ItemAPI::toJson(PItem* item)
 
 void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 {
-    if (item->f_type.rarity == "Currency")
+    if (item->f_type.rarity == "currency")
     {
         emit humour(tr("Currency search is unimplemented"));
         return;
@@ -898,7 +967,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         {
             auto& entry = it->second;
 
-            if (item->f_type.category == "Map")
+            if (item->f_type.category == "map")
             {
                 // Use default map discriminator
                 if (entry["disc"] == m_mapdisc)
@@ -935,7 +1004,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         item->m_options = "Legion";
 
         // Default Gem options
-        if (item->f_type.category == "Gem")
+        if (item->f_type.category == "gem")
         {
             qe["filters"]["misc_filters"]["filters"]["gem_level"]["min"] = item->f_misc.gem_level;
             qe["filters"]["misc_filters"]["filters"]["quality"]["min"]   = item->f_misc.quality;
@@ -1035,7 +1104,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
 void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
 {
-    if (item->filters.empty() || item->f_type.category == "Map")
+    if (item->filters.empty() || item->f_type.category == "map")
     {
         // Cannot advanced search items with no filters
         emit humour(tr("Advanced search is unavailable for this item type"));

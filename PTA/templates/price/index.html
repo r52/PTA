@@ -82,17 +82,17 @@
             color: #c8c8c8;
         }
 
-        .Prophecy {
+        .prophecy {
             border-color: #b54bff;
             color: #b54bff;
         }
 
-        .Gem {
+        .gem {
             border-color: #1ba29b;
             color: #1ba29b;
         }
 
-        .Card {
+        .card {
             border-color: #111;
             color: #eee;
         }
@@ -152,7 +152,7 @@
         }
 
         var columns = {
-            "Default": [{
+            "default": [{
                     "title": "Account Name",
                     "field": function (entry) {
                         return entry["listing"]["account"]["name"];
@@ -174,7 +174,7 @@
                     }
                 }
             ],
-            "Gem": [{
+            "gem": [{
                     "title": "Account Name",
                     "field": function (entry) {
                         return entry["listing"]["account"]["name"];
@@ -235,7 +235,7 @@
 
         var itemclass = item["rarity"];
 
-        if (item["category"] == "Gem" || item["category"] == "Prophecy" || item["category"] == "Card") {
+        if (item["category"] == "gem" || item["category"] == "prophecy" || item["category"] == "card") {
             itemclass = item["category"];
         }
 
@@ -273,10 +273,10 @@
 
         // Add column headers
 
-        var clm = "Default"
+        var clm = "default"
 
-        if (itemclass == "Gem") {
-            clm = "Gem";
+        if (itemclass == "gem") {
+            clm = "gem";
         }
 
         var tr = table.insertRow(-1);

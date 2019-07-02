@@ -1,6 +1,6 @@
 #include "webwidget.h"
-
 #include "pitem.h"
+#include "pta_types.h"
 
 #include <QtWebEngineWidgets/QWebEngineCertificateError>
 #include <QtWebEngineWidgets/QWebEngineScriptCollection>
@@ -30,6 +30,8 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
 {
     setAttribute(Qt::WA_DeleteOnClose);
 
+    QSettings settings;
+
     // No frame/border, no taskbar button
     Qt::WindowFlags flags = Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint;
 
@@ -37,8 +39,8 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
 
     QUrl startFile;
 
-    // TODO: fix for template option
-    QString startFilePath = QFileInfo("templates/price/index.html").absoluteFilePath();
+    QString tmplpath      = settings.value(PTA_CONFIG_PRICE_TEMPLATE, PTA_CONFIG_DEFAULT_PRICE_TEMPLATE).toString();
+    QString startFilePath = QFileInfo(tmplpath).absoluteFilePath();
     startFile             = QUrl::fromLocalFile(startFilePath);
 
     PWebPage* page = new PWebPage(this);
@@ -51,7 +53,6 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
     overlay = new OverlayWidget(this);
 
     // Restore settings
-    QSettings settings;
     restoreGeometry(settings.value(getSettingKey("geometry")).toByteArray());
 
     // resize (TODO custom size?)

@@ -12,9 +12,14 @@ enum pta_log_level_t
 constexpr auto PTA_CONFIG_LOGLEVEL = "global/loglevel";
 constexpr auto PTA_CONFIG_LOGFILE  = "global/logfile";
 
+constexpr auto PTA_CONFIG_PRICE_TEMPLATE = "ui/pricetemplate";
+
 constexpr auto PTA_CONFIG_DISPLAYLIMIT    = "pricecheck/displaylimit";
 constexpr auto PTA_CONFIG_CORRUPTOVERRIDE = "pricecheck/corruptoverride";
 constexpr auto PTA_CONFIG_CORRUPTSEARCH   = "pricecheck/corruptsearch";
+
+// defaults
+constexpr auto PTA_CONFIG_DEFAULT_PRICE_TEMPLATE = "templates/price/index.html";
 
 constexpr auto PTA_CONFIG_DEFAULT_DISPLAYLIMIT    = 12;
 constexpr auto PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE = false;

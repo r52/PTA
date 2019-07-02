@@ -87,9 +87,6 @@ struct misc_filters_t
 
 struct PItem
 {
-    void setName(std::string n);
-    void setType(std::string t);
-
     std::string m_itemtext; // original item text;
 
     std::string name;
