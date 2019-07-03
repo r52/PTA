@@ -102,7 +102,8 @@ struct PItem
     bool is_weapon;
     bool is_armour;
 
-    std::map<std::string, json> filters;
+    json filters;
+    json pseudos;
 
     std::string m_options; // search options
     int         m_sections = 0;

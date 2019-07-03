@@ -111,6 +111,7 @@ private:
                                                        {"Experience", {misc_filter, misc_filter_gem_level_progress}}};
 
     json c_baseCat;
+    json c_pseudoRules;
 
     std::map<std::string, std::string> c_baseMap;
 
@@ -133,7 +134,7 @@ private:
 
     json                                       m_leagues;
     std::unordered_multimap<std::string, json> m_stats_by_text;
-    std::unordered_multimap<std::string, json> m_stats_by_id;
+    std::unordered_map<std::string, json>      m_stats_by_id;
     std::unordered_multimap<std::string, json> m_uniques;
 
     const std::string m_mapdisc = "warfortheatlas"; // default map discriminator

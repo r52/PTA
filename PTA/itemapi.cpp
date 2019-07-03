@@ -177,6 +177,20 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
         qInfo() << "Item base data loaded";
     });
+
+    // Load pseudo rules
+    QFile pr("data/pseudo_rules.json");
+
+    if (!pr.open(QIODevice::ReadOnly))
+    {
+        throw std::runtime_error("Cannot open pseudo_rules.json");
+    }
+
+    QByteArray pdat = pr.readAll();
+
+    c_pseudoRules = json::parse(pdat.toStdString());
+
+    qInfo() << "Pseudo rules loaded";
 }
 
 int ItemAPI::readPropInt(QString prop)
@@ -698,12 +712,12 @@ bool ItemAPI::parseStat(PItem* item, QString stat, bool multiline)
         return false;
     }
 
-    // TODO: process special/pseudo rules here
+    std::string fid = filter["id"].get<std::string>();
 
     // If the item already has this filter, merge them
-    if (item->filters.contains(filter["id"].get<std::string>()))
+    if (item->filters.contains(fid))
     {
-        auto& efil = item->filters[filter["id"].get<std::string>()];
+        auto& efil = item->filters[fid];
 
         auto count = efil["value"].size();
 
@@ -721,7 +735,7 @@ bool ItemAPI::parseStat(PItem* item, QString stat, bool multiline)
     }
     else
     {
-        item->filters.insert({filter["id"].get<std::string>(), filter});
+        item->filters.emplace(fid, filter);
     }
 
     return true;
@@ -938,6 +952,69 @@ PItem* ItemAPI::parse(QString itemText)
         if (base != c_baseMap.end())
         {
             item->f_type.category = base->second;
+        }
+    }
+
+    // Process special/pseudo rules
+    if (item->filters.size())
+    {
+        for (auto [key, fil] : item->filters.items())
+        {
+            if (c_pseudoRules.contains(key))
+            {
+                auto& rules = c_pseudoRules[key];
+
+                for (auto& r : rules)
+                {
+                    std::string pid = r["id"].get<std::string>();
+
+                    auto pentry = m_stats_by_id[pid];
+
+                    if (!item->pseudos.contains(pid))
+                    {
+                        json ps_entry = pentry;
+
+                        ps_entry["value"] = json::array();
+
+                        for (auto v : fil["value"])
+                        {
+                            if (v.is_number_float())
+                            {
+                                ps_entry["value"].push_back(v.get<double>() * r["factor"].get<double>());
+                            }
+                            else
+                            {
+                                ps_entry["value"].push_back((int) (v.get<int>() * r["factor"].get<double>()));
+                            }
+                        }
+
+                        item->pseudos.emplace(pid, ps_entry);
+                    }
+                    else
+                    {
+                        auto& ps_entry = item->pseudos[pid];
+
+                        for (size_t i = 0; i < fil["value"].size(); i++)
+                        {
+                            auto v = fil["value"][i];
+
+                            // XXX: only support one operation right now
+                            // also remove is useless
+                            if (r["op"] == "add")
+                            {
+                                if (v.is_number_float())
+                                {
+                                    ps_entry["value"][i] = ps_entry["value"][i].get<double>() + (v.get<double>() * r["factor"].get<double>());
+                                }
+                                else
+                                {
+                                    ps_entry["value"][i] = ps_entry["value"][i].get<int>() + ((int) (v.get<int>() * r["factor"].get<double>()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
