@@ -215,6 +215,13 @@ void PTA::priceCheckActivated()
     Once::connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, [=]() {
         QString itemText = QGuiApplication::clipboard()->text();
 
+        if (itemText.isEmpty())
+        {
+            showToolTip("Failed to retrieve item text from clipboard. Please try again");
+            qWarning() << "Failed to retrieve item text from clipboard.";
+            return;
+        }
+
         showToolTip("Searching...");
 
         std::shared_ptr<PItem> item(m_api->parse(itemText));
@@ -278,6 +285,13 @@ void PTA::advancedPriceCheckActivated()
     // Set up clipboard signal
     Once::connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, [=]() {
         QString itemText = QGuiApplication::clipboard()->text();
+
+        if (itemText.isEmpty())
+        {
+            showToolTip("Failed to retrieve item text from clipboard. Please try again");
+            qWarning() << "Failed to retrieve item text from clipboard.";
+            return;
+        }
 
         showToolTip("Searching...");
 
