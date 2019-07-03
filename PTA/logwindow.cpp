@@ -3,9 +3,9 @@
 #include "pta_types.h"
 
 #include <QFile>
+#include <QPlainTextEdit>
 #include <QSettings>
 #include <QStandardPaths>
-#include <QTextEdit>
 #include <QTextStream>
 
 #include <mutex>
@@ -20,7 +20,7 @@
 namespace
 {
     std::mutex            s_logMutex;
-    QTextEdit*            s_logEdit = nullptr;
+    QPlainTextEdit*       s_logEdit = nullptr;
     QScopedPointer<QFile> s_logFile;
 }
 
@@ -84,7 +84,7 @@ void msg_handler(QtMsgType type, const QMessageLogContext& context, const QStrin
 
         if (s_logEdit)
         {
-            s_logEdit->append(output);
+            s_logEdit->appendPlainText(output);
         }
 
         if (logFile && !s_logFile)
@@ -120,19 +120,18 @@ LogWindow::LogWindow(QObject* parent) : QObject(parent)
         throw std::runtime_error("log window already created");
     }
 
-    s_logEdit = new QTextEdit();
+    s_logEdit = new QPlainTextEdit();
 
     s_logEdit->setReadOnly(true);
-    s_logEdit->setAcceptRichText(true);
 
     // max lines in log viewer
-    s_logEdit->document()->setMaximumBlockCount(250);
+    s_logEdit->setMaximumBlockCount(250);
 
     qInstallMessageHandler(msg_handler);
     qSetMessagePattern("[%{time}]    %{type}    %{message} - (%{function}:%{line})");
 }
 
-QTextEdit* LogWindow::release()
+QPlainTextEdit* LogWindow::release()
 {
     if (nullptr != s_logEdit)
     {

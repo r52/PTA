@@ -2,7 +2,7 @@
 
 #include <QObject>
 
-QT_FORWARD_DECLARE_CLASS(QTextEdit)
+QT_FORWARD_DECLARE_CLASS(QPlainTextEdit)
 
 class LogWindow : public QObject
 {
@@ -12,7 +12,7 @@ public:
     ~LogWindow();
     explicit LogWindow(QObject* parent = nullptr);
 
-    QTextEdit* release();
+    QPlainTextEdit* release();
 
 private:
     bool m_released = false;

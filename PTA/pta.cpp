@@ -11,7 +11,7 @@
 #include <QHotkey>
 #include <QMenu>
 #include <QMessageBox>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 #include <QToolTip>
 #include <QVBoxLayout>
 
