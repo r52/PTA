@@ -105,4 +105,5 @@ struct PItem
     std::map<std::string, json> filters;
 
     std::string m_options; // search options
+    int         m_sections = 0;
 };

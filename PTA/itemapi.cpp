@@ -511,7 +511,7 @@ void ItemAPI::parseProp(PItem* item, QString prop)
     }
 }
 
-void ItemAPI::parseStat(PItem* item, QString stat)
+bool ItemAPI::parseStat(PItem* item, QString stat, bool multiline)
 {
     // Make a copy
     QString orig_stat = stat;
@@ -519,25 +519,25 @@ void ItemAPI::parseStat(PItem* item, QString stat)
     if (stat == "Unidentified")
     {
         item->f_misc.identified = false;
-        return;
+        return true;
     }
 
     if (stat == "Shaper Item")
     {
         item->f_misc.shaper_item = true;
-        return;
+        return true;
     }
 
     if (stat == "Elder Item")
     {
         item->f_misc.elder_item = true;
-        return;
+        return true;
     }
 
     if (stat == "Corrupted")
     {
         item->f_misc.corrupted = true;
-        return;
+        return true;
     }
 
     bool stat_is_crafted = false;
@@ -573,23 +573,74 @@ void ItemAPI::parseStat(PItem* item, QString stat)
         }
     }
 
-    if (!val.size())
-    {
-        // If stat has no values, then it has no variance. Skip
-        qDebug() << "Static stat line" << orig_stat;
-        return;
-    }
-
     // Craft search token
     stat.replace(re, "#");
 
     auto stoken = stat.toStdString();
 
-    if (!m_stats_by_text.contains(stoken))
+    bool found = m_stats_by_text.contains(stoken);
+
+    if (!found && val.size() && stat.contains("reduced"))
     {
-        // Ignored line
+        // If the stat line has a "reduced" value, try to
+        // flip it and try again
+
+        stat.replace("reduced", "increased");
+
+        for (auto& v : val)
+        {
+            if (v.is_number_float())
+            {
+                v = v.get<double>() * -1.0;
+            }
+            else
+            {
+                v = v.get<int>() * -1;
+            }
+        }
+
+        stoken = stat.toStdString();
+        found  = m_stats_by_text.contains(stoken);
+    }
+
+    if (!found)
+    {
+        if (!multiline)
+        {
+            // Could be a multiline stat
+            if (m_section.isEmpty())
+            {
+                m_section = orig_stat;
+            }
+            else
+            {
+                // Try to combine and search again
+                QString combstat = m_section + "\n" + orig_stat;
+
+                bool result = parseStat(item, combstat, true);
+
+                if (result)
+                {
+                    // Successfully parsed multiline stat
+                    m_section.clear();
+                }
+                else
+                {
+                    // otherwise, ditch the older line
+                    m_section = orig_stat;
+                }
+
+                return result;
+            }
+        }
+
         qDebug() << "Ignored/unprocessed line" << orig_stat;
-        return;
+        return false;
+    }
+    else if (!m_section.isEmpty())
+    {
+        // Clear section upon finding a good stat
+        m_section.clear();
     }
 
     json filter;
@@ -644,7 +695,7 @@ void ItemAPI::parseStat(PItem* item, QString stat)
     if (filter.empty())
     {
         qDebug() << "Error parsing stat line" << orig_stat;
-        return;
+        return false;
     }
 
     // TODO: process special/pseudo rules here
@@ -672,6 +723,8 @@ void ItemAPI::parseStat(PItem* item, QString stat)
     {
         item->filters.insert({filter["id"].get<std::string>(), filter});
     }
+
+    return true;
 }
 
 void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results)
@@ -863,6 +916,7 @@ PItem* ItemAPI::parse(QString itemText)
         if (line.startsWith("---"))
         {
             m_section.clear();
+            item->m_sections++;
             continue;
         }
 
@@ -871,7 +925,7 @@ PItem* ItemAPI::parse(QString itemText)
             // parse item prop
             parseProp(item, line);
         }
-        else
+        else if (item->m_sections > 1)
         {
             // parse item stat
             parseStat(item, line);

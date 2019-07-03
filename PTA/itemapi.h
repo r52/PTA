@@ -123,7 +123,7 @@ private:
     std::string      readType(PItem* item, QString type);
 
     void parseProp(PItem* item, QString prop);
-    void parseStat(PItem* item, QString stat);
+    bool parseStat(PItem* item, QString stat, bool multiline = false);
 
     void processPriceResults(std::shared_ptr<PItem> item, json results);
 
