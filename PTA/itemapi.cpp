@@ -617,6 +617,23 @@ bool ItemAPI::parseStat(PItem* item, QString stat, bool multiline)
         found  = m_stats_by_text.contains(stoken);
     }
 
+    while (!found && stat.contains('#') && val.size())
+    {
+        // Try putting back some values in case the mod itself has hardcoded values
+        stat.replace(stat.lastIndexOf("#"), 1, QString::number(val[val.size() - 1].get<int>()));
+
+        stoken = stat.toStdString();
+        found  = m_stats_by_text.contains(stoken);
+
+        if (found)
+        {
+            // Delete value used
+            val.erase(val.size() - 1);
+        }
+
+        // Otherwise, give up
+    }
+
     if (!found)
     {
         if (!multiline)
