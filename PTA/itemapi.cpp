@@ -591,8 +591,7 @@ bool ItemAPI::parseStat(PItem* item, QString stat, bool multiline)
     stat.replace(re, "#");
 
     auto stoken = stat.toStdString();
-
-    bool found = m_stats_by_text.contains(stoken);
+    bool found  = m_stats_by_text.contains(stoken);
 
     if (!found && val.size() && stat.contains("reduced"))
     {
@@ -617,12 +616,14 @@ bool ItemAPI::parseStat(PItem* item, QString stat, bool multiline)
         found  = m_stats_by_text.contains(stoken);
     }
 
-    while (!found && stat.contains('#') && val.size())
+    // Reverse replace search
+    QString reverse_repl_stat = stat;
+    while (!found && reverse_repl_stat.contains('#') && val.size())
     {
         // Try putting back some values in case the mod itself has hardcoded values
-        stat.replace(stat.lastIndexOf("#"), 1, QString::number(val[val.size() - 1].get<int>()));
+        reverse_repl_stat.replace(reverse_repl_stat.lastIndexOf("#"), 1, QString::number(val[val.size() - 1].get<int>()));
 
-        stoken = stat.toStdString();
+        stoken = reverse_repl_stat.toStdString();
         found  = m_stats_by_text.contains(stoken);
 
         if (found)
@@ -630,10 +631,39 @@ bool ItemAPI::parseStat(PItem* item, QString stat, bool multiline)
             // Delete value used
             val.erase(val.size() - 1);
         }
-
-        // Otherwise, give up
     }
 
+    // Forward replace search
+    QString forward_repl_stat = stat;
+    while (!found && forward_repl_stat.contains('#') && val.size())
+    {
+        // Try putting back some values in case the mod itself has hardcoded values
+        forward_repl_stat.replace(forward_repl_stat.indexOf("#"), 1, QString::number(val[0].get<int>()));
+
+        stoken = forward_repl_stat.toStdString();
+        found  = m_stats_by_text.contains(stoken);
+
+        if (found)
+        {
+            // Delete value used
+            val.erase(0);
+        }
+    }
+
+    if (!found)
+    {
+        // Try the original line
+        stoken = orig_stat.toStdString();
+        found  = m_stats_by_text.contains(stoken);
+
+        if (found)
+        {
+            // If original line works, then mod has no variance
+            val.clear();
+        }
+    }
+
+    // Otherwise, give up
     if (!found)
     {
         if (!multiline)
