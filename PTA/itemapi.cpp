@@ -587,6 +587,13 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
         return true;
     }
 
+    // Vaal gems
+    if (item->f_type.category == "gem" && stat.startsWith("Vaal "))
+    {
+        item->type = stat.toStdString();
+        return true;
+    }
+
     bool stat_is_crafted = false;
 
     if (stat.endsWith("(crafted)"))
