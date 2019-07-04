@@ -3,6 +3,8 @@
 #include "pta_types.h"
 #include "statdialog.h"
 
+#include <sstream>
+#include <string>
 #include <unordered_set>
 
 #include <nlohmann/json.hpp>
@@ -15,7 +17,6 @@
 #include <QNetworkReply>
 #include <QRegularExpression>
 #include <QSettings>
-#include <QTextStream>
 
 using json = nlohmann::json;
 
@@ -83,7 +84,15 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
             for (auto& et : el)
             {
-                m_stats_by_text.insert({{et["text"].get<std::string>(), et}});
+                // Cut the key for multiline mods
+                std::string::size_type nl;
+                std::string            text = et["text"].get<std::string>();
+                if ((nl = text.find("\n")) != std::string::npos)
+                {
+                    text = text.substr(0, nl);
+                }
+
+                m_stats_by_text.insert({{text, et}});
                 m_stats_by_id.insert({{et["id"].get<std::string>(), et}});
             }
         }
@@ -343,6 +352,31 @@ std::string ItemAPI::readType(PItem* item, QString type)
     return type.toStdString();
 }
 
+void ItemAPI::captureNumerics(QString line, QRegularExpression& re, json& val, std::vector<QString>& captured)
+{
+    QRegularExpressionMatchIterator it = re.globalMatch(line);
+
+    while (it.hasNext())
+    {
+        QRegularExpressionMatch match = it.next();
+        QString                 word  = match.captured(1);
+
+        captured.push_back(word);
+
+        // Process floats
+        if (word.contains('.'))
+        {
+            double numval = word.toDouble();
+            val.push_back(numval);
+        }
+        else
+        {
+            int numval = word.toInt();
+            val.push_back(numval);
+        }
+    }
+}
+
 void ItemAPI::parseProp(PItem* item, QString prop)
 {
     QString p = prop.section(":", 0, 0);
@@ -525,9 +559,8 @@ void ItemAPI::parseProp(PItem* item, QString prop)
     }
 }
 
-bool ItemAPI::parseStat(PItem* item, QString stat, bool multiline)
+bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
 {
-    // Make a copy
     QString orig_stat = stat;
 
     if (stat == "Unidentified")
@@ -563,42 +596,43 @@ bool ItemAPI::parseStat(PItem* item, QString stat, bool multiline)
 
     stat.replace(" (crafted)", "");
 
-    // Get numeric values from stat
-    json val = json::array();
+    // Match numerics
+    QRegularExpression   re("([\\+\\-]?[\\d\\.]+)");
+    std::vector<QString> captured;
 
-    QRegularExpression              re("([\\+\\-]?[\\d\\.]+)");
-    QRegularExpressionMatchIterator it = re.globalMatch(stat);
+    json val    = json::array();
+    auto stoken = stat.toStdString();
 
-    while (it.hasNext())
+    // First try original line
+    bool found = m_stats_by_text.contains(stoken);
+
+    if (!found)
     {
-        QRegularExpressionMatch match = it.next();
-        QString                 word  = match.captured(1);
+        // Then, try replacing the num stats
+        captureNumerics(stat, re, val, captured);
 
-        // Process floats
-        if (word.contains('.'))
-        {
-            double numval = word.toDouble();
-            val.push_back(numval);
-        }
-        else
-        {
-            int numval = word.toInt();
-            val.push_back(numval);
-        }
+        // Craft search token
+        stat.replace(re, "#");
+
+        stoken = stat.toStdString();
+        found  = m_stats_by_text.contains(stoken);
     }
 
-    // Craft search token
-    stat.replace(re, "#");
-
-    auto stoken = stat.toStdString();
-    bool found  = m_stats_by_text.contains(stoken);
-
-    if (!found && val.size() && stat.contains("reduced"))
+    if (!found && val.size() && (stat.contains("reduced") || stat.contains("less")))
     {
         // If the stat line has a "reduced" value, try to
         // flip it and try again
 
-        stat.replace("reduced", "increased");
+        if (stat.contains("reduced"))
+        {
+            stat.replace("reduced", "increased");
+            orig_stat.replace("reduced", "increased");
+        }
+        else
+        {
+            stat.replace("less", "more");
+            orig_stat.replace("less", "more");
+        }
 
         for (auto& v : val)
         {
@@ -616,100 +650,158 @@ bool ItemAPI::parseStat(PItem* item, QString stat, bool multiline)
         found  = m_stats_by_text.contains(stoken);
     }
 
-    // Reverse replace search
-    QString reverse_repl_stat = stat;
-    while (!found && reverse_repl_stat.contains('#') && val.size())
+    if (!found)
     {
-        // Try putting back some values in case the mod itself has hardcoded values
-        reverse_repl_stat.replace(reverse_repl_stat.lastIndexOf("#"), 1, QString::number(val[val.size() - 1].get<int>()));
+        // Try forward replace search
+        QString frep     = orig_stat;
+        QString frepplus = frep;
 
-        stoken = reverse_repl_stat.toStdString();
-        found  = m_stats_by_text.contains(stoken);
-
-        if (found)
+        while (!found && frep.contains(re) && captured.size())
         {
-            // Delete value used
-            val.erase(val.size() - 1);
-        }
-    }
+            // Try putting back some values in case the mod itself has hardcoded values
+            frep.replace(frep.indexOf(re), captured[0].length(), "#");
+            frepplus.replace(frepplus.indexOf(re), captured[0].length(), "+#");
 
-    // Forward replace search
-    QString forward_repl_stat = stat;
-    while (!found && forward_repl_stat.contains('#') && val.size())
-    {
-        // Try putting back some values in case the mod itself has hardcoded values
-        forward_repl_stat.replace(forward_repl_stat.indexOf("#"), 1, QString::number(val[0].get<int>()));
+            stoken = frep.toStdString();
+            found  = m_stats_by_text.contains(stoken);
 
-        stoken = forward_repl_stat.toStdString();
-        found  = m_stats_by_text.contains(stoken);
+            if (!found)
+            {
+                // Try plus version
+                stoken = frepplus.toStdString();
+                found  = m_stats_by_text.contains(stoken);
+            }
 
-        if (found)
-        {
-            // Delete value used
-            val.erase(0);
+            if (found)
+            {
+                // Delete value used
+                captured.pop_back();
+                val.erase(val.size() - 1);
+            }
         }
     }
 
     if (!found)
     {
-        // Try the original line
-        stoken = orig_stat.toStdString();
-        found  = m_stats_by_text.contains(stoken);
-
-        if (found)
+        // Reverse replace search
+        QString rrep     = orig_stat;
+        QString rrepplus = rrep;
+        while (!found && rrep.contains(re) && captured.size())
         {
-            // If original line works, then mod has no variance
-            val.clear();
+            // Try putting back some values in case the mod itself has hardcoded values
+            rrep.replace(rrep.lastIndexOf(re), captured[captured.size() - 1].length(), "#");
+            rrepplus.replace(rrepplus.lastIndexOf(re), captured[captured.size() - 1].length(), "+#");
+
+            stoken = rrep.toStdString();
+            found  = m_stats_by_text.contains(stoken);
+
+            if (!found)
+            {
+                // Try plus version
+                stoken = rrepplus.toStdString();
+                found  = m_stats_by_text.contains(stoken);
+            }
+
+            if (found)
+            {
+                // Delete value used
+                captured.erase(captured.begin());
+                val.erase(0);
+            }
         }
     }
 
-    // Otherwise, give up
+    // Give up
     if (!found)
     {
-        if (!multiline)
-        {
-            // Could be a multiline stat
-            if (m_section.isEmpty())
-            {
-                m_section = orig_stat;
-            }
-            else
-            {
-                // Try to combine and search again
-                QString combstat = m_section + "\n" + orig_stat;
-
-                bool result = parseStat(item, combstat, true);
-
-                if (result)
-                {
-                    // Successfully parsed multiline stat
-                    m_section.clear();
-                }
-                else
-                {
-                    // otherwise, ditch the older line
-                    m_section = orig_stat;
-                }
-
-                return result;
-            }
-        }
-
         qDebug() << "Ignored/unprocessed line" << orig_stat;
         return false;
     }
-    else if (!m_section.isEmpty())
-    {
-        // Clear section upon finding a good stat
-        m_section.clear();
-    }
 
-    json filter;
+    std::vector<QString> multiline;
+    json                 filter;
+
+    const std::string nl = "\n";
 
     auto range = m_stats_by_text.equal_range(stoken);
     for (auto it = range.first; it != range.second; ++it)
     {
         auto& entry = it->second;
+
+        std::string text = entry["text"];
+
+        std::stringstream ss(text);
+        std::string       tl;
+
+        std::vector<QString> lines;
+
+        while (std::getline(ss, tl, '\n'))
+        {
+            lines.push_back(QString::fromStdString(tl));
+        }
+
+        // Bump the first line since we know it has matched
+        lines.erase(lines.begin());
+
+        if (lines.size() > 0)
+        {
+            // If this is a multiline mod
+            // Match the other lines as well
+            bool matches = true;
+
+            // Read in the other lines if we haven't yet
+            while (multiline.size() < lines.size())
+            {
+                QString nextline;
+
+                stream.readLineInto(&nextline);
+                multiline.push_back(nextline);
+            }
+
+            assert(multiline.size() == lines.size());
+
+            json                 lvals = json::array();
+            std::vector<QString> lcap;
+
+            for (size_t i = 0; i < multiline.size(); i++)
+            {
+                if (multiline[i] != lines[i])
+                {
+                    // Try capturing values
+                    QString statline = multiline[i];
+                    captureNumerics(statline, re, lvals, lcap);
+
+                    statline.replace(re, "#");
+
+                    if (statline != lines[i])
+                    {
+                        // Try the plus version
+                        statline = multiline[i];
+                        statline.replace(re, "+#");
+
+                        if (statline != lines[i])
+                        {
+                            matches = false;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!matches)
+            {
+                // Doesn't match, continue
+                continue;
+            }
+
+            // Need to merge captured numerics
+            for (size_t i = 0; i < lvals.size(); i++)
+            {
+                val.push_back(lvals.at(i));
+            }
+
+            captured.insert(captured.end(), lcap.begin(), lcap.end());
+        }
 
         if (stat_is_crafted)
         {
@@ -989,7 +1081,7 @@ PItem* ItemAPI::parse(QString itemText)
         else if (item->m_sections > 1)
         {
             // parse item stat
-            parseStat(item, line);
+            parseStat(item, line, stream);
         }
     }
 

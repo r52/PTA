@@ -7,9 +7,9 @@
 
 #include <nlohmann/json.hpp>
 
-#include <QObject>
-
 #include <QMap>
+#include <QObject>
+#include <QTextStream>
 #include <QVector>
 
 QT_FORWARD_DECLARE_CLASS(QNetworkAccessManager)
@@ -123,8 +123,10 @@ private:
     std::string      readName(QString name);
     std::string      readType(PItem* item, QString type);
 
+    void captureNumerics(QString line, QRegularExpression& re, json& val, std::vector<QString>& captured);
+
     void parseProp(PItem* item, QString prop);
-    bool parseStat(PItem* item, QString stat, bool multiline = false);
+    bool parseStat(PItem* item, QString stat, QTextStream& stream);
 
     void processPriceResults(std::shared_ptr<PItem> item, json results);
 
