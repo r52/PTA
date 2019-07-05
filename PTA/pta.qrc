@@ -2,5 +2,9 @@
     <qresource prefix="/">
         <file>PTA.ico</file>
         <file>Resources/data.js</file>
+        <file>Resources/pricing.png</file>
+        <file>Resources/settings.png</file>
+        <file>Resources/ui.png</file>
+        <file>Resources/hotkey.png</file>
     </qresource>
 </RCC>

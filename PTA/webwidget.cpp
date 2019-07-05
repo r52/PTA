@@ -39,8 +39,16 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
 
     QUrl startFile;
 
-    QString tmplpath      = settings.value(PTA_CONFIG_PRICE_TEMPLATE, PTA_CONFIG_DEFAULT_PRICE_TEMPLATE).toString();
-    QString startFilePath = QFileInfo(tmplpath).absoluteFilePath();
+    QString tmplpath = settings.value(PTA_CONFIG_PRICE_TEMPLATE, PTA_CONFIG_DEFAULT_PRICE_TEMPLATE).toString();
+
+    QFileInfo tmplFile(tmplpath);
+
+    if (!tmplFile.exists())
+    {
+        qWarning() << "Template file does not exist.";
+    }
+
+    QString startFilePath = tmplFile.absoluteFilePath();
     startFile             = QUrl::fromLocalFile(startFilePath);
 
     PWebPage* page = new PWebPage(this);

@@ -899,6 +899,7 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results)
 
     QSettings settings;
     size_t    display_limit = settings.value(PTA_CONFIG_DISPLAYLIMIT, PTA_CONFIG_DEFAULT_DISPLAYLIMIT).toInt();
+    bool      removedupes   = settings.value(PTA_CONFIG_REMOVE_DUPES, PTA_CONFIG_DEFAULT_REMOVE_DUPES).toBool();
 
     while (!done)
     {
@@ -943,22 +944,24 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results)
         auto& rj = dat["result"];
 
         // Delete duplicate accounts
-        // TODO make this a setting
-        for (json::iterator it = rj.begin(); it != rj.end();)
+        if (removedupes)
         {
-            auto& entry = *it;
-
-            std::string accname = entry["listing"]["account"]["name"].get<std::string>();
-
-            if (accounts.contains(accname))
+            for (json::iterator it = rj.begin(); it != rj.end();)
             {
-                // skip duplicate accounts
-                it = rj.erase(it);
-            }
-            else
-            {
-                accounts.insert(accname);
-                ++it;
+                auto& entry = *it;
+
+                std::string accname = entry["listing"]["account"]["name"].get<std::string>();
+
+                if (accounts.contains(accname))
+                {
+                    // skip duplicate accounts
+                    it = rj.erase(it);
+                }
+                else
+                {
+                    accounts.insert(accname);
+                    ++it;
+                }
             }
         }
 
@@ -1242,6 +1245,19 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
     bool        is_unique_base = false;
     std::string searchToken;
 
+    // Take care of settings
+    bool onlineonly = settings.value(PTA_CONFIG_ONLINE_ONLY, PTA_CONFIG_DEFAULT_ONLINE_ONLY).toBool();
+    if (!onlineonly)
+    {
+        query["query"]["status"]["option"] = "any";
+    }
+
+    bool buyoutonly = settings.value(PTA_CONFIG_BUYOUT_ONLY, PTA_CONFIG_DEFAULT_BUYOUT_ONLY).toBool();
+    if (buyoutonly)
+    {
+        query["query"]["filters"]["trade_filters"]["filters"]["sale_type"]["option"] = "priced";
+    }
+
     // Search by type if rare map, or if it has no name
     if ((item->f_type.category == "map" && item->f_type.rarity == "Rare") || item->name.empty())
     {
@@ -1461,6 +1477,19 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
 
     QSettings settings;
     auto&     qe = query["query"];
+
+    // Take care of settings
+    bool onlineonly = settings.value(PTA_CONFIG_ONLINE_ONLY, PTA_CONFIG_DEFAULT_ONLINE_ONLY).toBool();
+    if (!onlineonly)
+    {
+        query["query"]["status"]["option"] = "any";
+    }
+
+    bool buyoutonly = settings.value(PTA_CONFIG_BUYOUT_ONLY, PTA_CONFIG_DEFAULT_BUYOUT_ONLY).toBool();
+    if (buyoutonly)
+    {
+        query["query"]["filters"]["trade_filters"]["filters"]["sale_type"]["option"] = "priced";
+    }
 
     bool        is_unique_base = false;
     std::string searchToken;

@@ -1,12 +1,23 @@
 #include "statdialog.h"
 
+#include "pta_types.h"
+
 #include <QtWidgets>
 
 const QMap<std::string, QString> g_labelStyles = {{"Unique", "color: #af6025;"}, {"Rare", "color: #ff7;"}, {"Magic", "color: #88f;"}};
 
 StatDialog::StatDialog(PItem* item)
 {
-    // TODO prefill options
+    // TODO setting options
+    QSettings settings;
+
+    bool prefillmin     = settings.value(PTA_CONFIG_PREFILL_MIN, PTA_CONFIG_DEFAULT_PREFILL_MIN).toBool();
+    bool prefillmax     = settings.value(PTA_CONFIG_PREFILL_MAX, PTA_CONFIG_DEFAULT_PREFILL_MAX).toBool();
+    bool prefillnormals = settings.value(PTA_CONFIG_PREFILL_NORMALS, PTA_CONFIG_DEFAULT_PREFILL_NORMALS).toBool();
+    bool prefillpseudos = settings.value(PTA_CONFIG_PREFILL_PSEUDOS, PTA_CONFIG_DEFAULT_PREFILL_PSEUDOS).toBool();
+    bool prefillilvl    = settings.value(PTA_CONFIG_PREFILL_ILVL, PTA_CONFIG_DEFAULT_PREFILL_ILVL).toBool();
+    bool prefillbase    = settings.value(PTA_CONFIG_PREFILL_BASE, PTA_CONFIG_DEFAULT_PREFILL_BASE).toBool();
+
     int current_row = 0;
 
     Qt::WindowFlags flags = Qt::WindowTitleHint | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint;
@@ -131,31 +142,8 @@ StatDialog::StatDialog(PItem* item)
 
         layout->addWidget(minEdit, current_row, 1);
 
-        // current value
-        QString currval("");
-
-        // Only support single or range values
-        if (val_count > 0 && val_count < 3)
-        {
-            int    curr_val_int = e["value"][0].get<int>();
-            double curr_val_dbl = e["value"][0].get<double>();
-
-            if (val_count > 1)
-            {
-                for (size_t i = 1; i < val_count; i++)
-                {
-                    curr_val_int += e["value"][i].get<int>();
-                    curr_val_dbl += e["value"][i].get<double>();
-                }
-
-                curr_val_int /= val_count;
-                curr_val_dbl /= val_count;
-            }
-
-            currval = val_is_float ? QString::number(curr_val_dbl) : QString::number(curr_val_int);
-        }
-
-        QLabel* curvalLabel = new QLabel(currval);
+        // current value label
+        QLabel* curvalLabel = new QLabel();
         layout->addWidget(curvalLabel, current_row, 2);
 
         // max box
@@ -202,6 +190,48 @@ StatDialog::StatDialog(PItem* item)
         connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
 
         layout->addWidget(maxEdit, current_row, 3);
+
+        // current value
+        QString currval("");
+
+        // Only support single or range values
+        if (val_count > 0 && val_count < 3)
+        {
+            int    curr_val_int = e["value"][0].get<int>();
+            double curr_val_dbl = e["value"][0].get<double>();
+
+            if (val_count > 1)
+            {
+                for (size_t i = 1; i < val_count; i++)
+                {
+                    curr_val_int += e["value"][i].get<int>();
+                    curr_val_dbl += e["value"][i].get<double>();
+                }
+
+                curr_val_int /= val_count;
+                curr_val_dbl /= val_count;
+            }
+
+            currval = val_is_float ? QString::number(curr_val_dbl) : QString::number(curr_val_int);
+        }
+
+        curvalLabel->setText(currval);
+
+        // Process settings
+        if (prefillmin)
+        {
+            minEdit->setText(currval);
+        }
+
+        if (prefillmax)
+        {
+            maxEdit->setText(currval);
+        }
+
+        if (prefillnormals)
+        {
+            elab->setChecked(true);
+        }
 
         current_row++;
     }
@@ -274,30 +304,8 @@ StatDialog::StatDialog(PItem* item)
 
             layout->addWidget(minEdit, current_row, 1);
 
-            // current value
-            QString currval("");
-
-            if (val_count)
-            {
-                int    curr_val_int = e["value"][0].get<int>();
-                double curr_val_dbl = e["value"][0].get<double>();
-
-                if (val_count > 1)
-                {
-                    for (size_t i = 1; i < val_count; i++)
-                    {
-                        curr_val_int += e["value"][i].get<int>();
-                        curr_val_dbl += e["value"][i].get<double>();
-                    }
-
-                    curr_val_int /= val_count;
-                    curr_val_dbl /= val_count;
-                }
-
-                currval = val_is_float ? QString::number(curr_val_dbl) : QString::number(curr_val_int);
-            }
-
-            QLabel* curvalLabel = new QLabel(currval);
+            // current value label
+            QLabel* curvalLabel = new QLabel();
             layout->addWidget(curvalLabel, current_row, 2);
 
             // max box
@@ -344,6 +352,47 @@ StatDialog::StatDialog(PItem* item)
 
             layout->addWidget(maxEdit, current_row, 3);
 
+            // current value
+            QString currval("");
+
+            if (val_count)
+            {
+                int    curr_val_int = e["value"][0].get<int>();
+                double curr_val_dbl = e["value"][0].get<double>();
+
+                if (val_count > 1)
+                {
+                    for (size_t i = 1; i < val_count; i++)
+                    {
+                        curr_val_int += e["value"][i].get<int>();
+                        curr_val_dbl += e["value"][i].get<double>();
+                    }
+
+                    curr_val_int /= val_count;
+                    curr_val_dbl /= val_count;
+                }
+
+                currval = val_is_float ? QString::number(curr_val_dbl) : QString::number(curr_val_int);
+            }
+
+            curvalLabel->setText(currval);
+
+            // Process settings
+            if (prefillmin)
+            {
+                minEdit->setText(currval);
+            }
+
+            if (prefillmax)
+            {
+                maxEdit->setText(currval);
+            }
+
+            if (prefillpseudos)
+            {
+                elab->setChecked(true);
+            }
+
             current_row++;
         }
 
@@ -380,6 +429,7 @@ StatDialog::StatDialog(PItem* item)
     QLineEdit* ilvlEdit = new QLineEdit();
     ilvlEdit->setValidator(new QIntValidator(1, 100, this));
     ilvlEdit->setMaximumWidth(30);
+    ilvlEdit->setText(QString::number(item->f_misc.ilvl));
 
     connect(ilvlEdit, &QLineEdit::textChanged, [=](const QString& text) {
         if (!text.isEmpty())
@@ -391,17 +441,34 @@ StatDialog::StatDialog(PItem* item)
 
     connect(ilvlEdit, &QLineEdit::textEdited, [=](const QString& text) { ilvlCB->setChecked(true); });
 
+    if (prefillilvl)
+    {
+        ilvlCB->setChecked(true);
+    }
+
     miscLayout->addWidget(ilvlCB);
     miscLayout->addWidget(ilvlEdit);
 
     QCheckBox* itembaseCB = new QCheckBox(tr("Use Item Base"));
     connect(itembaseCB, &QCheckBox::stateChanged, [=](int checked) { misc["use_item_base"] = (checked == Qt::Checked); });
+
+    if (prefillbase)
+    {
+        itembaseCB->setChecked(true);
+    }
+
     miscLayout->addWidget(itembaseCB);
 
     if (item->f_misc.shaper_item)
     {
         QCheckBox* shaperBase = new QCheckBox(tr("Shaper Base"));
         connect(shaperBase, &QCheckBox::stateChanged, [=](int checked) { misc["use_shaper_base"] = (checked == Qt::Checked); });
+
+        if (prefillbase)
+        {
+            shaperBase->setChecked(true);
+        }
+
         miscLayout->addWidget(shaperBase);
     }
 
@@ -409,6 +476,12 @@ StatDialog::StatDialog(PItem* item)
     {
         QCheckBox* elderBase = new QCheckBox(tr("Elder Base"));
         connect(elderBase, &QCheckBox::stateChanged, [=](int checked) { misc["use_elder_base"] = (checked == Qt::Checked); });
+
+        if (prefillbase)
+        {
+            elderBase->setChecked(true);
+        }
+
         miscLayout->addWidget(elderBase);
     }
 

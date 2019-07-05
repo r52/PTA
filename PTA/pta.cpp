@@ -1,14 +1,15 @@
 #include "pta.h"
 
+#include "configdialog.h"
 #include "itemapi.h"
 #include "logwindow.h"
+#include "pta_types.h"
 #include "webwidget.h"
 
 #include <once/once.h>
 
 #include <QApplication>
 #include <QClipboard>
-#include <QHotkey>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPlainTextEdit>
@@ -122,7 +123,105 @@ void PTA::createActions()
 {
     m_settingsAction = new QAction(tr("&Settings"), this);
     connect(m_settingsAction, &QAction::triggered, [&] {
-        // TODO Settings dialog
+        json results;
+
+        ConfigDialog dlg(results, m_api);
+        int          ret = dlg.exec();
+
+        if (!ret)
+        {
+            // User close
+            return;
+        }
+
+        QSettings settings;
+
+        for (auto& [k, v] : results.items())
+        {
+            if (v.is_boolean())
+            {
+                settings.setValue(QString::fromStdString(k), v.get<bool>());
+            }
+            else if (v.is_number())
+            {
+                settings.setValue(QString::fromStdString(k), v.get<int>());
+            }
+            else if (v.is_string())
+            {
+                settings.setValue(QString::fromStdString(k), QString::fromStdString(v.get<std::string>()));
+            }
+
+            // TODO hotkey changes
+            if (k == PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED)
+            {
+                bool enabled = v.get<bool>();
+
+                if (!enabled)
+                {
+                    m_simpleKey.reset();
+                }
+                else if (!m_simpleKey)
+                {
+                    QString seq = settings.value(PTA_CONFIG_SIMPLE_CHECK_HOTKEY, PTA_CONFIG_DEFAULT_SIMPLE_CHECK_HOTKEY).toString();
+
+                    m_simpleKey.reset(new QHotkey(QKeySequence(seq), true));
+                    qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
+
+                    connect(m_simpleKey.get(), &QHotkey::activated, this, &PTA::priceCheckActivated);
+                }
+            }
+
+            if (k == PTA_CONFIG_ADV_CHECK_HOTKEY_ENABLED)
+            {
+                bool enabled = v.get<bool>();
+
+                if (!enabled)
+                {
+                    m_advancedKey.reset();
+                }
+                else if (!m_advancedKey)
+                {
+                    QString seq = settings.value(PTA_CONFIG_ADV_CHECK_HOTKEY, PTA_CONFIG_DEFAULT_ADV_CHECK_HOTKEY).toString();
+
+                    m_advancedKey.reset(new QHotkey(QKeySequence(seq), true));
+                    qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
+
+                    connect(m_advancedKey.get(), &QHotkey::activated, this, &PTA::advancedPriceCheckActivated);
+                }
+            }
+
+            if (k == PTA_CONFIG_SIMPLE_CHECK_HOTKEY)
+            {
+                QString nseq = QString::fromStdString(v.get<std::string>());
+
+                if (m_simpleKey)
+                {
+                    QString currseq = m_simpleKey->shortcut().toString();
+
+                    if (nseq != currseq)
+                    {
+                        m_simpleKey->setShortcut(QKeySequence(nseq), true);
+                        qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
+                    }
+                }
+            }
+
+            if (k == PTA_CONFIG_ADV_CHECK_HOTKEY)
+            {
+                QString nseq = QString::fromStdString(v.get<std::string>());
+
+                if (m_advancedKey)
+                {
+                    QString currseq = m_advancedKey->shortcut().toString();
+
+                    if (nseq != currseq)
+                    {
+                        m_advancedKey->setShortcut(QKeySequence(nseq), true);
+                        qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
+                    }
+                }
+            }
+        }
     });
 
     m_logAction = new QAction(tr("L&og"), this);
@@ -146,7 +245,8 @@ void PTA::createActions()
                                   "Qt version: " QT_VERSION_STR "<br/>"
                                   "<br/>"
                                   "Licensed under GPLv3<br/>"
-                                  "Source code available at <a href='https://github.com/r52/PTA'>GitHub</a>";
+                                  "Source code available at <a href='https://github.com/r52/PTA'>GitHub</a>"
+                                  "Icons from <a href='https://icons8.com'>https://icons8.com</a>";
 
         QMessageBox::about(this, tr("About Quasar"), aboutMsg);
     });
@@ -166,16 +266,32 @@ void PTA::setupFunctionality()
     connect(m_api, &ItemAPI::humour, this, &PTA::showToolTip);
     connect(m_api, &ItemAPI::priceCheckFinished, this, &PTA::showPriceResults);
 
-    // Price Check
-    auto hotkey = new QHotkey(QKeySequence("Ctrl+D"), true, this);
-    qDebug() << "Price Check Hotkey Registered:" << hotkey->isRegistered();
+    // Hotkeys
+    QSettings settings;
 
-    connect(hotkey, &QHotkey::activated, this, &PTA::priceCheckActivated);
+    bool simpleEnabled = settings.value(PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED, true).toBool();
 
-    auto advhotkey = new QHotkey(QKeySequence("Ctrl+Alt+D"), true, this);
-    qDebug() << "Advanced Price Check Hotkey Registered:" << advhotkey->isRegistered();
+    if (simpleEnabled)
+    {
+        QString seq = settings.value(PTA_CONFIG_SIMPLE_CHECK_HOTKEY, PTA_CONFIG_DEFAULT_SIMPLE_CHECK_HOTKEY).toString();
 
-    connect(advhotkey, &QHotkey::activated, this, &PTA::advancedPriceCheckActivated);
+        m_simpleKey.reset(new QHotkey(QKeySequence(seq), true));
+        qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
+
+        connect(m_simpleKey.get(), &QHotkey::activated, this, &PTA::priceCheckActivated);
+    }
+
+    bool advEnabled = settings.value(PTA_CONFIG_ADV_CHECK_HOTKEY_ENABLED, true).toBool();
+
+    if (advEnabled)
+    {
+        QString seq = settings.value(PTA_CONFIG_ADV_CHECK_HOTKEY, PTA_CONFIG_DEFAULT_ADV_CHECK_HOTKEY).toString();
+
+        m_advancedKey.reset(new QHotkey(QKeySequence(seq), true));
+        qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
+
+        connect(m_advancedKey.get(), &QHotkey::activated, this, &PTA::advancedPriceCheckActivated);
+    }
 }
 
 void PTA::priceCheckActivated()

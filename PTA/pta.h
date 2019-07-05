@@ -2,6 +2,9 @@
 
 #include "ui_pta.h"
 
+#include <memory>
+
+#include <QHotkey>
 #include <QSystemTrayIcon>
 #include <QtWidgets/QMainWindow>
 
@@ -50,8 +53,12 @@ private:
     QAction* m_aboutQtAction;
     QAction* m_quitAction;
 
-    //
+    // API
     ItemAPI* m_api;
+
+    // Hotkeys
+    std::unique_ptr<QHotkey> m_simpleKey;
+    std::unique_ptr<QHotkey> m_advancedKey;
 
     bool m_blockHotkeys;
 
