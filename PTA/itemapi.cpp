@@ -1062,8 +1062,9 @@ PItem* ItemAPI::parse(QString itemText)
             if (je["type"] == "Prophecy")
             {
                 // this is a prophecy
-                item->name = item->type;
-                item->type = item->f_type.category = "prophecy";
+                item->name            = item->type;
+                item->type            = "Prophecy";
+                item->f_type.category = "prophecy";
             }
         }
     }
