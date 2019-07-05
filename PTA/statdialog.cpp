@@ -90,7 +90,8 @@ StatDialog::StatDialog(PItem* item)
         QLineEdit* minEdit = new QLineEdit();
         minEdit->setMaximumWidth(30);
 
-        if (val_count)
+        // Only support single or range values
+        if (val_count > 0 && val_count < 3)
         {
             if (val_is_float)
             {
@@ -107,24 +108,34 @@ StatDialog::StatDialog(PItem* item)
         }
 
         connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
-            if (val_is_float)
+            if (!text.isEmpty())
             {
-                double val                  = text.toDouble();
-                filters[id]["value"]["min"] = val;
+                if (val_is_float)
+                {
+                    double val                  = text.toDouble();
+                    filters[id]["value"]["min"] = val;
+                }
+                else
+                {
+                    int val                     = text.toInt();
+                    filters[id]["value"]["min"] = val;
+                }
             }
             else
             {
-                int val                     = text.toInt();
-                filters[id]["value"]["min"] = val;
+                filters[id]["value"].erase("min");
             }
         });
+
+        connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
 
         layout->addWidget(minEdit, current_row, 1);
 
         // current value
         QString currval("");
 
-        if (val_count)
+        // Only support single or range values
+        if (val_count > 0 && val_count < 3)
         {
             int    curr_val_int = e["value"][0].get<int>();
             double curr_val_dbl = e["value"][0].get<double>();
@@ -151,7 +162,8 @@ StatDialog::StatDialog(PItem* item)
         QLineEdit* maxEdit = new QLineEdit();
         maxEdit->setMaximumWidth(30);
 
-        if (val_count)
+        // Only support single or range values
+        if (val_count > 0 && val_count < 3)
         {
             if (val_is_float)
             {
@@ -168,17 +180,26 @@ StatDialog::StatDialog(PItem* item)
         }
 
         connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
-            if (val_is_float)
+            if (!text.isEmpty())
             {
-                double val                  = text.toDouble();
-                filters[id]["value"]["max"] = val;
+                if (val_is_float)
+                {
+                    double val                  = text.toDouble();
+                    filters[id]["value"]["max"] = val;
+                }
+                else
+                {
+                    int val                     = text.toInt();
+                    filters[id]["value"]["max"] = val;
+                }
             }
             else
             {
-                int val                     = text.toInt();
-                filters[id]["value"]["max"] = val;
+                filters[id]["value"].erase("max");
             }
         });
+
+        connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
 
         layout->addWidget(maxEdit, current_row, 3);
 
@@ -230,17 +251,26 @@ StatDialog::StatDialog(PItem* item)
             }
 
             connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (val_is_float)
+                if (!text.isEmpty())
                 {
-                    double val                  = text.toDouble();
-                    filters[id]["value"]["min"] = val;
+                    if (val_is_float)
+                    {
+                        double val                  = text.toDouble();
+                        filters[id]["value"]["min"] = val;
+                    }
+                    else
+                    {
+                        int val                     = text.toInt();
+                        filters[id]["value"]["min"] = val;
+                    }
                 }
                 else
                 {
-                    int val                     = text.toInt();
-                    filters[id]["value"]["min"] = val;
+                    filters[id]["value"].erase("min");
                 }
             });
+
+            connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
 
             layout->addWidget(minEdit, current_row, 1);
 
@@ -291,17 +321,26 @@ StatDialog::StatDialog(PItem* item)
             }
 
             connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (val_is_float)
+                if (!text.isEmpty())
                 {
-                    double val                  = text.toDouble();
-                    filters[id]["value"]["max"] = val;
+                    if (val_is_float)
+                    {
+                        double val                  = text.toDouble();
+                        filters[id]["value"]["max"] = val;
+                    }
+                    else
+                    {
+                        int val                     = text.toInt();
+                        filters[id]["value"]["max"] = val;
+                    }
                 }
                 else
                 {
-                    int val                     = text.toInt();
-                    filters[id]["value"]["max"] = val;
+                    filters[id]["value"].erase("max");
                 }
             });
+
+            connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
 
             layout->addWidget(maxEdit, current_row, 3);
 
@@ -343,9 +382,14 @@ StatDialog::StatDialog(PItem* item)
     ilvlEdit->setMaximumWidth(30);
 
     connect(ilvlEdit, &QLineEdit::textChanged, [=](const QString& text) {
-        int val      = text.toInt();
-        misc["ilvl"] = val;
+        if (!text.isEmpty())
+        {
+            int val      = text.toInt();
+            misc["ilvl"] = val;
+        }
     });
+
+    connect(ilvlEdit, &QLineEdit::textEdited, [=](const QString& text) { ilvlCB->setChecked(true); });
 
     miscLayout->addWidget(ilvlCB);
     miscLayout->addWidget(ilvlEdit);
