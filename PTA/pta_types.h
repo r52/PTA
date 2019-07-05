@@ -12,7 +12,9 @@ enum pta_log_level_t
 constexpr auto PTA_CONFIG_LOGLEVEL = "global/loglevel";
 constexpr auto PTA_CONFIG_LOGFILE  = "global/logfile";
 
-constexpr auto PTA_CONFIG_PRICE_TEMPLATE = "ui/pricetemplate";
+constexpr auto PTA_CONFIG_PRICE_TEMPLATE  = "ui/pricetemplate";
+constexpr auto PTA_CONFIG_TEMPLATE_WIDTH  = "ui/tempwidth";
+constexpr auto PTA_CONFIG_TEMPLATE_HEIGHT = "ui/tempheight";
 
 constexpr auto PTA_CONFIG_SIMPLE_CHECK_HOTKEY         = "hotkey/simplecheck";
 constexpr auto PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED = "hotkey/simplecheck/enabled";
@@ -34,7 +36,9 @@ constexpr auto PTA_CONFIG_PREFILL_ILVL    = "pricecheck/prefillilvl";
 constexpr auto PTA_CONFIG_PREFILL_BASE    = "pricecheck/prefillbase";
 
 // defaults
-constexpr auto PTA_CONFIG_DEFAULT_PRICE_TEMPLATE = "templates/price/index.html";
+constexpr auto PTA_CONFIG_DEFAULT_PRICE_TEMPLATE  = "templates/price/index.html";
+constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH  = 600;
+constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT = 450;
 
 constexpr auto PTA_CONFIG_DEFAULT_SIMPLE_CHECK_HOTKEY = "Ctrl+D";
 constexpr auto PTA_CONFIG_DEFAULT_ADV_CHECK_HOTKEY    = "Ctrl+Alt+D";

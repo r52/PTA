@@ -8,7 +8,6 @@ const QMap<std::string, QString> g_labelStyles = {{"Unique", "color: #af6025;"},
 
 StatDialog::StatDialog(PItem* item)
 {
-    // TODO setting options
     QSettings settings;
 
     bool prefillmin     = settings.value(PTA_CONFIG_PREFILL_MIN, PTA_CONFIG_DEFAULT_PREFILL_MIN).toBool();

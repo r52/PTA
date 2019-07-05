@@ -87,8 +87,33 @@ UIPage::UIPage(json& set, QWidget* parent) : QWidget(parent)
     tmpLayout->addWidget(fedit);
     tmpLayout->addWidget(browseButton);
 
+    // ------------------Template Size
+    int default_width  = settings.value(PTA_CONFIG_TEMPLATE_WIDTH, PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH).toInt();
+    int default_height = settings.value(PTA_CONFIG_TEMPLATE_HEIGHT, PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT).toInt();
+
+    QFormLayout* formLayout = new QFormLayout;
+
+    QSpinBox* wEdit = new QSpinBox;
+    wEdit->setRange(1, 8192);
+    wEdit->setSuffix("px");
+    wEdit->setValue(default_width);
+    connect(wEdit, QOverload<int>::of(&QSpinBox::valueChanged), [=, &set](int i) { set[PTA_CONFIG_TEMPLATE_WIDTH] = i; });
+
+    QString wLabel = QString("Template Width (default %1px)").arg(PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH);
+    formLayout->addRow(wLabel, wEdit);
+
+    QSpinBox* hEdit = new QSpinBox;
+    hEdit->setRange(1, 8192);
+    hEdit->setSuffix("px");
+    hEdit->setValue(default_height);
+    connect(hEdit, QOverload<int>::of(&QSpinBox::valueChanged), [=, &set](int i) { set[PTA_CONFIG_TEMPLATE_HEIGHT] = i; });
+
+    QString hLabel = QString("Template Height (default %1px)").arg(PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT);
+    formLayout->addRow(hLabel, hEdit);
+
     QVBoxLayout* configLayout = new QVBoxLayout;
     configLayout->addLayout(tmpLayout);
+    configLayout->addLayout(formLayout);
 
     configGroup->setLayout(configLayout);
 
@@ -104,6 +129,8 @@ HotkeyPage::HotkeyPage(json& set, QWidget* parent) : QWidget(parent)
 
     QGroupBox* configGroup = new QGroupBox(tr("Hotkeys"));
 
+    QFormLayout* formLayout = new QFormLayout;
+
     // ------------------Simple Price Check
     QCheckBox* smpLabel = new QCheckBox(tr("Price Check:"));
     smpLabel->setChecked(settings.value(PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED, true).toBool());
@@ -117,9 +144,7 @@ HotkeyPage::HotkeyPage(json& set, QWidget* parent) : QWidget(parent)
         set[PTA_CONFIG_SIMPLE_CHECK_HOTKEY] = keySequence.toString().toStdString();
     });
 
-    QHBoxLayout* smpLayout = new QHBoxLayout;
-    smpLayout->addWidget(smpLabel);
-    smpLayout->addWidget(skeyedit);
+    formLayout->addRow(smpLabel, skeyedit);
 
     // ------------------Advanced Price Check
     QCheckBox* ampLabel = new QCheckBox(tr("Advanced Price Check:"));
@@ -134,15 +159,9 @@ HotkeyPage::HotkeyPage(json& set, QWidget* parent) : QWidget(parent)
         set[PTA_CONFIG_ADV_CHECK_HOTKEY] = keySequence.toString().toStdString();
     });
 
-    QHBoxLayout* ampLayout = new QHBoxLayout;
-    ampLayout->addWidget(ampLabel);
-    ampLayout->addWidget(akeyedit);
+    formLayout->addRow(ampLabel, akeyedit);
 
-    QVBoxLayout* configLayout = new QVBoxLayout;
-    configLayout->addLayout(smpLayout);
-    configLayout->addLayout(ampLayout);
-
-    configGroup->setLayout(configLayout);
+    configGroup->setLayout(formLayout);
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
     mainLayout->addWidget(configGroup);

@@ -151,7 +151,6 @@ void PTA::createActions()
                 settings.setValue(QString::fromStdString(k), QString::fromStdString(v.get<std::string>()));
             }
 
-            // TODO hotkey changes
             if (k == PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED)
             {
                 bool enabled = v.get<bool>();

@@ -63,8 +63,11 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
     // Restore settings
     restoreGeometry(settings.value(getSettingKey("geometry")).toByteArray());
 
-    // resize (TODO custom size?)
-    QSize defaultsize = {600, 450};
+    // resize
+    int default_width  = settings.value(PTA_CONFIG_TEMPLATE_WIDTH, PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH).toInt();
+    int default_height = settings.value(PTA_CONFIG_TEMPLATE_HEIGHT, PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT).toInt();
+
+    QSize defaultsize = {default_width, default_height};
 
     webview->resize(defaultsize);
     resize(defaultsize);

@@ -657,6 +657,15 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
         found  = m_stats_by_text.contains(stoken);
     }
 
+    if (!found && stat.contains("additional # times"))
+    {
+        // Handle weird enchant numeric rules
+        stat.replace("additional # times", "additional time");
+
+        stoken = stat.toStdString();
+        found  = m_stats_by_text.contains(stoken);
+    }
+
     if (!found)
     {
         // Try forward replace search
@@ -1224,7 +1233,6 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
     QSettings settings;
 
-    // TODO: default settings
     auto query = R"(
     {
         "query": {
