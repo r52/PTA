@@ -18,6 +18,8 @@
 
 #include <Windows.h>
 
+const std::wstring g_poeCls = L"POEWindowClass";
+
 INPUT createInput(WORD vk, bool isDown)
 {
     INPUT input          = {};
@@ -313,13 +315,10 @@ void PTA::priceCheckActivated()
         return;
     }
 
-    std::wstring t;
-    t.reserve(64);
-    GetClassName(hwnd, const_cast<WCHAR*>(t.c_str()), t.capacity());
+    wchar_t cls[512];
+    GetClassName(hwnd, cls, std::size(cls));
 
-    QString wcls = QString::fromWCharArray(t.c_str());
-
-    if ("POEWindowClass" != wcls)
+    if (g_poeCls != cls)
     {
         m_blockHotkeys = false;
         qDebug() << "Active window not PoE";
@@ -384,13 +383,10 @@ void PTA::advancedPriceCheckActivated()
         return;
     }
 
-    std::wstring t;
-    t.reserve(64);
-    GetClassName(hwnd, const_cast<WCHAR*>(t.c_str()), t.capacity());
+    wchar_t cls[512];
+    GetClassName(hwnd, cls, std::size(cls));
 
-    QString wcls = QString::fromWCharArray(t.c_str());
-
-    if ("POEWindowClass" != wcls)
+    if (g_poeCls != cls)
     {
         m_blockHotkeys = false;
         qDebug() << "Active window not PoE";

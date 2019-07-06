@@ -1227,6 +1227,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 {
     if (item->f_type.category == "currency")
     {
+        // TODO: currency search
         emit humour(tr("Currency search is unimplemented"));
         return;
     }

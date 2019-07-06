@@ -428,8 +428,6 @@ StatDialog::StatDialog(PItem* item)
     QLineEdit* ilvlEdit = new QLineEdit();
     ilvlEdit->setValidator(new QIntValidator(1, 100, this));
     ilvlEdit->setMaximumWidth(30);
-    ilvlEdit->setText(QString::number(item->f_misc.ilvl));
-
     connect(ilvlEdit, &QLineEdit::textChanged, [=](const QString& text) {
         if (!text.isEmpty())
         {
@@ -437,6 +435,8 @@ StatDialog::StatDialog(PItem* item)
             misc["ilvl"] = val;
         }
     });
+
+    ilvlEdit->setText(QString::number(item->f_misc.ilvl));
 
     connect(ilvlEdit, &QLineEdit::textEdited, [=](const QString& text) { ilvlCB->setChecked(true); });
 
