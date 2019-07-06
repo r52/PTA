@@ -737,8 +737,6 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
     std::vector<QString> multiline;
     json                 filter;
 
-    const std::string nl = "\n";
-
     auto range = m_stats_by_text.equal_range(stoken);
     for (auto it = range.first; it != range.second; ++it)
     {
@@ -842,22 +840,38 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
                 continue;
             }
 
-            if (!filter.empty() && filter["type"] == "implicit" && entry["type"] == "explicit")
+            // Peek next line
+            QString peek;
+
+            int pos = stream.pos();
+
+            if (pos != -1)
             {
-                // prefer explicit?
+                peek = stream.read(3);
+                stream.seek(pos);
+            }
+
+            if (item->filters.empty() && peek == "---")
+            {
+                // First stat with a section break, try to look for an implicit
+                if (entry["type"] == "implicit")
+                {
+                    filter["id"]    = entry["id"];
+                    filter["type"]  = entry["type"];
+                    filter["text"]  = entry["text"];
+                    filter["value"] = val;
+                }
+                // otherwise, skip
+            }
+            else if (entry["type"] == "explicit")
+            {
                 filter["id"]    = entry["id"];
                 filter["type"]  = entry["type"];
                 filter["text"]  = entry["text"];
                 filter["value"] = val;
             }
-            else if (filter.empty())
-            {
-                filter["id"]    = entry["id"];
-                filter["type"]  = entry["type"];
-                filter["text"]  = entry["text"];
-                filter["value"] = val;
-            }
-            // else skip
+
+            // otherwise skip
         }
     }
 
@@ -1014,7 +1028,7 @@ QString ItemAPI::getLeague()
 
 PItem* ItemAPI::parse(QString itemText)
 {
-    QTextStream stream(&itemText);
+    QTextStream stream(&itemText, QIODevice::ReadOnly);
     QString     line;
 
     // Check first line for PoE item

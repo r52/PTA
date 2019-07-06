@@ -83,9 +83,9 @@ StatDialog::StatDialog(PItem* item)
 
         QString modLabel = QString::fromStdString(e["text"].get<std::string>());
 
-        if (e["type"] == "crafted")
+        if (e["type"] == "crafted" || e["type"] == "implicit")
         {
-            modLabel += " (crafted)";
+            modLabel += QString(" (%1)").arg(QString::fromStdString(e["type"].get<std::string>()));
         }
 
         QCheckBox* elab = new QCheckBox(modLabel);
