@@ -83,7 +83,7 @@ StatDialog::StatDialog(PItem* item)
 
         QString modLabel = QString::fromStdString(e["text"].get<std::string>());
 
-        if (e["type"] == "crafted" || e["type"] == "implicit")
+        if (e["type"] == "crafted" || e["type"] == "implicit" || e["type"] == "enchant")
         {
             modLabel += QString(" (%1)").arg(QString::fromStdString(e["type"].get<std::string>()));
         }

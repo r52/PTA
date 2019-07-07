@@ -4,6 +4,7 @@
 
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <nlohmann/json.hpp>
 
@@ -110,8 +111,11 @@ private:
                                                        {"Elemental Damage", {weapon_filter, weapon_filter_edps}},
                                                        {"Experience", {misc_filter, misc_filter_gem_level_progress}}};
 
-    json c_baseCat;
-    json c_pseudoRules;
+    json                            c_baseCat;
+    json                            c_pseudoRules;
+    json                            c_enchantRules;
+    std::unordered_set<std::string> c_weaponLocals;
+    std::unordered_set<std::string> c_armourLocals;
 
     std::map<std::string, std::string> c_baseMap;
 

@@ -5,7 +5,6 @@
 
 #include <sstream>
 #include <string>
-#include <unordered_set>
 
 #include <nlohmann/json.hpp>
 
@@ -200,6 +199,58 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     c_pseudoRules = json::parse(pdat.toStdString());
 
     qInfo() << "Pseudo rules loaded";
+
+    // Load enchant rules
+    QFile er("data/enchant_rules.json");
+
+    if (!er.open(QIODevice::ReadOnly))
+    {
+        throw std::runtime_error("Cannot open enchant_rules.json");
+    }
+
+    QByteArray edat = er.readAll();
+
+    c_enchantRules = json::parse(edat.toStdString());
+
+    qInfo() << "Enchant rules loaded";
+
+    // Load local rules
+    QFile wl("data/weapon_locals.json");
+
+    if (!wl.open(QIODevice::ReadOnly))
+    {
+        throw std::runtime_error("Cannot open weapon_locals.json");
+    }
+
+    QByteArray wdat = wl.readAll();
+
+    json wlr = json::parse(wdat.toStdString());
+
+    for (auto& e : wlr["data"])
+    {
+        c_weaponLocals.insert(e.get<std::string>());
+    }
+
+    qInfo() << "Weapon Local rules loaded";
+
+    //  armour
+    QFile al("data/armour_locals.json");
+
+    if (!al.open(QIODevice::ReadOnly))
+    {
+        throw std::runtime_error("Cannot open armour_locals.json");
+    }
+
+    QByteArray adat = al.readAll();
+
+    json alr = json::parse(adat.toStdString());
+
+    for (auto& e : alr["data"])
+    {
+        c_armourLocals.insert(e.get<std::string>());
+    }
+
+    qInfo() << "Armour Local rules loaded";
 }
 
 int ItemAPI::readPropInt(QString prop)
@@ -625,6 +676,20 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
         found  = m_stats_by_text.contains(stoken);
     }
 
+    // Process local rules
+    if (item->is_weapon || item->is_armour)
+    {
+        bool is_local_stat = ((item->is_weapon && c_weaponLocals.contains(stoken)) || (item->is_armour && c_armourLocals.contains(stoken)));
+
+        if (is_local_stat)
+        {
+            stat += " (Local)";
+
+            stoken = stat.toStdString();
+            found  = m_stats_by_text.contains(stoken);
+        }
+    }
+
     if (!found && val.size() && (stat.contains("reduced") || stat.contains("less")))
     {
         // If the stat line has a "reduced" value, try to
@@ -657,13 +722,23 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
         found  = m_stats_by_text.contains(stoken);
     }
 
-    if (!found && stat.contains("additional # times"))
+    // Handle enchant rules
+    if (c_enchantRules.contains(stoken))
     {
-        // Handle weird enchant numeric rules
-        stat.replace("additional # times", "additional time");
+        auto& rule = c_enchantRules[stoken];
 
-        stoken = stat.toStdString();
-        found  = m_stats_by_text.contains(stoken);
+        if (rule.contains("id"))
+        {
+            found = true;
+
+            stoken = m_stats_by_id[rule["id"].get<std::string>()]["text"].get<std::string>();
+            stat   = QString::fromStdString(stoken);
+        }
+
+        if (rule.contains("value"))
+        {
+            val.push_back(rule["value"]);
+        }
     }
 
     if (!found)
@@ -851,10 +926,10 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
                 stream.seek(pos);
             }
 
-            if (item->filters.empty() && peek == "---")
+            if (item->filters.size() < 2 && peek == "---")
             {
-                // First stat with a section break, try to look for an implicit
-                if (entry["type"] == "implicit")
+                // First stat with a section break, try to look for an implicit or enchant
+                if (entry["type"] == "implicit" || entry["type"] == "enchant")
                 {
                     filter["id"]    = entry["id"];
                     filter["type"]  = entry["type"];
