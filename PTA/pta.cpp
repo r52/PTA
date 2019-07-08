@@ -83,6 +83,12 @@ void PTA::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
     }
 }
 
+PTA::~PTA()
+{
+    m_simpleKey.reset();
+    m_advancedKey.reset();
+}
+
 void PTA::showToolTip(QString message)
 {
     QToolTip::showText(QCursor::pos() + QPoint(5, 20), message);
@@ -101,6 +107,15 @@ void PTA::showPriceResults(std::shared_ptr<PItem> item, QString results)
 
     auto pricedlg = new WebWidget(itemjson, results);
     pricedlg->show();
+}
+
+void PTA::closeEvent(QCloseEvent* event)
+{
+    if (m_trayIcon->isVisible())
+    {
+        hide();
+        event->ignore();
+    }
 }
 
 void PTA::createTrayIcon()

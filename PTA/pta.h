@@ -19,10 +19,14 @@ class PTA : public QMainWindow
 
 public:
     explicit PTA(LogWindow* log, QWidget* parent = Q_NULLPTR);
+    ~PTA();
 
 public slots:
     void showToolTip(QString message);
     void showPriceResults(std::shared_ptr<PItem> item, QString results);
+
+protected:
+    virtual void closeEvent(QCloseEvent* event) override;
 
 private:
     void createTrayIcon();
