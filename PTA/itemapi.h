@@ -52,7 +52,7 @@ private:
     void parseProp(PItem* item, QString prop);
     bool parseStat(PItem* item, QString stat, QTextStream& stream);
 
-    void processPriceResults(std::shared_ptr<PItem> item, json results);
+    void processPriceResults(std::shared_ptr<PItem> item, json results, bool isCurrency = false);
 
     void doCurrencySearch(std::shared_ptr<PItem> item);
 
@@ -136,6 +136,7 @@ private:
     std::unordered_set<std::string>                                  c_weaponLocals;
     std::unordered_set<std::string>                                  c_armourLocals;
     std::unordered_map<std::string, std::unordered_set<std::string>> c_discriminators;
+    json                                                             c_currency;
 
     std::map<std::string, std::string> c_baseMap;
 

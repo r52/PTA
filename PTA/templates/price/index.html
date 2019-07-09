@@ -55,7 +55,8 @@
             font-style: italic;
         }
 
-        .corruptedItem, .unidentifiedItem {
+        .corruptedItem,
+        .unidentifiedItem {
             color: #d20000;
         }
 
@@ -64,7 +65,7 @@
         }
 
         .elderItem {
-            color:  #3498db;
+            color: #3498db;
         }
 
         .Unique {
@@ -230,12 +231,47 @@
                         return reltime(now, Date.parse(entry["listing"]["indexed"]));
                     }
                 }
+            ],
+            "currency": [{
+                    "title": "Account Name",
+                    "field": function (entry) {
+                        return entry["listing"]["account"]["name"];
+                    }
+                },
+                {
+                    "title": "Price",
+                    "field": function (entry) {
+                        var irate = entry["listing"]["price"]["item"]["amount"].toString() + " " + entry[
+                            "listing"]["price"]["item"]["currency"];
+                        var erate = entry["listing"]["price"]["exchange"]["amount"].toString() + " " +
+                            entry["listing"]["price"]["exchange"]["currency"];
+                        return irate + " <= " + erate;
+                    }
+                },
+                {
+                    "title": "Rate",
+                    "field": function (entry) {
+                        var rate = entry["listing"]["price"]["item"]["amount"] / entry["listing"]["price"][
+                            "exchange"
+                        ]["amount"];
+                        var ic = entry["listing"]["price"]["item"]["currency"];
+                        var ec = entry["listing"]["price"]["exchange"]["currency"];
+                        return rate.toPrecision(3) + " " + ic + "/" + ec;
+                    }
+                },
+                {
+                    "title": "Age",
+                    "field": function (entry) {
+                        return reltime(now, Date.parse(entry["listing"]["indexed"]));
+                    }
+                }
             ]
         };
 
         var itemclass = item["rarity"];
 
-        if (item["category"] == "gem" || item["category"] == "prophecy" || item["category"] == "card") {
+        if (item["category"] == "gem" || item["category"] == "prophecy" || item["category"] == "card" || item[
+                "category"] == "currency") {
             itemclass = item["category"];
         }
 
@@ -246,24 +282,20 @@
             document.getElementById("item-type").innerText = item["type"];
         }
 
-        if (item["shaper_item"])
-        {
-            document.getElementById("shaper").innerText  = "Shaper Item";
+        if (item["shaper_item"]) {
+            document.getElementById("shaper").innerText = "Shaper Item";
         }
 
-        if (item["elder_item"])
-        {
-            document.getElementById("elder").innerText  = "Elder Item";
+        if (item["elder_item"]) {
+            document.getElementById("elder").innerText = "Elder Item";
         }
 
-        if (!item["identified"])
-        {
-            document.getElementById("identified").innerText  = "Unidentified";
+        if (!item["identified"]) {
+            document.getElementById("identified").innerText = "Unidentified";
         }
 
-        if (item["corrupted"])
-        {
-            document.getElementById("corrupted").innerText  = "Corrupted";
+        if (item["corrupted"]) {
+            document.getElementById("corrupted").innerText = "Corrupted";
         }
 
         document.getElementById("search-options").innerText = "Search Options: " + item["options"];

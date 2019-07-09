@@ -29,6 +29,7 @@ const QUrl    itemsApiUrl("https://www.pathofexile.com/api/trade/data/items");
 const QUrl    repoeBaseUrl("https://raw.githubusercontent.com/brather1ng/RePoE/master/data/base_items.min.json");
 const QString tradeFetchUrl("https://www.pathofexile.com/api/trade/fetch/%1?query=%2");
 const QString tradeSearchUrl("https://www.pathofexile.com/api/trade/search/");
+const QString exchangeUrl("https://www.pathofexile.com/api/trade/exchange/");
 const QString tradeSiteUrl("https://www.pathofexile.com/trade/search/");
 
 ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
@@ -273,6 +274,20 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     }
 
     qInfo() << "Discriminator rules loaded";
+
+    // Currency
+    QFile curr("data/currency.json");
+
+    if (!curr.open(QIODevice::ReadOnly))
+    {
+        throw std::runtime_error("Cannot open currency.json");
+    }
+
+    QByteArray cdat = curr.readAll();
+
+    c_currency = json::parse(cdat.toStdString());
+
+    qInfo() << "Currency rules loaded";
 }
 
 int ItemAPI::readPropInt(QString prop)
@@ -1021,7 +1036,7 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
     return true;
 }
 
-void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results)
+void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results, bool isCurrency)
 {
     bool   done  = false;
     size_t start = 0, end = 0;
@@ -1055,7 +1070,14 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results)
 
         QString fcode = fetchcodes.join(',');
 
-        QUrl resUrl = tradeFetchUrl.arg(fcode).arg(QString::fromStdString(results["id"]));
+        QString fetchurl = tradeFetchUrl.arg(fcode).arg(QString::fromStdString(results["id"]));
+
+        if (isCurrency)
+        {
+            fetchurl += "&exchange";
+        }
+
+        QUrl resUrl = fetchurl;
 
         QEventLoop loop;
         connect(m_manager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
@@ -1134,6 +1156,59 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
         }
     }
     )"_json;
+
+    std::string p_curr = settings.value(PTA_CONFIG_PRIMARY_CURRENCY, PTA_CONFIG_DEFAULT_PRIMARY_CURRENCY).toString().toStdString();
+    std::string s_curr = settings.value(PTA_CONFIG_SECONDARY_CURRENCY, PTA_CONFIG_DEFAULT_SECONDARY_CURRENCY).toString().toStdString();
+
+    std::string want = c_currency[item->type].get<std::string>();
+    std::string have = p_curr;
+
+    if (want == p_curr)
+    {
+        have = s_curr;
+    }
+
+    item->m_options = "To " + have;
+
+    query["exchange"]["want"].push_back(want);
+    query["exchange"]["have"].push_back(have);
+
+    auto qba = query.dump();
+
+    QNetworkRequest request;
+    request.setUrl(QUrl(exchangeUrl + getLeague()));
+    request.setRawHeader("Content-Type", "application/json");
+
+    auto req = m_manager->post(request, QByteArray::fromStdString(qba));
+    connect(req, &QNetworkReply::finished, [=]() {
+        req->deleteLater();
+
+        if (req->error() != QNetworkReply::NoError)
+        {
+            qWarning() << "PAPI: Error querying trade site" << req->error() << req->errorString();
+            return;
+        }
+
+        auto respdata = req->readAll();
+        auto resp     = json::parse(respdata.toStdString());
+        if (!resp.contains("result") || !resp.contains("id"))
+        {
+            emit humour(tr("Error querying trade site. See log for details"));
+            qWarning() << "PAPI: Error querying trade site";
+            qWarning() << "PAPI: Site responded with" << respdata;
+            return;
+        }
+
+        if (resp["result"].size() == 0)
+        {
+            emit humour(tr("No results found."));
+            qDebug() << "No results";
+            return;
+        }
+
+        // else process the results
+        processPriceResults(item, resp, true);
+    });
 }
 
 QString ItemAPI::getLeague()
