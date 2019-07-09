@@ -229,6 +229,104 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
     crLayout->addWidget(crCombo);
     crLayout->addWidget(croLabel);
 
+    // ------------------Primary Currency
+    QLabel* pcLabel = new QLabel(tr("Primary Currency:"));
+
+    QComboBox* pcCombo = new QComboBox;
+    pcCombo->addItem("Orb of Alteration", "alt");
+    pcCombo->addItem("Orb of Fusing", "fuse");
+    pcCombo->addItem("Orb of Alchemy", "alch");
+    pcCombo->addItem("Chaos Orb", "chaos");
+    pcCombo->addItem("Gemcutter's Prism", "gcp");
+    pcCombo->addItem("Exalted Orb", "exa");
+    pcCombo->addItem("Chromatic Orb", "chrom");
+    pcCombo->addItem("Jeweller's Orb", "jew");
+    pcCombo->addItem("Engineer's Orb", "engineers-orb");
+    pcCombo->addItem("Orb of Chance", "chance");
+    pcCombo->addItem("Cartographer's Chisel", "chisel");
+    pcCombo->addItem("Orb of Scouring", "scour");
+    pcCombo->addItem("Blessed Orb", "blessed");
+    pcCombo->addItem("Orb of Regret", "regret");
+    pcCombo->addItem("Regal Orb", "regal");
+    pcCombo->addItem("Divine Orb", "divine");
+    pcCombo->addItem("Vaal Orb", "vaal");
+    pcCombo->addItem("Orb of Annulment", "orb-of-annulment");
+    pcCombo->addItem("Orb of Binding", "orb-of-binding");
+    pcCombo->addItem("Ancient Orb", "ancient-orb");
+    pcCombo->addItem("Orb of Horizons", "orb-of-horizons");
+    pcCombo->addItem("Harbinger's Orb", "harbingers-orb");
+    pcCombo->addItem("Scroll of Wisdom", "wis");
+    pcCombo->addItem("Portal Scroll", "port");
+    pcCombo->addItem("Armourer's Scrap", "scr");
+    pcCombo->addItem("Blacksmith's Whetstone", "whe");
+    pcCombo->addItem("Glassblower's Bauble", "ba");
+    pcCombo->addItem("Orb of Transmutation", "tra");
+    pcCombo->addItem("Orb of Augmentation", "aug");
+    pcCombo->addItem("Mirror of Kalandra", "mir");
+    pcCombo->addItem("Eternal Orb", "ete");
+    pcCombo->addItem("Perandus Coin", "p");
+    pcCombo->addItem("Silver Coin", "silver");
+
+    int pidx = pcCombo->findData(settings.value(PTA_CONFIG_PRIMARY_CURRENCY, PTA_CONFIG_DEFAULT_PRIMARY_CURRENCY).toString());
+    pcCombo->setCurrentIndex(pidx);
+
+    connect(pcCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=, &set](int index) {
+        set[PTA_CONFIG_PRIMARY_CURRENCY] = pcCombo->itemData(index).toString().toStdString();
+    });
+
+    QHBoxLayout* pcLayout = new QHBoxLayout;
+    pcLayout->addWidget(pcLabel);
+    pcLayout->addWidget(pcCombo);
+
+    // ------------------Secondary Currency
+    QLabel* scLabel = new QLabel(tr("Primary Currency:"));
+
+    QComboBox* scCombo = new QComboBox;
+    scCombo->addItem("Orb of Alteration", "alt");
+    scCombo->addItem("Orb of Fusing", "fuse");
+    scCombo->addItem("Orb of Alchemy", "alch");
+    scCombo->addItem("Chaos Orb", "chaos");
+    scCombo->addItem("Gemcutter's Prism", "gcp");
+    scCombo->addItem("Exalted Orb", "exa");
+    scCombo->addItem("Chromatic Orb", "chrom");
+    scCombo->addItem("Jeweller's Orb", "jew");
+    scCombo->addItem("Engineer's Orb", "engineers-orb");
+    scCombo->addItem("Orb of Chance", "chance");
+    scCombo->addItem("Cartographer's Chisel", "chisel");
+    scCombo->addItem("Orb of Scouring", "scour");
+    scCombo->addItem("Blessed Orb", "blessed");
+    scCombo->addItem("Orb of Regret", "regret");
+    scCombo->addItem("Regal Orb", "regal");
+    scCombo->addItem("Divine Orb", "divine");
+    scCombo->addItem("Vaal Orb", "vaal");
+    scCombo->addItem("Orb of Annulment", "orb-of-annulment");
+    scCombo->addItem("Orb of Binding", "orb-of-binding");
+    scCombo->addItem("Ancient Orb", "ancient-orb");
+    scCombo->addItem("Orb of Horizons", "orb-of-horizons");
+    scCombo->addItem("Harbinger's Orb", "harbingers-orb");
+    scCombo->addItem("Scroll of Wisdom", "wis");
+    scCombo->addItem("Portal Scroll", "port");
+    scCombo->addItem("Armourer's Scrap", "scr");
+    scCombo->addItem("Blacksmith's Whetstone", "whe");
+    scCombo->addItem("Glassblower's Bauble", "ba");
+    scCombo->addItem("Orb of Transmutation", "tra");
+    scCombo->addItem("Orb of Augmentation", "aug");
+    scCombo->addItem("Mirror of Kalandra", "mir");
+    scCombo->addItem("Eternal Orb", "ete");
+    scCombo->addItem("Perandus Coin", "p");
+    scCombo->addItem("Silver Coin", "silver");
+
+    int sidx = scCombo->findData(settings.value(PTA_CONFIG_SECONDARY_CURRENCY, PTA_CONFIG_DEFAULT_SECONDARY_CURRENCY).toString());
+    scCombo->setCurrentIndex(sidx);
+
+    connect(scCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [=, &set](int index) {
+        set[PTA_CONFIG_SECONDARY_CURRENCY] = scCombo->itemData(index).toString().toStdString();
+    });
+
+    QHBoxLayout* scLayout = new QHBoxLayout;
+    scLayout->addWidget(scLabel);
+    scLayout->addWidget(scCombo);
+
     // ------------------Online only
     QCheckBox* olLabel = new QCheckBox(tr("Online only"));
     olLabel->setChecked(settings.value(PTA_CONFIG_ONLINE_ONLY, PTA_CONFIG_DEFAULT_ONLINE_ONLY).toBool());
@@ -252,6 +350,8 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
     QVBoxLayout* priceLayout = new QVBoxLayout;
     priceLayout->addLayout(lgLayout);
     priceLayout->addLayout(crLayout);
+    priceLayout->addLayout(pcLayout);
+    priceLayout->addLayout(scLayout);
     priceLayout->addWidget(olLabel);
     priceLayout->addWidget(boLabel);
     priceLayout->addWidget(dupeLabel);
