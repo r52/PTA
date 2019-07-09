@@ -3,6 +3,7 @@
 #include "pta_types.h"
 #include "statdialog.h"
 
+#include <regex>
 #include <sstream>
 #include <string>
 
@@ -414,15 +415,15 @@ int ItemAPI::readPropExp(QString prop)
 
 std::string ItemAPI::readName(QString name)
 {
-    name.replace("<<set:MS>><<set:M>><<set:S>>", "");
+    name.remove(QRegularExpression("<<.*?>>|<.*?>"));
 
     return name.toStdString();
 }
 
 std::string ItemAPI::readType(PItem* item, QString type)
 {
-    type.replace("<<set:MS>><<set:M>><<set:S>>", "");
-    type.replace("Superior ", "");
+    type.remove(QRegularExpression("<<.*?>>|<.*?>"));
+    type.remove("Superior ");
 
     if (item->f_type.rarity == "Magic")
     {
@@ -1297,6 +1298,9 @@ PItem* ItemAPI::parse(QString itemText)
     {
         item->f_type.category = "map";
         item->f_misc.disc     = m_mapdisc; // Default map discriminator
+
+        item->type = std::regex_replace(item->type, std::regex("Elder "), "");
+        item->type = std::regex_replace(item->type, std::regex("Shaped "), "");
     }
 
     if (item->f_type.category.empty() && m_uniques.contains(item->type))
