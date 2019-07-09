@@ -275,8 +275,8 @@
 
         var clm = "default"
 
-        if (itemclass == "gem") {
-            clm = "gem";
+        if (itemclass in columns) {
+            clm = itemclass;
         }
 
         var tr = table.insertRow(-1);

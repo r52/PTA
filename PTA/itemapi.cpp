@@ -576,6 +576,12 @@ void ItemAPI::parseProp(PItem* item, QString prop)
                     item->f_misc.gem_level_progress = readPropExp(v);
                     break;
                 }
+
+                case misc_filter_map_tier:
+                {
+                    item->f_misc.map_tier = readPropInt(v);
+                    break;
+                }
             }
 
             break;
@@ -1450,6 +1456,14 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             qe["filters"]["socket_filters"]["filters"]["links"]["min"] = item->f_socket.links;
 
             item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
+        }
+
+        // Force map tier
+        if (item->f_misc.map_tier)
+        {
+            qe["filters"]["map_filters"]["filters"]["map_tier"]["min"] = item->f_misc.map_tier;
+
+            item->m_options += ", Map Tier=" + std::to_string(item->f_misc.map_tier);
         }
 
         // Default corrupt options

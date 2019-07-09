@@ -83,6 +83,7 @@ struct misc_filters_t
     bool veiled;
     bool enchanted;
     int  talisman_tier;
+    int  map_tier;
 };
 
 struct PItem

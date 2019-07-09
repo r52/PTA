@@ -88,7 +88,8 @@ private:
         misc_filter_crafted,
         misc_filter_veiled,
         misc_filter_enchanted,
-        misc_filter_talisman_level
+        misc_filter_talisman_level,
+        misc_filter_map_tier
     };
 
     const QMap<QString, QVector<uint8_t>> c_propMap = {{"Quality", {misc_filter, misc_filter_quality}},
@@ -109,7 +110,8 @@ private:
                                                        {"Critical Strike Chance", {weapon_filter, weapon_filter_crit}},
                                                        {"Attacks per Second", {weapon_filter, weapon_filter_aps}},
                                                        {"Elemental Damage", {weapon_filter, weapon_filter_edps}},
-                                                       {"Experience", {misc_filter, misc_filter_gem_level_progress}}};
+                                                       {"Experience", {misc_filter, misc_filter_gem_level_progress}},
+                                                       {"Map Tier", {misc_filter, misc_filter_map_tier}}};
 
     json                            c_baseCat;
     json                            c_pseudoRules;
