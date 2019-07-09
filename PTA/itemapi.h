@@ -39,6 +39,23 @@ signals:
     void priceCheckFinished(std::shared_ptr<PItem> item, QString results);
 
 private:
+    int              readPropInt(QString prop);
+    mmv_t            readPropIntRange(QString prop);
+    double           readPropFloat(QString prop);
+    socket_filters_t readSockets(QString prop);
+    int              readPropExp(QString prop);
+    std::string      readName(QString name);
+    std::string      readType(PItem* item, QString type);
+
+    void captureNumerics(QString line, QRegularExpression& re, json& val, std::vector<QString>& captured);
+
+    void parseProp(PItem* item, QString prop);
+    bool parseStat(PItem* item, QString stat, QTextStream& stream);
+
+    void processPriceResults(std::shared_ptr<PItem> item, json results);
+
+    void doCurrencySearch(std::shared_ptr<PItem> item);
+
     enum filter_type_e : uint8_t
     {
         weapon_filter = 0,
@@ -113,28 +130,14 @@ private:
                                                        {"Experience", {misc_filter, misc_filter_gem_level_progress}},
                                                        {"Map Tier", {misc_filter, misc_filter_map_tier}}};
 
-    json                            c_baseCat;
-    json                            c_pseudoRules;
-    json                            c_enchantRules;
-    std::unordered_set<std::string> c_weaponLocals;
-    std::unordered_set<std::string> c_armourLocals;
+    json                                                             c_baseCat;
+    json                                                             c_pseudoRules;
+    json                                                             c_enchantRules;
+    std::unordered_set<std::string>                                  c_weaponLocals;
+    std::unordered_set<std::string>                                  c_armourLocals;
+    std::unordered_map<std::string, std::unordered_set<std::string>> c_discriminators;
 
     std::map<std::string, std::string> c_baseMap;
-
-    int              readPropInt(QString prop);
-    mmv_t            readPropIntRange(QString prop);
-    double           readPropFloat(QString prop);
-    socket_filters_t readSockets(QString prop);
-    int              readPropExp(QString prop);
-    std::string      readName(QString name);
-    std::string      readType(PItem* item, QString type);
-
-    void captureNumerics(QString line, QRegularExpression& re, json& val, std::vector<QString>& captured);
-
-    void parseProp(PItem* item, QString prop);
-    bool parseStat(PItem* item, QString stat, QTextStream& stream);
-
-    void processPriceResults(std::shared_ptr<PItem> item, json results);
 
     QString m_section;
 

@@ -251,6 +251,28 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     }
 
     qInfo() << "Armour Local rules loaded";
+
+    // Discriminators
+    QFile disc("data/discriminators.json");
+
+    if (!disc.open(QIODevice::ReadOnly))
+    {
+        throw std::runtime_error("Cannot open discriminators.json");
+    }
+
+    QByteArray ddat = disc.readAll();
+
+    json dcr = json::parse(ddat.toStdString());
+
+    for (auto [entry, list] : dcr.items())
+    {
+        for (auto value : list["unused"])
+        {
+            c_discriminators[entry].insert(value.get<std::string>());
+        }
+    }
+
+    qInfo() << "Discriminator rules loaded";
 }
 
 int ItemAPI::readPropInt(QString prop)
@@ -946,6 +968,14 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
             }
             else if (entry["type"] == "explicit")
             {
+                std::string id = entry["id"].get<std::string>();
+
+                if (c_discriminators.contains(id) && c_discriminators[id].contains(item->f_type.category))
+                {
+                    // Discriminator skip
+                    continue;
+                }
+
                 filter["id"]    = entry["id"];
                 filter["type"]  = entry["type"];
                 filter["text"]  = entry["text"];
@@ -1089,6 +1119,23 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results)
     emit priceCheckFinished(item, QString::fromStdString(endRes.dump()));
 }
 
+void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
+{
+    QSettings settings;
+
+    auto query = R"(
+    {
+        "exchange": {
+            "status": {
+                "option": "online"
+            },
+            "have": [],
+            "want": []
+        }
+    }
+    )"_json;
+}
+
 QString ItemAPI::getLeague()
 {
     QSettings settings;
@@ -1176,6 +1223,15 @@ PItem* ItemAPI::parse(QString itemText)
         }
     }
 
+    if (item->f_type.category.empty())
+    {
+        auto base = c_baseMap.find(item->type);
+        if (base != c_baseMap.end())
+        {
+            item->f_type.category = base->second;
+        }
+    }
+
     // Read the rest of the crap
 
     while (stream.readLineInto(&line))
@@ -1197,15 +1253,6 @@ PItem* ItemAPI::parse(QString itemText)
         {
             // parse item stat
             parseStat(item, line, stream);
-        }
-    }
-
-    if (item->f_type.category.empty())
-    {
-        auto base = c_baseMap.find(item->type);
-        if (base != c_baseMap.end())
-        {
-            item->f_type.category = base->second;
         }
     }
 
@@ -1322,8 +1369,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 {
     if (item->f_type.category == "currency")
     {
-        // TODO: currency search
-        emit humour(tr("Currency search is unimplemented"));
+        doCurrencySearch(item);
         return;
     }
 
