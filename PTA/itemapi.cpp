@@ -657,6 +657,21 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
 {
     QString orig_stat = stat;
 
+    // Special rule for A Master Seeks Help
+    if (item->f_type.category == "prophecy" && item->name == "A Master Seeks Help")
+    {
+        QRegularExpression      re("^You will find (\\w+) and complete her mission.$");
+        QRegularExpressionMatch match = re.match(stat);
+        if (match.hasMatch())
+        {
+            QString master = match.captured(1);
+
+            item->f_misc.disc = master.toLower().toStdString();
+        }
+
+        return true;
+    }
+
     if (stat == "Unidentified")
     {
         item->f_misc.identified = false;
@@ -1260,6 +1275,7 @@ PItem* ItemAPI::parse(QString itemText)
     {
         // nametype has to be item type and not name
         item->type = readType(item, nametype);
+        item->m_sections++;
     }
     else
     {
@@ -1280,6 +1296,7 @@ PItem* ItemAPI::parse(QString itemText)
     if (item->type.ends_with("Map"))
     {
         item->f_type.category = "map";
+        item->f_misc.disc     = m_mapdisc; // Default map discriminator
     }
 
     if (item->f_type.category.empty() && m_uniques.contains(item->type))
@@ -1523,10 +1540,10 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         {
             auto& entry = it->second;
 
-            // If map, match default map discriminator and type
-            if (item->f_type.category == "map")
+            // If has discriminator, match discriminator and type
+            if (!item->f_misc.disc.empty())
             {
-                if (entry["disc"] == m_mapdisc && entry["type"] == item->type)
+                if (entry["disc"] == item->f_misc.disc && entry["type"] == item->type)
                 {
                     if (entry.contains("name"))
                     {
@@ -1585,6 +1602,12 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             qe["filters"]["map_filters"]["filters"]["map_tier"]["min"] = item->f_misc.map_tier;
 
             item->m_options += ", Map Tier=" + std::to_string(item->f_misc.map_tier);
+        }
+
+        // Note discriminator
+        if (!item->f_misc.disc.empty())
+        {
+            item->m_options += ", Disc=" + item->f_misc.disc;
         }
 
         // Default corrupt options
