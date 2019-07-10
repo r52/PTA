@@ -61,5 +61,11 @@
     },
     "Power Siphon fires an additional Projectile": {
         "value": 1
+    },
+    "Divine Ire Damages # additional nearby Enemies when gaining Stages": {
+        "id":"enchant.stat_1477213724"
+    },
+    "Divine Ire Damages an additional nearby Enemy when gaining Stages": {
+        "value": 1
     }
 }
