@@ -9,6 +9,8 @@ struct mmv_t
     int min;
     int max;
 
+    int avg() { return ((min + max) / 2); }
+
     mmv_t& operator+=(const mmv_t& b)
     {
         min += b.min;
@@ -31,6 +33,11 @@ struct weapon_filters_t
     double crit;
     mmv_t  pdps;
     mmv_t  edps;
+
+    bool  search_pdps;
+    mmv_t pdps_filter;
+    bool  search_edps;
+    mmv_t edps_filter;
 };
 
 struct armour_filters_t
@@ -39,6 +46,13 @@ struct armour_filters_t
     int ev;
     int es;
     int block;
+
+    bool  search_ar;
+    mmv_t ar_filter;
+    bool  search_ev;
+    mmv_t ev_filter;
+    bool  search_es;
+    mmv_t es_filter;
 };
 
 struct socket_type_t

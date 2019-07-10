@@ -1783,7 +1783,72 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
         query["query"]["filters"]["type_filters"]["filters"]["category"]["option"] = category;
     }
 
-    // TODO weapon/armour base mods
+    // weapon/armour base mods
+
+    if (item->f_weapon.search_pdps)
+    {
+        if (item->f_weapon.pdps_filter.min > 0)
+        {
+            query["query"]["filters"]["weapon_filters"]["filters"]["pdps"]["min"] = item->f_weapon.pdps_filter.min;
+        }
+
+        if (item->f_weapon.pdps_filter.max > 0)
+        {
+            query["query"]["filters"]["weapon_filters"]["filters"]["pdps"]["max"] = item->f_weapon.pdps_filter.max;
+        }
+    }
+
+    if (item->f_weapon.search_edps)
+    {
+        if (item->f_weapon.edps_filter.min > 0)
+        {
+            query["query"]["filters"]["weapon_filters"]["filters"]["edps"]["min"] = item->f_weapon.edps_filter.min;
+        }
+
+        if (item->f_weapon.edps_filter.max > 0)
+        {
+            query["query"]["filters"]["weapon_filters"]["filters"]["edps"]["max"] = item->f_weapon.edps_filter.max;
+        }
+    }
+
+    if (item->f_armour.search_ar)
+    {
+        if (item->f_armour.ar_filter.min > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["ar"]["min"] = item->f_armour.ar_filter.min;
+        }
+
+        if (item->f_armour.ar_filter.max > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["ar"]["max"] = item->f_armour.ar_filter.max;
+        }
+    }
+
+    if (item->f_armour.search_ev)
+    {
+        if (item->f_armour.ev_filter.min > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["ev"]["min"] = item->f_armour.ev_filter.min;
+        }
+
+        if (item->f_armour.ev_filter.max > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["ev"]["max"] = item->f_armour.ev_filter.max;
+        }
+    }
+
+    if (item->f_armour.search_es)
+    {
+        if (item->f_armour.es_filter.min > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["es"]["min"] = item->f_armour.es_filter.min;
+        }
+
+        if (item->f_armour.es_filter.max > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["es"]["max"] = item->f_armour.es_filter.max;
+        }
+    }
 
     // Checked mods
     for (auto& [k, e] : filters.items())
