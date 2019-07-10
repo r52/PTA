@@ -117,6 +117,7 @@ struct PItem
 
     bool is_weapon;
     bool is_armour;
+    bool is_prediction = false;
 
     json filters;
     json pseudos;

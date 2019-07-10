@@ -32,6 +32,7 @@ const QString tradeFetchUrl("https://www.pathofexile.com/api/trade/fetch/%1?quer
 const QString tradeSearchUrl("https://www.pathofexile.com/api/trade/search/");
 const QString exchangeUrl("https://www.pathofexile.com/api/trade/exchange/");
 const QString tradeSiteUrl("https://www.pathofexile.com/trade/search/");
+const QString poepricesUrl("https://www.poeprices.info/api?l=%1&i=%2");
 
 ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 {
@@ -1422,6 +1423,8 @@ QString ItemAPI::toJson(PItem* item)
 {
     json j;
 
+    j["prediction"] = item->is_prediction;
+
     j["name"] = item->name;
 
     j["rarity"] = item->f_type.rarity;
@@ -1656,6 +1659,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
             if (req->error() != QNetworkReply::NoError)
             {
+                emit humour(tr("Error querying trade site. See log for details"));
                 qWarning() << "PAPI: Error querying trade site" << req->error() << req->errorString();
                 return;
             }
@@ -1683,9 +1687,53 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
     }
     else
     {
-        // TODO: poeprices.info?
-        emit humour(tr("Simple price check for rare items is unimplemented"));
-        qWarning() << "Unimplemented";
+        // poeprices.info
+
+        item->is_prediction = true;
+
+        QString itemText = QString::fromStdString(item->m_itemtext);
+
+        itemText.remove(QRegularExpression("<<.*?>>|<.*?>"));
+
+        QByteArray itemData = itemText.toUtf8().toBase64(QByteArray::Base64UrlEncoding);
+
+        QNetworkRequest request;
+
+        QString qurl = poepricesUrl.arg(getLeague()).arg(QString::fromUtf8(itemData));
+
+        request.setUrl(QUrl(qurl));
+
+        auto req = m_manager->get(request);
+        connect(req, &QNetworkReply::finished, [=]() {
+            req->deleteLater();
+
+            if (req->error() != QNetworkReply::NoError)
+            {
+                emit humour(tr("Error querying poeprices.info. See log for details"));
+                qWarning() << "PAPI: Error querying poeprices.info" << req->error() << req->errorString();
+                return;
+            }
+
+            auto respdata = req->readAll();
+            auto resp     = json::parse(respdata.toStdString());
+            if (resp["error"].get<int>() != 0)
+            {
+                emit humour(tr("Error querying poeprices.info. See log for details"));
+                qWarning() << "PAPI: Error querying poeprices.info";
+                qWarning() << "PAPI: Site responded with" << respdata;
+                return;
+            }
+
+            if (!resp.contains("min") || !resp.contains("max"))
+            {
+                emit humour(tr("No prediction data available from poeprices.info for this item."));
+                qInfo() << "PAPI: No prediction data available from poeprices.info for this item.";
+                return;
+            }
+
+            // else process the results
+            emit priceCheckFinished(item, QString::fromStdString(resp.dump()));
+        });
     }
 }
 

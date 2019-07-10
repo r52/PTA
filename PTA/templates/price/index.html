@@ -98,6 +98,10 @@
             color: #eee;
         }
 
+        #prediction {
+            font-weight: bold;
+        }
+
     </style>
 </head>
 
@@ -124,10 +128,19 @@
     </div>
     <div id="search-options-div" class="modBox">
         <span id="search-options"></span>
+        <div>
+            <span id="prediction"></span>
+        </div>
+        <div>
+            <span id="confidence"></span>
+        </div>
     </div>
     <table id="prices" class="priceTable">
     </table>
     <div class="dismissBox">
+        <div>
+            <span id="poeprices"></span>
+        </div>
         <span>Right-click to dismiss</span>
     </div>
     <script>
@@ -265,6 +278,19 @@
                         return reltime(now, Date.parse(entry["listing"]["indexed"]));
                     }
                 }
+            ],
+            "prediction": [{
+                    "title": "Mod",
+                    "field": function (entry) {
+                        return entry[0];
+                    }
+                },
+                {
+                    "title": "Contribution",
+                    "field": function (entry) {
+                        return (entry[1] * 100.0).toPrecision(4) + "%";
+                    }
+                }
             ]
         };
 
@@ -298,7 +324,16 @@
             document.getElementById("corrupted").innerText = "Corrupted";
         }
 
-        document.getElementById("search-options").innerText = "Search Options: " + item["options"];
+        if (!item["prediction"]) {
+            document.getElementById("search-options").innerText = "Search Options: " + item["options"];
+        } else {
+            document.getElementById("search-options").innerText = "Price Prediction via poeprices.info:";
+            document.getElementById("prediction").innerText = data["min"].toPrecision(4) + " ~ " + data["max"]
+                .toPrecision(4) + " " + data["currency"];
+            document.getElementById("confidence").innerText = "Confidence: " + data["pred_confidence_score"]
+                .toPrecision(4) + "%";
+            document.getElementById("poeprices").innerText = "Please consider supporting poeprices.info";
+        }
 
         // craft table
         var table = document.getElementById("prices");
@@ -311,6 +346,10 @@
             clm = itemclass;
         }
 
+        if (item["prediction"]) {
+            clm = "prediction"
+        }
+
         var tr = table.insertRow(-1);
 
         columns[clm].forEach(function (c) {
@@ -319,7 +358,14 @@
             tr.appendChild(th);
         });
 
-        var dat = data["result"];
+        var dat = [];
+
+        if (!item["prediction"]) {
+            dat = data["result"];
+        } else {
+            dat = data["pred_explanation"];
+        }
+
         dat.forEach(function (e, i) {
             tr = table.insertRow(-1);
 
