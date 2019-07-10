@@ -429,14 +429,23 @@ std::string ItemAPI::readType(PItem* item, QString type)
     if (item->f_type.rarity == "Magic")
     {
         // Parse out magic affixes
+        QRegularExpression              re("([\\w']+)(?(?= of)( of [\\w\\s]+))");
+        QRegularExpressionMatchIterator i = re.globalMatch(type);
 
-        QRegularExpression      re("^\\S+ ([\\w\\s]+) of \\w+$");
-        QRegularExpressionMatch match = re.match(type);
-
-        if (match.hasMatch())
+        QStringList words;
+        while (i.hasNext())
         {
-            type = match.captured(1);
+            QRegularExpressionMatch match = i.next();
+            QString                 word  = match.captured(1);
+            words << word;
         }
+
+        if (words.length() == 3)
+        {
+            words.removeAt(0);
+        }
+
+        type = words.join(' ');
     }
 
     return type.toStdString();
@@ -975,6 +984,22 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
                 continue;
             }
 
+            if (entry["type"] == "explicit")
+            {
+                std::string id = entry["id"].get<std::string>();
+
+                if (c_discriminators.contains(id) && c_discriminators[id].contains(item->f_type.category))
+                {
+                    // Discriminator skip
+                    continue;
+                }
+
+                filter["id"]    = entry["id"];
+                filter["type"]  = entry["type"];
+                filter["text"]  = entry["text"];
+                filter["value"] = val;
+            }
+
             // Peek next line
             QString peek;
 
@@ -996,25 +1021,7 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
                     filter["text"]  = entry["text"];
                     filter["value"] = val;
                 }
-                // otherwise, skip
             }
-            else if (entry["type"] == "explicit")
-            {
-                std::string id = entry["id"].get<std::string>();
-
-                if (c_discriminators.contains(id) && c_discriminators[id].contains(item->f_type.category))
-                {
-                    // Discriminator skip
-                    continue;
-                }
-
-                filter["id"]    = entry["id"];
-                filter["type"]  = entry["type"];
-                filter["text"]  = entry["text"];
-                filter["value"] = val;
-            }
-
-            // otherwise skip
         }
     }
 

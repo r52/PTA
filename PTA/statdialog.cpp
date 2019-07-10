@@ -411,13 +411,16 @@ StatDialog::StatDialog(PItem* item)
         }
     }
 
-    // separator
+    if (item->is_weapon || item->is_armour)
+    {
+        // separator
 
-    line = new QFrame();
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
+        line = new QFrame();
+        line->setFrameShape(QFrame::HLine);
+        line->setFrameShadow(QFrame::Sunken);
 
-    layout->addWidget(line, current_row++, 0, 1, 4);
+        layout->addWidget(line, current_row++, 0, 1, 4);
+    }
 
     // mods
 
