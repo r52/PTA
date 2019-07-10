@@ -1603,6 +1603,14 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
         }
 
+        // Force iLvl
+        if (item->f_misc.ilvl)
+        {
+            qe["filters"]["misc_filters"]["filters"]["ilvl"]["min"] = item->f_misc.ilvl;
+
+            item->m_options += ", iLvl=" + std::to_string(item->f_misc.ilvl);
+        }
+
         // Force map tier
         if (item->f_misc.map_tier)
         {
