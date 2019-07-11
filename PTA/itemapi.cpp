@@ -1710,6 +1710,17 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
         itemText.remove(QRegularExpression("<<.*?>>|<.*?>"));
 
+        // Remove notes
+        QStringList lines = itemText.trimmed().split('\n');
+
+        if (lines[lines.size() - 1].startsWith("Note:"))
+        {
+            lines.removeLast();
+            lines.removeLast();
+        }
+
+        itemText = lines.join('\n');
+
         QByteArray itemData = itemText.toUtf8().toBase64(QByteArray::Base64UrlEncoding);
 
         QNetworkRequest request;
