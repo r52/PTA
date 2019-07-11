@@ -2059,6 +2059,12 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
             return;
         }
 
+        if (searchonsite)
+        {
+            QDesktopServices::openUrl(QUrl(tradeSiteUrl + getLeague() + "/" + QString::fromStdString(resp["id"].get<std::string>())));
+            return;
+        }
+
         if (resp["result"].size() == 0)
         {
             emit humour(tr("No results found."));
@@ -2066,14 +2072,7 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
             return;
         }
 
-        if (searchonsite)
-        {
-            QDesktopServices::openUrl(QUrl(tradeSiteUrl + getLeague() + "/" + QString::fromStdString(resp["id"].get<std::string>())));
-        }
-        else
-        {
-            // else process the results
-            processPriceResults(item, resp);
-        }
+        // else process the results
+        processPriceResults(item, resp);
     });
 }
