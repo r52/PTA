@@ -1611,7 +1611,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         }
 
         // Force iLvl
-        if (item->f_misc.ilvl)
+        if (item->f_type.rarity != "Unique" && item->f_misc.ilvl)
         {
             qe["filters"]["misc_filters"]["filters"]["ilvl"]["min"] = item->f_misc.ilvl;
 
