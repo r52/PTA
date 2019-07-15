@@ -261,7 +261,7 @@ void PTA::createActions()
                                   "Qt version: " QT_VERSION_STR "<br/>"
                                   "<br/>"
                                   "Licensed under GPLv3<br/>"
-                                  "Source code available at <a href='https://github.com/r52/PTA'>GitHub</a>"
+                                  "Source code available at <a href='https://github.com/r52/PTA'>GitHub</a><br/>"
                                   "Icons from <a href='https://icons8.com'>https://icons8.com</a>";
 
         QMessageBox::about(this, tr("About Quasar"), aboutMsg);
