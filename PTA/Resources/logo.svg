@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="70"
+   height="70"
+   viewBox="0 0 18.520834 18.520833"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
+   sodipodi:docname="logo.svg"
+   inkscape:export-filename="D:\dev\PTA\PTA\Resources\logo.png"
+   inkscape:export-xdpi="600"
+   inkscape:export-ydpi="600">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="5.6"
+     inkscape:cx="-26.023925"
+     inkscape:cy="35.725174"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1920"
+     inkscape:window-height="1027"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     units="px" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-144.38038,-160.20597)">
+    <path
+       style="display:inline;opacity:1;fill:#aa9e82;fill-opacity:0.94117647;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke markers fill"
+       d="m 148.35115,176.56936 c -2.22025,-2.04441 -2.86986,-5.49822 -3.04985,-7.77953 -0.19682,-2.1249 0.30404,-4.21805 1.43067,-5.48585 0.645,-0.6907 1.85019,-1.51592 3.31108,-1.30088 0,0 0.2478,0.80151 0.26578,0.86203 0,0 1.25025,-0.36405 2.34997,-0.52431 0.80701,-0.0739 1.34987,-0.11048 2.41151,-0.16322 0.22566,-0.30425 0.23306,-0.63198 0.42769,-0.94689 1.58173,-0.12388 3.02335,0.37651 4.12202,0.97933 1.7782,1.2492 2.3246,3.36734 2.38796,5.00451 0.31438,3.00628 -0.43056,6.73693 -2.31709,8.62259 -0.67653,0.71826 -1.38129,1.25966 -2.27801,1.45299 -0.27774,0.0252 -0.27911,0.0247 -0.46993,-0.1739 -0.40069,-0.40522 -0.0987,-1.1523 -0.52695,-1.42084 -0.63768,0.38346 -1.14511,0.83747 -2.01516,0.88673 -1.17987,0.15307 -2.08967,-0.37829 -2.73545,-0.32324 -0.22726,0.42597 -0.22132,1.1454 -0.41117,1.51655 -1.21967,0.17865 -2.33347,-0.65821 -2.90307,-1.20607 z"
+       id="path826"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccccccccccccccccc" />
+    <text
+       xml:space="preserve"
+       style="font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:16.93333244px;line-height:1.25;font-family:Cambria;-inkscape-font-specification:'Cambria Bold Italic';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:#ffffff;stroke-width:2.2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke markers fill;"
+       x="148.60326"
+       y="175.15808"
+       id="text4546"><tspan
+         sodipodi:role="line"
+         id="tspan4544"
+         x="148.60326"
+         y="175.15808"
+         style="font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:16.93333244px;font-family:Cambria;-inkscape-font-specification:'Cambria Bold Italic';fill:#000000;fill-opacity:1;stroke:#ffffff;stroke-width:2.2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke markers fill;">P</tspan></text>
+  </g>
+</svg>

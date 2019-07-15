@@ -1,10 +1,12 @@
 <RCC>
     <qresource prefix="/">
-        <file>PTA.ico</file>
         <file>Resources/data.js</file>
         <file>Resources/pricing.png</file>
         <file>Resources/settings.png</file>
         <file>Resources/ui.png</file>
         <file>Resources/hotkey.png</file>
+        <file>Resources/logo.svg</file>
+        <file>Resources/splash.png</file>
+        <file>Resources/logo.ico</file>
     </qresource>
 </RCC>

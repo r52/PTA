@@ -48,7 +48,7 @@ PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log
     createTrayIcon();
 
     // Setup icon
-    QIcon icon(":/PTA.ico");
+    QIcon icon(":/Resources/logo.svg");
     setWindowIcon(icon);
     m_trayIcon->setIcon(icon);
 
