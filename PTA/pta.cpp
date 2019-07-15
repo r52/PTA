@@ -264,7 +264,7 @@ void PTA::createActions()
                                   "Source code available at <a href='https://github.com/r52/PTA'>GitHub</a><br/>"
                                   "Icons from <a href='https://icons8.com'>https://icons8.com</a>";
 
-        QMessageBox::about(this, tr("About Quasar"), aboutMsg);
+        QMessageBox::about(this, tr("About PTA"), aboutMsg);
     });
 
     m_aboutQtAction = new QAction(tr("About &Qt"), this);
