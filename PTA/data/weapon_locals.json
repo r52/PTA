@@ -1,12 +1,1 @@
-{
-    "data": [
-        "#% increased Attack Speed",
-        "Adds # to # Physical Damage",
-        "Adds # to # Lightning Damage",
-        "# to Accuracy Rating",
-        "Adds # to # Fire Damage",
-        "Adds # to # Cold Damage",
-        "#% chance to Poison on Hit",
-        "Adds # to # Chaos Damage"
-    ]
-}
+{"data":["#% increased Attack Speed","Adds # to # Physical Damage","Adds # to # Lightning Damage","# to Accuracy Rating","Adds # to # Fire Damage","Adds # to # Cold Damage","#% chance to Poison on Hit","Adds # to # Chaos Damage"]}
