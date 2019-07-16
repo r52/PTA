@@ -1141,7 +1141,12 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results, boo
         QUrl resUrl = fetchurl;
 
         json dat;
-        synchronizedGetJSON(QNetworkRequest(resUrl), dat);
+
+        if (!synchronizedGetJSON(QNetworkRequest(resUrl), dat))
+        {
+            emit humour(tr("Error retrieving search results. See log for details"));
+            return;
+        }
 
         auto& rj = dat["result"];
 
@@ -1275,7 +1280,15 @@ bool ItemAPI::synchronizedGetJSON(const QNetworkRequest& req, json& result)
 
     auto rdat = reply->readAll();
 
-    result = json::parse(rdat.toStdString());
+    if (!rdat.size())
+    {
+        qWarning() << "PAPI: Error retrieving" << reply->url() << "-"
+                   << "returned no data.";
+        return false;
+    }
+
+    std::string sdat = rdat.toStdString();
+    result           = json::parse(sdat);
 
     return true;
 }
