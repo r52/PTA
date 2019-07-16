@@ -4,6 +4,7 @@
 #include "runguard.h"
 
 #include <QSettings>
+#include <QSplashScreen>
 #include <QtWidgets/QApplication>
 
 int main(int argc, char* argv[])
@@ -22,8 +23,19 @@ int main(int argc, char* argv[])
 
     LogWindow* log = new LogWindow();
 
+    QPixmap       pixmap(":/Resources/splash.png");
+    QSplashScreen splash(pixmap);
+    auto          align = Qt::AlignHCenter | Qt::AlignBottom;
+    auto          color = Qt::white;
+    splash.show();
+
+    splash.showMessage("Downloading API data...", align, color);
+    a.processEvents();
+
     PTA w(log);
     w.hide();
+
+    splash.finish(&w);
 
     return a.exec();
 }
