@@ -64,4 +64,9 @@ constexpr auto PTA_CONFIG_DEFAULT_PREFILL_NORMALS    = false;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_PSEUDOS    = true;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_ILVL       = false;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_BASE       = false;
-#define PTA_CONFIG_DEFAULT_LOGLEVEL PTA_LOG_DEBUG
+
+#ifndef NDEBUG
+#    define PTA_CONFIG_DEFAULT_LOGLEVEL PTA_LOG_DEBUG
+#else
+#    define PTA_CONFIG_DEFAULT_LOGLEVEL PTA_LOG_INFO
+#endif
