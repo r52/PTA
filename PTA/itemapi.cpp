@@ -1236,15 +1236,24 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
 
         if (req->error() != QNetworkReply::NoError)
         {
-            qWarning() << "PAPI: Error querying trade site" << req->error() << req->errorString();
+            emit humour(tr("Error querying currency exchange API. See log for details"));
+            qWarning() << "PAPI: Error querying currency exchange API" << req->error() << req->errorString();
             return;
         }
 
         auto respdata = req->readAll();
-        auto resp     = json::parse(respdata.toStdString());
+
+        if (!respdata.size())
+        {
+            emit humour(tr("Error querying currency exchange API. See log for details"));
+            qWarning() << "PAPI: Error querying currency exchange API - returned no data";
+            return;
+        }
+
+        auto resp = json::parse(respdata.toStdString());
         if (!resp.contains("result") || !resp.contains("id"))
         {
-            emit humour(tr("Error querying trade site. See log for details"));
+            emit humour(tr("Error querying currency exchange API. See log for details"));
             qWarning() << "PAPI: Error querying trade site";
             qWarning() << "PAPI: Site responded with" << respdata;
             return;
@@ -1732,17 +1741,25 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
             if (req->error() != QNetworkReply::NoError)
             {
-                emit humour(tr("Error querying trade site. See log for details"));
-                qWarning() << "PAPI: Error querying trade site" << req->error() << req->errorString();
+                emit humour(tr("Error querying trade API. See log for details"));
+                qWarning() << "PAPI: Error querying trade API" << req->error() << req->errorString();
                 return;
             }
 
             auto respdata = req->readAll();
-            auto resp     = json::parse(respdata.toStdString());
+
+            if (!respdata.size())
+            {
+                emit humour(tr("Error querying trade API. See log for details"));
+                qWarning() << "PAPI: Error querying trade API - returned no data";
+                return;
+            }
+
+            auto resp = json::parse(respdata.toStdString());
             if (!resp.contains("result") || !resp.contains("id"))
             {
-                emit humour(tr("Error querying trade site. See log for details"));
-                qWarning() << "PAPI: Error querying trade site";
+                emit humour(tr("Error querying trade API. See log for details"));
+                qWarning() << "PAPI: Error querying trade API";
                 qWarning() << "PAPI: Site responded with" << respdata;
                 return;
             }
@@ -1799,7 +1816,15 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             }
 
             auto respdata = req->readAll();
-            auto resp     = json::parse(respdata.toStdString());
+
+            if (!respdata.size())
+            {
+                emit humour(tr("Error querying poeprices.info. See log for details"));
+                qWarning() << "PAPI: Error querying poeprices.info - returned no data";
+                return;
+            }
+
+            auto resp = json::parse(respdata.toStdString());
             if (resp["error"].get<int>() != 0)
             {
                 emit humour(tr("Error querying poeprices.info. See log for details"));
@@ -2103,16 +2128,25 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
 
         if (req->error() != QNetworkReply::NoError)
         {
-            qWarning() << "PAPI: Error querying trade site" << req->error() << req->errorString();
+            emit humour(tr("Error querying trade API. See log for details"));
+            qWarning() << "PAPI: Error querying trade API" << req->error() << req->errorString();
             return;
         }
 
         auto respdata = req->readAll();
-        auto resp     = json::parse(respdata.toStdString());
+
+        if (!respdata.size())
+        {
+            emit humour(tr("Error querying trade API. See log for details"));
+            qWarning() << "PAPI: Error querying trade API - returned no data";
+            return;
+        }
+
+        auto resp = json::parse(respdata.toStdString());
         if (!resp.contains("result") || !resp.contains("id"))
         {
-            emit humour(tr("Error querying trade site. See log for details"));
-            qWarning() << "PAPI: Error querying trade site";
+            emit humour(tr("Error querying trade API. See log for details"));
+            qWarning() << "PAPI: Error querying trade API";
             qWarning() << "PAPI: Site responded with" << respdata;
             return;
         }
