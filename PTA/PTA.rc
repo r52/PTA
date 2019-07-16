@@ -1,2 +1,27 @@
-IDI_ICON1		ICON		DISCARDABLE	"Resources\logo.ico"
+IDI_ICON1		ICON		DISCARDABLE	"Resources/logo.ico"
+
+#include <windows.h>
+#include "version.h"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION VER_FILEVERSION
+PRODUCTVERSION VER_PRODUCTVERSION
+BEGIN
+BLOCK "StringFileInfo"
+BEGIN
+BLOCK "040904E4"
+BEGIN
+VALUE "FileDescription", "PTA"
+VALUE "FileVersion", VER_STRING
+VALUE "OriginalFilename", "PTA.exe"
+VALUE "ProductName", "PTA"
+VALUE "ProductVersion", VER_STRING
+END
+END
+
+BLOCK "VarFileInfo"
+BEGIN
+VALUE "Translation", 0x409, 1200
+END
+END
 

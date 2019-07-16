@@ -4,6 +4,7 @@
 #include "itemapi.h"
 #include "logwindow.h"
 #include "pta_types.h"
+#include "version.h"
 #include "webwidget.h"
 
 #include <once/once.h>
@@ -251,8 +252,7 @@ void PTA::createActions()
     m_aboutAction = new QAction(tr("&About PTA"), this);
 
     connect(m_aboutAction, &QAction::triggered, [&] {
-        static QString aboutMsg = "PTA v0.1.0"
-                                  "<br/>"
+        static QString aboutMsg = "PTA " VER_STRING "<br/>"
 #ifndef NDEBUG
                                   "DEBUG BUILD<br/>"
 #endif
