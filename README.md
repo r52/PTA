@@ -16,6 +16,8 @@ PTA provides the **Ctrl+D** and **Ctrl+Alt+D** shortcuts much like [PoE-TradeMac
 
 ## Building
 
+Only Windows x64 is supported.
+
 [Visual Studio 2019](https://www.visualstudio.com/) is required.
 
 [Qt 5.12 or later](http://www.qt.io/) is required.
