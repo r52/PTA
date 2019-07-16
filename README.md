@@ -23,3 +23,10 @@ Only Windows x64 is supported.
 [Qt 5.12 or later](http://www.qt.io/) is required.
 
 Build using the Visual Studio Solution file.
+
+## Credits
+
+- [Grinding Gear Games](http://www.grindinggear.com/) for [Path of Exile](https://www.pathofexile.com/)
+- [brather1ng](https://github.com/brather1ng) for [RePoE](https://github.com/brather1ng/RePoE).
+- [PoE-TradeMacro](https://github.com/PoE-TradeMacro/POE-TradeMacro)
+- [poeprices.info](https://poeprices.info/)
