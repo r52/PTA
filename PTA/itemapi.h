@@ -9,11 +9,10 @@
 #include <nlohmann/json.hpp>
 
 #include <QMap>
+#include <QNetworkAccessManager>
 #include <QObject>
 #include <QTextStream>
 #include <QVector>
-
-QT_FORWARD_DECLARE_CLASS(QNetworkAccessManager)
 
 using json = nlohmann::json;
 
@@ -55,6 +54,8 @@ private:
     void processPriceResults(std::shared_ptr<PItem> item, json results, bool isCurrency = false);
 
     void doCurrencySearch(std::shared_ptr<PItem> item);
+
+    bool synchronizedGetJSON(const QNetworkRequest& req, json& result);
 
     enum filter_type_e : uint8_t
     {

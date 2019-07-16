@@ -7,231 +7,240 @@
 #include <sstream>
 #include <string>
 
-#include <nlohmann/json.hpp>
-
 #include <QDebug>
 #include <QDesktopServices>
 #include <QEventLoop>
 #include <QFileInfo>
-#include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QRegularExpression>
 #include <QSettings>
-
-using json = nlohmann::json;
 
 // PoE trade api only allows 10 items at once
 constexpr size_t papi_query_limit = 10;
 
 // API URLs
-const QUrl    leagueApiUrl("https://www.pathofexile.com/api/trade/data/leagues");
-const QUrl    modsApiUrl("https://www.pathofexile.com/api/trade/data/stats");
-const QUrl    itemsApiUrl("https://www.pathofexile.com/api/trade/data/items");
-const QUrl    repoeBaseUrl("https://raw.githubusercontent.com/brather1ng/RePoE/master/data/base_items.min.json");
-const QString tradeFetchUrl("https://www.pathofexile.com/api/trade/fetch/%1?query=%2");
-const QString tradeSearchUrl("https://www.pathofexile.com/api/trade/search/");
-const QString exchangeUrl("https://www.pathofexile.com/api/trade/exchange/");
-const QString tradeSiteUrl("https://www.pathofexile.com/trade/search/");
-const QString poepricesUrl("https://www.poeprices.info/api?l=%1&i=%2");
+
+// official
+const QUrl u_api_league("https://www.pathofexile.com/api/trade/data/leagues");
+const QUrl u_api_mods("https://www.pathofexile.com/api/trade/data/stats");
+const QUrl u_api_items("https://www.pathofexile.com/api/trade/data/items");
+
+// repoe
+const QUrl u_repoe_base("https://raw.githubusercontent.com/brather1ng/RePoE/master/data/base_items.min.json");
+
+// pta
+const QUrl u_pta_armourlocals("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/armour_locals.json");
+const QUrl u_pta_basecat("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/base_categories.json");
+const QUrl u_pta_currency("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/currency.json");
+const QUrl u_pta_disc("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/discriminators.json");
+const QUrl u_pta_enchantrules("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/enchant_rules.json");
+const QUrl u_pta_pseudorules("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/pseudo_rules.json");
+const QUrl u_pta_weaponlocals("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/weapon_locals.json");
+
+// trade site
+const QString u_trade_fetch("https://www.pathofexile.com/api/trade/fetch/%1?query=%2");
+const QString u_trade_search("https://www.pathofexile.com/api/trade/search/");
+const QString u_trade_exchange("https://www.pathofexile.com/api/trade/exchange/");
+const QString u_trade_site("https://www.pathofexile.com/trade/search/");
+
+// poe prices
+const QString u_poeprices("https://www.poeprices.info/api?l=%1&i=%2");
 
 ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 {
     m_manager = new QNetworkAccessManager(this);
 
+    if (nullptr == m_manager)
+    {
+        throw std::runtime_error("Failed to create network manager");
+    }
+
+    json data;
+
     // Download leagues
+    if (!synchronizedGetJSON(QNetworkRequest(u_api_league), data))
+    {
+        throw std::runtime_error("Failed to download league data");
+    }
 
-    auto rp_league = m_manager->get(QNetworkRequest(leagueApiUrl));
-    connect(rp_league, &QNetworkReply::finished, [=]() {
-        rp_league->deleteLater();
+    auto& lgs = data["result"];
 
-        if (rp_league->error() != QNetworkReply::NoError)
-        {
-            qWarning() << "PAPI: Error downloading league data" << rp_league->error() << rp_league->errorString();
-            return;
-        }
+    m_leagues = json::array();
+    for (size_t i = 0; i < lgs.size(); i++)
+    {
+        m_leagues.push_back(lgs[i]["id"].get<std::string>());
+    }
 
-        auto  obj = json::parse(rp_league->readAll().toStdString());
-        auto& rs  = obj["result"];
+    QString setlg = getLeague();
 
-        m_leagues = json::array();
-        for (size_t i = 0; i < rs.size(); i++)
-        {
-            m_leagues.push_back(rs[i]["id"].get<std::string>());
-        }
-
-        QString setlg = getLeague();
-
-        qInfo() << "League data loaded. Setting league to" << setlg;
-    });
+    qInfo() << "League data loaded. Setting league to" << setlg;
 
     // Download stats
+    if (!synchronizedGetJSON(QNetworkRequest(u_api_mods), data))
+    {
+        throw std::runtime_error("Failed to download mod data");
+    }
 
-    auto rp_stats = m_manager->get(QNetworkRequest(modsApiUrl));
-    connect(rp_stats, &QNetworkReply::finished, [=]() {
-        rp_stats->deleteLater();
+    auto& stt = data["result"];
 
-        if (rp_stats->error() != QNetworkReply::NoError)
+    for (auto& type : stt)
+    {
+        auto& el = type["entries"];
+
+        for (auto& et : el)
         {
-            qWarning() << "PAPI: Error downloading mod data" << rp_stats->error() << rp_stats->errorString();
-            return;
-        }
-
-        auto obj = json::parse(rp_stats->readAll().toStdString());
-
-        auto& ll = obj["result"];
-
-        for (auto& type : ll)
-        {
-            auto& el = type["entries"];
-
-            for (auto& et : el)
+            // Cut the key for multiline mods
+            std::string::size_type nl;
+            std::string            text = et["text"].get<std::string>();
+            if ((nl = text.find("\n")) != std::string::npos)
             {
-                // Cut the key for multiline mods
-                std::string::size_type nl;
-                std::string            text = et["text"].get<std::string>();
-                if ((nl = text.find("\n")) != std::string::npos)
-                {
-                    text = text.substr(0, nl);
-                }
-
-                m_stats_by_text.insert({{text, et}});
-                m_stats_by_id.insert({{et["id"].get<std::string>(), et}});
+                text = text.substr(0, nl);
             }
-        }
 
-        qInfo() << "Mod data loaded";
-    });
+            m_stats_by_text.insert({{text, et}});
+            m_stats_by_id.insert({{et["id"].get<std::string>(), et}});
+        }
+    }
+
+    qInfo() << "Mod data loaded";
 
     // Download unique items
+    if (!synchronizedGetJSON(QNetworkRequest(u_api_items), data))
+    {
+        throw std::runtime_error("Failed to download unique item data");
+    }
 
-    auto rp_uniq = m_manager->get(QNetworkRequest(itemsApiUrl));
-    connect(rp_uniq, &QNetworkReply::finished, [=]() {
-        rp_uniq->deleteLater();
+    auto& itm = data["result"];
 
-        if (rp_uniq->error() != QNetworkReply::NoError)
+    for (auto& type : itm)
+    {
+        auto& el = type["entries"];
+
+        for (auto& et : el)
         {
-            qWarning() << "PAPI: Error downloading unique item data" << rp_uniq->error() << rp_uniq->errorString();
-            return;
-        }
-
-        // Process data
-        auto obj = json::parse(rp_uniq->readAll().toStdString());
-
-        auto& ll = obj["result"];
-
-        for (auto& type : ll)
-        {
-            auto& el = type["entries"];
-
-            for (auto& et : el)
+            if (et.contains("name"))
             {
-                if (et.contains("name"))
-                {
-                    m_uniques.insert({{et["name"].get<std::string>(), et}});
-                }
-                else if (et.contains("type"))
-                {
-                    m_uniques.insert({{et["type"].get<std::string>(), et}});
-                }
-                else
-                {
-                    qDebug() << "Item entry has neither name nor type:" << QString::fromStdString(et.dump());
-                }
+                m_uniques.insert({{et["name"].get<std::string>(), et}});
+            }
+            else if (et.contains("type"))
+            {
+                m_uniques.insert({{et["type"].get<std::string>(), et}});
+            }
+            else
+            {
+                qDebug() << "Item entry has neither name nor type:" << QString::fromStdString(et.dump());
             }
         }
+    }
 
-        qInfo() << "Unique item data loaded";
-    });
+    qInfo() << "Unique item data loaded";
+
+    // Load RePoE base data
+    if (!synchronizedGetJSON(QNetworkRequest(u_repoe_base), data))
+    {
+        throw std::runtime_error("Failed to download base item data");
+    }
+
+    for (auto& [k, o] : data.items())
+    {
+        std::string typeName  = o["name"].get<std::string>();
+        std::string itemClass = o["item_class"].get<std::string>();
+
+        auto search = c_baseCat.find(itemClass);
+        if (search != c_baseCat.end())
+        {
+            std::string itemCat = search.value().get<std::string>();
+
+            c_baseMap.insert({{typeName, itemCat}});
+        }
+    }
+
+    qInfo() << "Item base data loaded";
 
     // Load base categories
     QFile bc("data/base_categories.json");
 
-    if (!bc.open(QIODevice::ReadOnly))
+    if (bc.open(QIODevice::ReadOnly))
+    {
+        QByteArray bdat = bc.readAll();
+
+        c_baseCat = json::parse(bdat.toStdString());
+    }
+    else if (synchronizedGetJSON(QNetworkRequest(u_pta_basecat), data))
+    {
+        c_baseCat = data;
+    }
+    else
     {
         throw std::runtime_error("Cannot open base_categories.json");
     }
 
-    QByteArray bdat = bc.readAll();
-
-    c_baseCat = json::parse(bdat.toStdString());
-
     qInfo() << "Base categories loaded";
-
-    // Load RePoE base data
-
-    auto rp_base = m_manager->get(QNetworkRequest(repoeBaseUrl));
-    connect(rp_base, &QNetworkReply::finished, [=]() {
-        rp_base->deleteLater();
-
-        if (rp_base->error() != QNetworkReply::NoError)
-        {
-            qWarning() << "PAPI: Error downloading item base data" << rp_base->error() << rp_base->errorString();
-            return;
-        }
-
-        // Process data
-        auto obj = json::parse(rp_base->readAll().toStdString());
-
-        for (auto& [k, o] : obj.items())
-        {
-            std::string typeName  = o["name"].get<std::string>();
-            std::string itemClass = o["item_class"].get<std::string>();
-
-            auto search = c_baseCat.find(itemClass);
-            if (search != c_baseCat.end())
-            {
-                std::string itemCat = search.value().get<std::string>();
-
-                c_baseMap.insert({{typeName, itemCat}});
-            }
-        }
-
-        qInfo() << "Item base data loaded";
-    });
 
     // Load pseudo rules
     QFile pr("data/pseudo_rules.json");
 
-    if (!pr.open(QIODevice::ReadOnly))
+    if (pr.open(QIODevice::ReadOnly))
+    {
+        QByteArray pdat = pr.readAll();
+
+        c_pseudoRules = json::parse(pdat.toStdString());
+    }
+    else if (synchronizedGetJSON(QNetworkRequest(u_pta_pseudorules), data))
+    {
+        c_pseudoRules = data;
+    }
+    else
     {
         throw std::runtime_error("Cannot open pseudo_rules.json");
     }
-
-    QByteArray pdat = pr.readAll();
-
-    c_pseudoRules = json::parse(pdat.toStdString());
 
     qInfo() << "Pseudo rules loaded";
 
     // Load enchant rules
     QFile er("data/enchant_rules.json");
 
-    if (!er.open(QIODevice::ReadOnly))
+    if (er.open(QIODevice::ReadOnly))
+    {
+        QByteArray edat = er.readAll();
+
+        c_enchantRules = json::parse(edat.toStdString());
+    }
+    else if (synchronizedGetJSON(QNetworkRequest(u_pta_enchantrules), data))
+    {
+        c_enchantRules = data;
+    }
+    else
     {
         throw std::runtime_error("Cannot open enchant_rules.json");
     }
-
-    QByteArray edat = er.readAll();
-
-    c_enchantRules = json::parse(edat.toStdString());
 
     qInfo() << "Enchant rules loaded";
 
     // Load local rules
     QFile wl("data/weapon_locals.json");
 
-    if (!wl.open(QIODevice::ReadOnly))
+    if (wl.open(QIODevice::ReadOnly))
+    {
+        QByteArray wdat = wl.readAll();
+
+        json wlr = json::parse(wdat.toStdString());
+
+        for (auto& e : wlr["data"])
+        {
+            c_weaponLocals.insert(e.get<std::string>());
+        }
+    }
+    else if (synchronizedGetJSON(QNetworkRequest(u_pta_weaponlocals), data))
+    {
+        for (auto& e : data["data"])
+        {
+            c_weaponLocals.insert(e.get<std::string>());
+        }
+    }
+    else
     {
         throw std::runtime_error("Cannot open weapon_locals.json");
-    }
-
-    QByteArray wdat = wl.readAll();
-
-    json wlr = json::parse(wdat.toStdString());
-
-    for (auto& e : wlr["data"])
-    {
-        c_weaponLocals.insert(e.get<std::string>());
     }
 
     qInfo() << "Weapon Local rules loaded";
@@ -239,18 +248,27 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     //  armour
     QFile al("data/armour_locals.json");
 
-    if (!al.open(QIODevice::ReadOnly))
+    if (al.open(QIODevice::ReadOnly))
+    {
+        QByteArray adat = al.readAll();
+
+        json alr = json::parse(adat.toStdString());
+
+        for (auto& e : alr["data"])
+        {
+            c_armourLocals.insert(e.get<std::string>());
+        }
+    }
+    else if (synchronizedGetJSON(QNetworkRequest(u_pta_armourlocals), data))
+    {
+        for (auto& e : data["data"])
+        {
+            c_armourLocals.insert(e.get<std::string>());
+        }
+    }
+    else
     {
         throw std::runtime_error("Cannot open armour_locals.json");
-    }
-
-    QByteArray adat = al.readAll();
-
-    json alr = json::parse(adat.toStdString());
-
-    for (auto& e : alr["data"])
-    {
-        c_armourLocals.insert(e.get<std::string>());
     }
 
     qInfo() << "Armour Local rules loaded";
@@ -258,21 +276,34 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     // Discriminators
     QFile disc("data/discriminators.json");
 
-    if (!disc.open(QIODevice::ReadOnly))
+    if (disc.open(QIODevice::ReadOnly))
+    {
+        QByteArray ddat = disc.readAll();
+
+        json dcr = json::parse(ddat.toStdString());
+
+        for (auto [entry, list] : dcr.items())
+        {
+            for (auto value : list["unused"])
+            {
+                c_discriminators[entry].insert(value.get<std::string>());
+            }
+        }
+    }
+    else if (synchronizedGetJSON(QNetworkRequest(u_pta_disc), data))
+    {
+        for (auto [entry, list] : data.items())
+        {
+            for (auto value : list["unused"])
+            {
+                c_discriminators[entry].insert(value.get<std::string>());
+            }
+        }
+    }
+    else
+
     {
         throw std::runtime_error("Cannot open discriminators.json");
-    }
-
-    QByteArray ddat = disc.readAll();
-
-    json dcr = json::parse(ddat.toStdString());
-
-    for (auto [entry, list] : dcr.items())
-    {
-        for (auto value : list["unused"])
-        {
-            c_discriminators[entry].insert(value.get<std::string>());
-        }
     }
 
     qInfo() << "Discriminator rules loaded";
@@ -280,14 +311,20 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     // Currency
     QFile curr("data/currency.json");
 
-    if (!curr.open(QIODevice::ReadOnly))
+    if (curr.open(QIODevice::ReadOnly))
+    {
+        QByteArray cdat = curr.readAll();
+
+        c_currency = json::parse(cdat.toStdString());
+    }
+    else if (synchronizedGetJSON(QNetworkRequest(u_pta_currency), data))
+    {
+        c_currency = data;
+    }
+    else
     {
         throw std::runtime_error("Cannot open currency.json");
     }
-
-    QByteArray cdat = curr.readAll();
-
-    c_currency = json::parse(cdat.toStdString());
 
     qInfo() << "Currency rules loaded";
 }
@@ -1094,7 +1131,7 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results, boo
 
         QString fcode = fetchcodes.join(',');
 
-        QString fetchurl = tradeFetchUrl.arg(fcode).arg(QString::fromStdString(results["id"]));
+        QString fetchurl = u_trade_fetch.arg(fcode).arg(QString::fromStdString(results["id"]));
 
         if (isCurrency)
         {
@@ -1103,23 +1140,8 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results, boo
 
         QUrl resUrl = fetchurl;
 
-        QEventLoop loop;
-        connect(m_manager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
-
-        auto pricereq = m_manager->get(QNetworkRequest(resUrl));
-        loop.exec();
-
-        pricereq->deleteLater();
-
-        if (pricereq->error() != QNetworkReply::NoError)
-        {
-            qWarning() << "PAPI: Error getting prices" << pricereq->error() << pricereq->errorString();
-            return;
-        }
-
-        auto pricesb = pricereq->readAll();
-
-        auto dat = json::parse(pricesb.toStdString());
+        json dat;
+        synchronizedGetJSON(QNetworkRequest(resUrl), dat);
 
         auto& rj = dat["result"];
 
@@ -1200,7 +1222,7 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
     auto qba = query.dump();
 
     QNetworkRequest request;
-    request.setUrl(QUrl(exchangeUrl + getLeague()));
+    request.setUrl(QUrl(u_trade_exchange + getLeague()));
     request.setRawHeader("Content-Type", "application/json");
 
     auto req = m_manager->post(request, QByteArray::fromStdString(qba));
@@ -1233,6 +1255,29 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
         // else process the results
         processPriceResults(item, resp, true);
     });
+}
+
+bool ItemAPI::synchronizedGetJSON(const QNetworkRequest& req, json& result)
+{
+    QEventLoop loop;
+    connect(m_manager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+
+    auto reply = m_manager->get(req);
+    loop.exec();
+
+    reply->deleteLater();
+
+    if (reply->error() != QNetworkReply::NoError)
+    {
+        qWarning() << "PAPI: Error retrieving" << reply->url() << "-" << reply->error() << reply->errorString();
+        return false;
+    }
+
+    auto rdat = reply->readAll();
+
+    result = json::parse(rdat.toStdString());
+
+    return true;
 }
 
 QString ItemAPI::getLeague()
@@ -1665,7 +1710,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         auto qba = query.dump();
 
         QNetworkRequest request;
-        request.setUrl(QUrl(tradeSearchUrl + getLeague()));
+        request.setUrl(QUrl(u_trade_search + getLeague()));
         request.setRawHeader("Content-Type", "application/json");
 
         auto req = m_manager->post(request, QByteArray::fromStdString(qba));
@@ -1725,7 +1770,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 
         QNetworkRequest request;
 
-        QString qurl = poepricesUrl.arg(getLeague()).arg(QString::fromUtf8(itemData));
+        QString qurl = u_poeprices.arg(getLeague()).arg(QString::fromUtf8(itemData));
 
         request.setUrl(QUrl(qurl));
 
@@ -2036,7 +2081,7 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
     auto qba = query.dump();
 
     QNetworkRequest request;
-    request.setUrl(QUrl(tradeSearchUrl + getLeague()));
+    request.setUrl(QUrl(u_trade_search + getLeague()));
     request.setRawHeader("Content-Type", "application/json");
 
     auto req = m_manager->post(request, QByteArray::fromStdString(qba));
@@ -2061,7 +2106,7 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
 
         if (searchonsite)
         {
-            QDesktopServices::openUrl(QUrl(tradeSiteUrl + getLeague() + "/" + QString::fromStdString(resp["id"].get<std::string>())));
+            QDesktopServices::openUrl(QUrl(u_trade_site + getLeague() + "/" + QString::fromStdString(resp["id"].get<std::string>())));
             return;
         }
 
