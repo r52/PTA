@@ -135,7 +135,27 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "Unique item data loaded";
 
-    // Load RePoE base data
+    // Load base categories
+    QFile bc("data/base_categories.json");
+
+    if (bc.open(QIODevice::ReadOnly))
+    {
+        QByteArray bdat = bc.readAll();
+
+        c_baseCat = json::parse(bdat.toStdString());
+    }
+    else if (synchronizedGetJSON(QNetworkRequest(u_pta_basecat), data))
+    {
+        c_baseCat = data;
+    }
+    else
+    {
+        throw std::runtime_error("Cannot open base_categories.json");
+    }
+
+    qInfo() << "Base categories loaded";
+
+    // Load RePoE base data (needs to be loaded AFTER c_baseCat)
     if (!synchronizedGetJSON(QNetworkRequest(u_repoe_base), data))
     {
         throw std::runtime_error("Failed to download base item data");
@@ -156,26 +176,6 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     }
 
     qInfo() << "Item base data loaded";
-
-    // Load base categories
-    QFile bc("data/base_categories.json");
-
-    if (bc.open(QIODevice::ReadOnly))
-    {
-        QByteArray bdat = bc.readAll();
-
-        c_baseCat = json::parse(bdat.toStdString());
-    }
-    else if (synchronizedGetJSON(QNetworkRequest(u_pta_basecat), data))
-    {
-        c_baseCat = data;
-    }
-    else
-    {
-        throw std::runtime_error("Cannot open base_categories.json");
-    }
-
-    qInfo() << "Base categories loaded";
 
     // Load pseudo rules
     QFile pr("data/pseudo_rules.json");
