@@ -1021,16 +1021,16 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
                 continue;
             }
 
+            std::string id = entry["id"].get<std::string>();
+
+            if (c_discriminators.contains(id) && c_discriminators[id].contains(item->f_type.category))
+            {
+                // Discriminator skip
+                continue;
+            }
+
             if (entry["type"] == "explicit")
             {
-                std::string id = entry["id"].get<std::string>();
-
-                if (c_discriminators.contains(id) && c_discriminators[id].contains(item->f_type.category))
-                {
-                    // Discriminator skip
-                    continue;
-                }
-
                 filter["id"]    = entry["id"];
                 filter["type"]  = entry["type"];
                 filter["text"]  = entry["text"];
