@@ -1283,7 +1283,8 @@ bool ItemAPI::synchronizedGetJSON(const QNetworkRequest& req, json& result)
 
     if (reply->error() != QNetworkReply::NoError)
     {
-        qWarning() << "PAPI: Error retrieving" << reply->url() << "-" << reply->error() << reply->errorString();
+        QString msg = "PAPI: Error retrieving" + reply->url().toString() + "-" + reply->error() + reply->errorString();
+        qWarning() << msg;
         return false;
     }
 
@@ -1678,7 +1679,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         }
 
         // Force iLvl
-        if (item->f_type.rarity != "Unique" && item->f_misc.ilvl)
+        if (item->f_type.rarity != "Unique" && item->f_type.category != "card" && item->f_misc.ilvl)
         {
             qe["filters"]["misc_filters"]["filters"]["ilvl"]["min"] = item->f_misc.ilvl;
 
@@ -1686,7 +1687,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         }
 
         // Force map tier
-        if (item->f_misc.map_tier)
+        if (item->f_type.category == "map" && item->f_misc.map_tier)
         {
             qe["filters"]["map_filters"]["filters"]["map_tier"]["min"] = item->f_misc.map_tier;
 
@@ -1702,29 +1703,33 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         // Default corrupt options
         bool corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
 
-        if (corrupt_override)
+        // No such thing as corrupted cards
+        if (item->f_type.category != "card")
         {
-            QString corrupt_search = settings.value(PTA_CONFIG_CORRUPTSEARCH, PTA_CONFIG_DEFAULT_CORRUPTSEARCH).toString();
-
-            if (corrupt_search != "Any")
+            if (corrupt_override)
             {
-                qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = (corrupt_search == "Yes");
+                QString corrupt_search = settings.value(PTA_CONFIG_CORRUPTSEARCH, PTA_CONFIG_DEFAULT_CORRUPTSEARCH).toString();
 
-                item->m_options += ", Corrupted=" + corrupt_search.toStdString();
+                if (corrupt_search != "Any")
+                {
+                    qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = (corrupt_search == "Yes");
+
+                    item->m_options += ", Corrupted=" + corrupt_search.toStdString();
+                }
+                else
+                {
+                    item->m_options += ", Corrupted=Any";
+                }
+
+                item->m_options += " (override)";
             }
             else
             {
-                item->m_options += ", Corrupted=Any";
+                qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item->f_misc.corrupted;
+
+                item->m_options += ", Corrupted=";
+                item->m_options += item->f_misc.corrupted ? "Yes" : "No";
             }
-
-            item->m_options += " (override)";
-        }
-        else
-        {
-            qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item->f_misc.corrupted;
-
-            item->m_options += ", Corrupted=";
-            item->m_options += item->f_misc.corrupted ? "Yes" : "No";
         }
 
         item->m_options += ", Mods ignored";
