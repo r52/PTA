@@ -1523,6 +1523,8 @@ QString ItemAPI::toJson(PItem* item)
         j["gem_level"] = item->f_misc.gem_level;
     }
 
+    j["identified"] = item->f_misc.identified;
+
     // This stuff not relevant to cards
     if (item->f_type.category != "card")
     {
@@ -1531,7 +1533,6 @@ QString ItemAPI::toJson(PItem* item)
 
         j["elder_item"]  = item->f_misc.elder_item;
         j["shaper_item"] = item->f_misc.shaper_item;
-        j["identified"]  = item->f_misc.identified;
         j["corrupted"]   = item->f_misc.corrupted;
     }
 
