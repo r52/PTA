@@ -1518,18 +1518,22 @@ QString ItemAPI::toJson(PItem* item)
     j["sockets"] = item->f_socket.sockets.total();
     j["links"]   = item->f_socket.links;
 
-    j["ilvl"]    = item->f_misc.ilvl;
-    j["quality"] = item->f_misc.quality;
-
     if (item->f_type.category == "gem")
     {
         j["gem_level"] = item->f_misc.gem_level;
     }
 
-    j["elder_item"]  = item->f_misc.elder_item;
-    j["shaper_item"] = item->f_misc.shaper_item;
-    j["identified"]  = item->f_misc.identified;
-    j["corrupted"]   = item->f_misc.corrupted;
+    // This stuff not relevant to cards
+    if (item->f_type.category != "card")
+    {
+        j["ilvl"]    = item->f_misc.ilvl;
+        j["quality"] = item->f_misc.quality;
+
+        j["elder_item"]  = item->f_misc.elder_item;
+        j["shaper_item"] = item->f_misc.shaper_item;
+        j["identified"]  = item->f_misc.identified;
+        j["corrupted"]   = item->f_misc.corrupted;
+    }
 
     if (!item->m_options.empty())
     {
