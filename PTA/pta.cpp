@@ -44,6 +44,16 @@ PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log
 
     ui.setupUi(this);
 
+    // Try to initialize API
+    try
+    {
+        m_api = new ItemAPI(this);
+    } catch (std::exception e)
+    {
+        QMessageBox::critical(nullptr, tr("Critical Error"), QString(e.what()), QMessageBox::Abort);
+        qApp->exit(1);
+    }
+
     // Setup system tray
     createActions();
     createTrayIcon();
@@ -276,9 +286,6 @@ void PTA::createActions()
 
 void PTA::setupFunctionality()
 {
-    // Initialize API
-    m_api = new ItemAPI(this);
-
     connect(m_api, &ItemAPI::humour, this, &PTA::showToolTip);
     connect(m_api, &ItemAPI::priceCheckFinished, this, &PTA::showPriceResults);
 

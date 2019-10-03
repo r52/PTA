@@ -1211,6 +1211,28 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
     std::string p_curr = settings.value(PTA_CONFIG_PRIMARY_CURRENCY, PTA_CONFIG_DEFAULT_PRIMARY_CURRENCY).toString().toStdString();
     std::string s_curr = settings.value(PTA_CONFIG_SECONDARY_CURRENCY, PTA_CONFIG_DEFAULT_SECONDARY_CURRENCY).toString().toStdString();
 
+    // Reset setting that no longer exists
+    if (!c_currency.contains(p_curr))
+    {
+        p_curr = PTA_CONFIG_DEFAULT_PRIMARY_CURRENCY;
+        settings.setValue(PTA_CONFIG_PRIMARY_CURRENCY, QString::fromStdString(p_curr));
+    }
+
+    if (!c_currency.contains(s_curr))
+    {
+        s_curr = PTA_CONFIG_DEFAULT_SECONDARY_CURRENCY;
+        settings.setValue(PTA_CONFIG_SECONDARY_CURRENCY, QString::fromStdString(s_curr));
+    }
+
+    // Check for existing currencies
+    if (!c_currency.contains(item->type))
+    {
+        emit humour(tr("Could not find this currency in the database. See log for details."));
+        qWarning() << "Currency not found:" << QString::fromStdString(item->type);
+        qWarning() << "If you believe that this is a mistake, please file a bug report on GitHub.";
+        return;
+    }
+
     std::string want = c_currency[item->type].get<std::string>();
     std::string have = p_curr;
 
@@ -1932,14 +1954,16 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
         searchToken    = item->type;
     }
 
-    // Force rarity if unique
+    // Force rarity
+    std::string rarity = "nonunique";
+
     if (item->f_type.rarity == "Unique")
     {
-        std::string rarity = item->f_type.rarity;
+        rarity = item->f_type.rarity;
         std::transform(rarity.begin(), rarity.end(), rarity.begin(), ::tolower);
-
-        query["query"]["filters"]["type_filters"]["filters"]["rarity"]["option"] = rarity;
     }
+
+    query["query"]["filters"]["type_filters"]["filters"]["rarity"]["option"] = rarity;
 
     // Force category
     if (!item->f_type.category.empty())
