@@ -16,8 +16,9 @@ init:
 environment:
   QTDIR: C:\Qt\5.12.5\msvc2017_64
   OPENSSL: C:\OpenSSL-v111-Win64\bin
-# Gotta run this twice because a fresh qtvars build in projects with references results in unresolved entry points for some stupid reason
+# Gotta run this multiple times because a fresh qtvars build in projects with references results in unresolved entry points for some stupid reason
 build_script:
+  - cmd: msbuild "C:\projects\PTA\PTA.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" & exit 0
   - cmd: msbuild "C:\projects\PTA\PTA.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" & exit 0
   - cmd: msbuild "C:\projects\PTA\PTA.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 after_build:
