@@ -1,4 +1,6 @@
 # PTA
+[![License](https://img.shields.io/github/license/r52/PTA)](https://github.com/r52/PTA/blob/master/LICENSE)
+[![Build status](https://ci.appveyor.com/api/projects/status/m0mh6snl47uxdcs1?svg=true)](https://ci.appveyor.com/project/r52/pta)
 
 **PTA** (PoE Trade Assistant) is currently a [PoE-TradeMacro](https://github.com/PoE-TradeMacro/POE-TradeMacro) clone (with fewer features) that operates on the [Official Path of Exile Trade](https://www.pathofexile.com/trade) website instead of third-party alternatives. It hopes to become a full fledged trade assistant tool in the future.
 
