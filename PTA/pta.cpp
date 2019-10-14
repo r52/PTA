@@ -263,9 +263,6 @@ void PTA::createActions()
 
     connect(m_aboutAction, &QAction::triggered, [&] {
         static QString aboutMsg = "PTA " VER_STRING "<br/>"
-#ifndef NDEBUG
-                                  "DEBUG BUILD<br/>"
-#endif
                                   "<br/>"
                                   "Compiled on: " __DATE__ "<br/>"
                                   "Qt version: " QT_VERSION_STR "<br/>"
