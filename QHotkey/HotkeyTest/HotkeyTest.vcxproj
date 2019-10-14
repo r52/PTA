@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Release|x64">
@@ -18,7 +18,7 @@
     <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+  <PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;" Label="Configuration">
     <PlatformToolset>v142</PlatformToolset>
     <OutputDirectory>release\</OutputDirectory>
     <ATLMinimizesCRunTimeLibraryUsage>false</ATLMinimizesCRunTimeLibraryUsage>
@@ -27,7 +27,7 @@
     <IntermediateDirectory>release\</IntermediateDirectory>
     <PrimaryOutput>HotkeyTest</PrimaryOutput>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+  <PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;" Label="Configuration">
     <PlatformToolset>v142</PlatformToolset>
     <OutputDirectory>debug\</OutputDirectory>
     <ATLMinimizesCRunTimeLibraryUsage>false</ATLMinimizesCRunTimeLibraryUsage>
@@ -37,58 +37,48 @@
     <PrimaryOutput>HotkeyTest</PrimaryOutput>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <PropertyGroup Condition="'$(QtMsBuild)'=='' or !Exists('$(QtMsBuild)\qt.targets')">
-    <QtMsBuild>$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
-  </PropertyGroup>
-  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
-    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
-  </Target>
-  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')">
-    <Import Project="$(QtMsBuild)\qt.props" />
-  </ImportGroup>
   <ImportGroup Label="ExtensionSettings" />
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
+  <ImportGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists(&apos;$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props&apos;)" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
+  <ImportGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists(&apos;$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props&apos;)" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">HotkeyTest</TargetName>
-    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</IgnoreImportLibrary>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">HotkeyTest</TargetName>
-    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</IgnoreImportLibrary>
+    <OutDir Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">release\</OutDir>
+    <IntDir Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">release\</IntDir>
+    <TargetName Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">HotkeyTest</TargetName>
+    <IgnoreImportLibrary Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">true</IgnoreImportLibrary>
+    <LinkIncremental Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">false</LinkIncremental>
+    <OutDir Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">debug\</OutDir>
+    <IntDir Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">debug\</IntDir>
+    <TargetName Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">HotkeyTest</TargetName>
+    <IgnoreImportLibrary Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">true</IgnoreImportLibrary>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;.;..\QHotkey;$(QTDIR)\include;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtCore;release;\include;$(QTDIR)\mkspecs\win32-msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\QHotkey;C:\QT\5.12.5\MSVC2017_64\include;C:\QT\5.12.5\MSVC2017_64\include\QtWidgets;C:\QT\5.12.5\MSVC2017_64\include\QtGui;C:\QT\5.12.5\MSVC2017_64\include\QtANGLE;C:\QT\5.12.5\MSVC2017_64\include\QtCore;release;.;/include;C:\QT\5.12.5\MSVC2017_64\mkspecs\win32-msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-Zc:rvalueCast -Zc:inline -Zc:strictStrings -Zc:throwingNew -Zc:referenceBinding -Zc:__cplusplus -w34100 -w34189 -w44996 -w44456 -w44457 -w44458 %(AdditionalOptions)</AdditionalOptions>
       <AssemblerListingLocation>release\</AssemblerListingLocation>
       <BrowseInformation>false</BrowseInformation>
       <DebugInformationFormat>None</DebugInformationFormat>
       <DisableSpecificWarnings>4577;4467;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ObjectFileName>release\</ObjectFileName>
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessToFile>false</PreprocessToFile>
-      <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+      <ProgramDataBaseFileName></ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level3</WarningLevel>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>"C:\Program Files (x86)\Windows Kits\10\lib\10.0.18362.0\um\x64\user32.lib";$(QTDIR)\lib\Qt5Widgets.lib;$(QTDIR)\lib\Qt5Gui.lib;$(QTDIR)\lib\Qt5Core.lib;$(QTDIR)\lib\qtmain.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>&quot;C:\Program Files (x86)\Windows Kits\10\lib\10.0.18362.0\um\x64\user32.lib&quot;;C:\QT\5.12.5\MSVC2017_64\lib\Qt5Widgets.lib;C:\QT\5.12.5\MSVC2017_64\lib\Qt5Gui.lib;C:\QT\5.12.5\MSVC2017_64\lib\Qt5Core.lib;C:\QT\5.12.5\MSVC2017_64\lib\qtmain.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;C:\openssl\lib;C:\Utils\my_sql\mysql-5.6.11-winx64\lib;C:\Utils\postgresql\pgsql\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot; %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreImportLibrary>true</IgnoreImportLibrary>
@@ -106,34 +96,17 @@
     <ResourceCompile>
       <PreprocessorDefinitions>_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
-    <QtMoc>
-      <QTDIR>$(QTDIR)</QTDIR>
-      <InputFile>%(FullPath)</InputFile>
-      <OutputFile>$(Configuration)\moc_%(Filename).cpp</OutputFile>
-      <Define>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_NO_DEBUG;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB</Define>
-      <CompilerFlavor>msvc</CompilerFlavor>
-      <Include>./$(Configuration)/moc_predefs.h</Include>
-      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
-      <DynamicSource>output</DynamicSource>
-      <IncludePath>.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;$(QTDIR)\mkspecs/win32-msvc;.;D:/dev/PTA/QHotkey/QHotkey;$(QTDIR)\include;$(QTDIR)\include/QtWidgets;$(QTDIR)\include/QtGui;$(QTDIR)\include/QtANGLE;$(QTDIR)\include/QtCore;C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.21.27702\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt</IncludePath>
-    </QtMoc>
-    <QtUic>
-      <OutputFile>ui_hottestwidget.h</OutputFile>
-      <QTDIR>$(QTDIR)</QTDIR>
-      <InputFile>%(FullPath)</InputFile>
-      <ExecutionDescription>Uic'ing %(Identity)...</ExecutionDescription>
-    </QtUic>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;.;..\QHotkey;$(QTDIR)\include;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtCore;debug;\include;$(QTDIR)\mkspecs\win32-msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\QHotkey;C:\QT\5.12.5\MSVC2017_64\include;C:\QT\5.12.5\MSVC2017_64\include\QtWidgets;C:\QT\5.12.5\MSVC2017_64\include\QtGui;C:\QT\5.12.5\MSVC2017_64\include\QtANGLE;C:\QT\5.12.5\MSVC2017_64\include\QtCore;debug;.;/include;C:\QT\5.12.5\MSVC2017_64\mkspecs\win32-msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>-Zc:rvalueCast -Zc:inline -Zc:strictStrings -Zc:throwingNew -Zc:referenceBinding -Zc:__cplusplus -w34100 -w34189 -w44996 -w44456 -w44457 -w44458 %(AdditionalOptions)</AdditionalOptions>
       <AssemblerListingLocation>debug\</AssemblerListingLocation>
       <BrowseInformation>false</BrowseInformation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4577;4467;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ObjectFileName>debug\</ObjectFileName>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessToFile>false</PreprocessToFile>
@@ -141,13 +114,11 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level3</WarningLevel>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>"C:\Program Files (x86)\Windows Kits\10\lib\10.0.18362.0\um\x64\user32.lib";$(QTDIR)\lib\Qt5Widgetsd.lib;$(QTDIR)\lib\Qt5Guid.lib;$(QTDIR)\lib\Qt5Cored.lib;$(QTDIR)\lib\qtmaind.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>&quot;C:\Program Files (x86)\Windows Kits\10\lib\10.0.18362.0\um\x64\user32.lib&quot;;C:\QT\5.12.5\MSVC2017_64\lib\Qt5Widgetsd.lib;C:\QT\5.12.5\MSVC2017_64\lib\Qt5Guid.lib;C:\QT\5.12.5\MSVC2017_64\lib\Qt5Cored.lib;C:\QT\5.12.5\MSVC2017_64\lib\qtmaind.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;C:\openssl\lib;C:\Utils\my_sql\mysql-5.6.11-winx64\lib;C:\Utils\postgresql\pgsql\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>&quot;/MANIFESTDEPENDENCY:type=&apos;win32&apos; name=&apos;Microsoft.Windows.Common-Controls&apos; version=&apos;6.0.0.0&apos; publicKeyToken=&apos;6595b64144ccf1df&apos; language=&apos;*&apos; processorArchitecture=&apos;*&apos;&quot; %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreImportLibrary>true</IgnoreImportLibrary>
@@ -164,23 +135,6 @@
     <ResourceCompile>
       <PreprocessorDefinitions>_WINDOWS;UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
-    <QtMoc>
-      <QTDIR>$(QTDIR)</QTDIR>
-      <InputFile>%(FullPath)</InputFile>
-      <OutputFile>$(Configuration)\moc_%(Filename).cpp</OutputFile>
-      <Define>UNICODE;_UNICODE;WIN32;_ENABLE_EXTENDED_ALIGNED_STORAGE;WIN64;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB</Define>
-      <CompilerFlavor>msvc</CompilerFlavor>
-      <Include>./$(Configuration)/moc_predefs.h</Include>
-      <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
-      <DynamicSource>output</DynamicSource>
-      <IncludePath>.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;$(QTDIR)\mkspecs/win32-msvc;.;D:/dev/PTA/QHotkey/QHotkey;$(QTDIR)\include;$(QTDIR)\include/QtWidgets;$(QTDIR)\include/QtGui;$(QTDIR)\include/QtANGLE;$(QTDIR)\include/QtCore;C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.21.27702\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt</IncludePath>
-    </QtMoc>
-    <QtUic>
-      <QTDIR>$(QTDIR)</QTDIR>
-      <InputFile>%(FullPath)</InputFile>
-      <OutputFile>ui_hottestwidget.h</OutputFile>
-      <ExecutionDescription>Uic'ing %(Identity)...</ExecutionDescription>
-    </QtUic>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="hottestwidget.cpp" />
@@ -190,44 +144,87 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\QHotkey\QHotkey" />
-    <QtMoc Include="hottestwidget.h">
-    </QtMoc>
-    <QtMoc Include="..\QHotkey\qhotkey.h">
-    </QtMoc>
-    <QtMoc Include="..\QHotkey\qhotkey_p.h">
-    </QtMoc>
+    <CustomBuild Include="hottestwidget.h">
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">hottestwidget.h;release\moc_predefs.h;C:\QT\5.12.5\MSVC2017_64\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">C:\QT\5.12.5\MSVC2017_64\bin\moc.exe  -DUNICODE -D_UNICODE -DWIN32 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -DWIN64 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB --compiler-flavor=msvc --include D:/dev/PTA/QHotkey/HotkeyTest/release/moc_predefs.h -IC:/QT/5.12.5/MSVC2017_64/mkspecs/win32-msvc -ID:/dev/PTA/QHotkey/HotkeyTest -ID:/dev/PTA/QHotkey/QHotkey -IC:/QT/5.12.5/MSVC2017_64/include -IC:/QT/5.12.5/MSVC2017_64/include/QtWidgets -IC:/QT/5.12.5/MSVC2017_64/include/QtGui -IC:/QT/5.12.5/MSVC2017_64/include/QtANGLE -IC:/QT/5.12.5/MSVC2017_64/include/QtCore -I&quot;C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.23.28105\include&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt&quot; hottestwidget.h -o release\moc_hottestwidget.cpp</Command>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">MOC hottestwidget.h</Message>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">release\moc_hottestwidget.cpp;%(Outputs)</Outputs>
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">hottestwidget.h;debug\moc_predefs.h;C:\QT\5.12.5\MSVC2017_64\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">C:\QT\5.12.5\MSVC2017_64\bin\moc.exe  -DUNICODE -D_UNICODE -DWIN32 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -DWIN64 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB --compiler-flavor=msvc --include D:/dev/PTA/QHotkey/HotkeyTest/debug/moc_predefs.h -IC:/QT/5.12.5/MSVC2017_64/mkspecs/win32-msvc -ID:/dev/PTA/QHotkey/HotkeyTest -ID:/dev/PTA/QHotkey/QHotkey -IC:/QT/5.12.5/MSVC2017_64/include -IC:/QT/5.12.5/MSVC2017_64/include/QtWidgets -IC:/QT/5.12.5/MSVC2017_64/include/QtGui -IC:/QT/5.12.5/MSVC2017_64/include/QtANGLE -IC:/QT/5.12.5/MSVC2017_64/include/QtCore -I&quot;C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.23.28105\include&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt&quot; hottestwidget.h -o debug\moc_hottestwidget.cpp</Command>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">MOC hottestwidget.h</Message>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">debug\moc_hottestwidget.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\QHotkey\qhotkey.h">
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">..\QHotkey\qhotkey.h;release\moc_predefs.h;C:\QT\5.12.5\MSVC2017_64\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">C:\QT\5.12.5\MSVC2017_64\bin\moc.exe  -DUNICODE -D_UNICODE -DWIN32 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -DWIN64 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB --compiler-flavor=msvc --include D:/dev/PTA/QHotkey/HotkeyTest/release/moc_predefs.h -IC:/QT/5.12.5/MSVC2017_64/mkspecs/win32-msvc -ID:/dev/PTA/QHotkey/HotkeyTest -ID:/dev/PTA/QHotkey/QHotkey -IC:/QT/5.12.5/MSVC2017_64/include -IC:/QT/5.12.5/MSVC2017_64/include/QtWidgets -IC:/QT/5.12.5/MSVC2017_64/include/QtGui -IC:/QT/5.12.5/MSVC2017_64/include/QtANGLE -IC:/QT/5.12.5/MSVC2017_64/include/QtCore -I&quot;C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.23.28105\include&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt&quot; ..\QHotkey\qhotkey.h -o release\moc_qhotkey.cpp</Command>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">MOC ../QHotkey/qhotkey.h</Message>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">release\moc_qhotkey.cpp;%(Outputs)</Outputs>
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">..\QHotkey\qhotkey.h;debug\moc_predefs.h;C:\QT\5.12.5\MSVC2017_64\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">C:\QT\5.12.5\MSVC2017_64\bin\moc.exe  -DUNICODE -D_UNICODE -DWIN32 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -DWIN64 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB --compiler-flavor=msvc --include D:/dev/PTA/QHotkey/HotkeyTest/debug/moc_predefs.h -IC:/QT/5.12.5/MSVC2017_64/mkspecs/win32-msvc -ID:/dev/PTA/QHotkey/HotkeyTest -ID:/dev/PTA/QHotkey/QHotkey -IC:/QT/5.12.5/MSVC2017_64/include -IC:/QT/5.12.5/MSVC2017_64/include/QtWidgets -IC:/QT/5.12.5/MSVC2017_64/include/QtGui -IC:/QT/5.12.5/MSVC2017_64/include/QtANGLE -IC:/QT/5.12.5/MSVC2017_64/include/QtCore -I&quot;C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.23.28105\include&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt&quot; ..\QHotkey\qhotkey.h -o debug\moc_qhotkey.cpp</Command>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">MOC ../QHotkey/qhotkey.h</Message>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">debug\moc_qhotkey.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\QHotkey\qhotkey_p.h">
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">..\QHotkey\qhotkey_p.h;release\moc_predefs.h;C:\QT\5.12.5\MSVC2017_64\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">C:\QT\5.12.5\MSVC2017_64\bin\moc.exe  -DUNICODE -D_UNICODE -DWIN32 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -DWIN64 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB --compiler-flavor=msvc --include D:/dev/PTA/QHotkey/HotkeyTest/release/moc_predefs.h -IC:/QT/5.12.5/MSVC2017_64/mkspecs/win32-msvc -ID:/dev/PTA/QHotkey/HotkeyTest -ID:/dev/PTA/QHotkey/QHotkey -IC:/QT/5.12.5/MSVC2017_64/include -IC:/QT/5.12.5/MSVC2017_64/include/QtWidgets -IC:/QT/5.12.5/MSVC2017_64/include/QtGui -IC:/QT/5.12.5/MSVC2017_64/include/QtANGLE -IC:/QT/5.12.5/MSVC2017_64/include/QtCore -I&quot;C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.23.28105\include&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt&quot; ..\QHotkey\qhotkey_p.h -o release\moc_qhotkey_p.cpp</Command>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">MOC ../QHotkey/qhotkey_p.h</Message>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">release\moc_qhotkey_p.cpp;%(Outputs)</Outputs>
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">..\QHotkey\qhotkey_p.h;debug\moc_predefs.h;C:\QT\5.12.5\MSVC2017_64\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">C:\QT\5.12.5\MSVC2017_64\bin\moc.exe  -DUNICODE -D_UNICODE -DWIN32 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -DWIN64 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB --compiler-flavor=msvc --include D:/dev/PTA/QHotkey/HotkeyTest/debug/moc_predefs.h -IC:/QT/5.12.5/MSVC2017_64/mkspecs/win32-msvc -ID:/dev/PTA/QHotkey/HotkeyTest -ID:/dev/PTA/QHotkey/QHotkey -IC:/QT/5.12.5/MSVC2017_64/include -IC:/QT/5.12.5/MSVC2017_64/include/QtWidgets -IC:/QT/5.12.5/MSVC2017_64/include/QtGui -IC:/QT/5.12.5/MSVC2017_64/include/QtANGLE -IC:/QT/5.12.5/MSVC2017_64/include/QtCore -I&quot;C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.23.28105\include&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt&quot; -I&quot;C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt&quot; ..\QHotkey\qhotkey_p.h -o debug\moc_qhotkey_p.cpp</Command>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">MOC ../QHotkey/qhotkey_p.h</Message>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">debug\moc_qhotkey_p.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="debug\moc_hottestwidget.cpp">
+      <ExcludedFromBuild Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="release\moc_hottestwidget.cpp">
+      <ExcludedFromBuild Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">true</ExcludedFromBuild>
+    </ClCompile>
     <CustomBuild Include="debug\moc_predefs.h.cbt">
       <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QTDIR)\mkspecs\features\data\dummy.cpp;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cl -Bx"$(QTDIR)\bin\qmake.exe" -nologo -Zc:wchar_t -FS -Zc:rvalueCast -Zc:inline -Zc:strictStrings -Zc:throwingNew -Zc:referenceBinding -Zc:__cplusplus -Zi -MDd -W3 -w34100 -w34189 -w44996 -w44456 -w44457 -w44458 -wd4577 -wd4467 -E $(QTDIR)\mkspecs\features\data\dummy.cpp 2&gt;NUL &gt;debug\moc_predefs.h</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generate moc_predefs.h</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">debug\moc_predefs.h;%(Outputs)</Outputs>
+      <ExcludedFromBuild Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">true</ExcludedFromBuild>
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">C:\QT\5.12.5\MSVC2017_64\mkspecs\features\data\dummy.cpp;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">cl -Bx&quot;$(QTDIR)\bin\qmake.exe&quot; -nologo -Zc:wchar_t -FS -Zc:rvalueCast -Zc:inline -Zc:strictStrings -Zc:throwingNew -Zc:referenceBinding -Zc:__cplusplus -Zi -MDd -W3 -w34100 -w34189 -w44996 -w44456 -w44457 -w44458 -wd4577 -wd4467 -E C:\QT\5.12.5\MSVC2017_64\mkspecs\features\data\dummy.cpp 2&gt;NUL &gt;debug\moc_predefs.h</Command>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">Generate moc_predefs.h</Message>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">debug\moc_predefs.h;%(Outputs)</Outputs>
     </CustomBuild>
     <CustomBuild Include="release\moc_predefs.h.cbt">
       <FileType>Document</FileType>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QTDIR)\mkspecs\features\data\dummy.cpp;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cl -Bx"$(QTDIR)\bin\qmake.exe" -nologo -Zc:wchar_t -FS -Zc:rvalueCast -Zc:inline -Zc:strictStrings -Zc:throwingNew -Zc:referenceBinding -Zc:__cplusplus -O2 -MD -W3 -w34100 -w34189 -w44996 -w44456 -w44457 -w44458 -wd4577 -wd4467 -E $(QTDIR)\mkspecs\features\data\dummy.cpp 2&gt;NUL &gt;release\moc_predefs.h</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generate moc_predefs.h</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">release\moc_predefs.h;%(Outputs)</Outputs>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">C:\QT\5.12.5\MSVC2017_64\mkspecs\features\data\dummy.cpp;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">cl -Bx&quot;$(QTDIR)\bin\qmake.exe&quot; -nologo -Zc:wchar_t -FS -Zc:rvalueCast -Zc:inline -Zc:strictStrings -Zc:throwingNew -Zc:referenceBinding -Zc:__cplusplus -O2 -MD -W3 -w34100 -w34189 -w44996 -w44456 -w44457 -w44458 -wd4577 -wd4467 -E C:\QT\5.12.5\MSVC2017_64\mkspecs\features\data\dummy.cpp 2&gt;NUL &gt;release\moc_predefs.h</Command>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">Generate moc_predefs.h</Message>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">release\moc_predefs.h;%(Outputs)</Outputs>
+      <ExcludedFromBuild Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">true</ExcludedFromBuild>
     </CustomBuild>
+    <ClCompile Include="debug\moc_qhotkey.cpp">
+      <ExcludedFromBuild Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="release\moc_qhotkey.cpp">
+      <ExcludedFromBuild Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="debug\moc_qhotkey_p.cpp">
+      <ExcludedFromBuild Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="release\moc_qhotkey_p.cpp">
+      <ExcludedFromBuild Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">true</ExcludedFromBuild>
+    </ClCompile>
     <ClInclude Include="ui_hottestwidget.h" />
   </ItemGroup>
   <ItemGroup>
-    <QtUic Include="hottestwidget.ui">
-    </QtUic>
+    <CustomBuild Include="hottestwidget.ui">
+      <FileType>Document</FileType>
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">hottestwidget.ui;C:\QT\5.12.5\MSVC2017_64\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">C:\QT\5.12.5\MSVC2017_64\bin\uic.exe hottestwidget.ui -o ui_hottestwidget.h</Command>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">UIC hottestwidget.ui</Message>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Release|x64&apos;">ui_hottestwidget.h;%(Outputs)</Outputs>
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">hottestwidget.ui;C:\QT\5.12.5\MSVC2017_64\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">C:\QT\5.12.5\MSVC2017_64\bin\uic.exe hottestwidget.ui -o ui_hottestwidget.h</Command>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">UIC hottestwidget.ui</Message>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;Debug|x64&apos;">ui_hottestwidget.h;%(Outputs)</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
-    <Import Project="$(QtMsBuild)\qt.targets" />
-  </ImportGroup>
   <ImportGroup Label="ExtensionTargets" />
-  <ProjectExtensions>
-    <VisualStudio>
-      <UserProperties Qt5Version_x0020_x64="5.12.4" />
-    </VisualStudio>
-  </ProjectExtensions>
 </Project>

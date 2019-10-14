@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Form Files">
@@ -54,36 +54,48 @@
     <ClInclude Include="..\QHotkey\QHotkey">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <QtMoc Include="hottestwidget.h">
+    <CustomBuild Include="hottestwidget.h">
       <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="..\QHotkey\qhotkey.h">
+    </CustomBuild>
+    <CustomBuild Include="..\QHotkey\qhotkey.h">
       <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="..\QHotkey\qhotkey_p.h">
+    </CustomBuild>
+    <CustomBuild Include="..\QHotkey\qhotkey_p.h">
       <Filter>Header Files</Filter>
-    </QtMoc>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    
-    
+    <ClCompile Include="debug\moc_hottestwidget.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="release\moc_hottestwidget.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
     <CustomBuild Include="debug\moc_predefs.h.cbt">
       <Filter>Generated Files</Filter>
     </CustomBuild>
     <CustomBuild Include="release\moc_predefs.h.cbt">
       <Filter>Generated Files</Filter>
     </CustomBuild>
-    
-    
-    
-    
+    <ClCompile Include="debug\moc_qhotkey.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="release\moc_qhotkey.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="debug\moc_qhotkey_p.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="release\moc_qhotkey_p.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
     <ClInclude Include="ui_hottestwidget.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <QtUic Include="hottestwidget.ui">
+    <CustomBuild Include="hottestwidget.ui">
       <Filter>Form Files</Filter>
-    </QtUic>
+    </CustomBuild>
   </ItemGroup>
 </Project>
