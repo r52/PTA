@@ -1,0 +1,23 @@
+version: '{branch}-{build}'
+skip_non_tags: true
+image: Visual Studio 2019
+configuration: Release
+platform: x64
+init:
+- ps: >-
+    if ($env:APPVEYOR_REPO_TAG -eq "true")
+    {
+        Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_TAG_NAME-$env:APPVEYOR_BUILD_NUMBER"
+    }
+    else
+    {
+        Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.Substring(0, 7))-$env:APPVEYOR_BUILD_NUMBER"
+    }
+environment:
+  QTDIR: C:\Qt\5.12.5\msvc2017_64
+# Gotta run this twice because a fresh qtvars build in projects with references results in unresolved entry points for some stupid reason
+build_script:
+  - cmd: msbuild "C:\projects\PTA\PTA.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" & exit 0
+  - cmd: msbuild "C:\projects\PTA\PTA.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+after_build:
+- ps: .\deploy\package.ps1
