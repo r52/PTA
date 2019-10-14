@@ -35,6 +35,13 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Import pre-requisites
+  // -->
+  <Import
+    Condition="'$(QtMsBuildTargets_BeforeMoc)' != ''"
+    Project="$(QtMsBuildTargets_BeforeMoc)"/>
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,13 +55,53 @@
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Setup item type and property page
   // -->
+  <Choose>
+    <When Condition="'$(QtVsProjectSettings)' == 'true' AND '$(QtVsProjectClProperties)' == 'true'">
+      <ItemGroup>
+        <PropertyPageSchema
+          Include="$(MSBuildThisFileDirectory)qtmoc_v3.xml" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup Condition="'$(QtVsProjectSettings)' == 'false'">
+        <PropertyPageSchema
+          Include="$(MSBuildThisFileDirectory)qtmoc.xml" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
   <ItemGroup>
-    <PropertyPageSchema
-      Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
     <AvailableItemName Include="QtMoc">
       <Targets>Qt;_ClCompile</Targets>
     </AvailableItemName>
   </ItemGroup>
+  <PropertyGroup>
+    <QtMocRuleName>QtRule30_Moc</QtMocRuleName>
+  </PropertyGroup>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  /// TARGET QtMocInit
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Initialize default metadata
+  // -->
+  <Target Name="QtMocInit">
+    <!--// Initialize %(OutputFile) -->
+    <ItemGroup Condition="'$(QtVsProjectSettings)' == 'true'">
+      <QtMocAux Include="@(QtMoc)">
+        <OutputFile>%(QtMoc.QtMocDir)\%(QtMoc.QtMocFileName)</OutputFile>
+      </QtMocAux>
+      <QtMoc Remove="@(QtMoc)"/>
+      <QtMoc Include="@(QtMocAux)"/>
+      <QtMocAux Remove="@(QtMocAux)"/>
+    </ItemGroup>
+    <!--
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Add moc output dir to C++ include path
+    // -->
+    <ItemGroup>
+      <QtIncludePath Include="$([System.IO.Path]::GetDirectoryName('%(QtMoc.OutputFile)'))"/>
+    </ItemGroup>
+  </Target>
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +109,7 @@
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Prepare to process sources
   // -->
-  <Target Name="QtMocPrepare" DependsOnTargets="_SelectedFiles"
+  <Target Name="QtMocPrepare" DependsOnTargets="_SelectedFiles;QtMocInit"
     Inputs="%(QtMoc.Identity)" Outputs="@(QtMoc->'####### Don't skip this target #######')">
 
     <Message Importance="High" Condition="'$(QtDebug)' == 'true'"
@@ -126,12 +173,29 @@
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
+  /// TARGET QtMocOverrideCpp
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //
+  // -->
+  <Import Project="qtmoc_cl.targets"/>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
   /// TARGET QtMoc
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Process each source file and produce the corresponding QtWork items
   // -->
+  <PropertyGroup>
+    <QtMocDependsOn>
+      QtPrepare;
+      QtMocPrepare;
+      QtMocSetModified;
+      QtMocOverrideCpp;
+      $(QtMocDependsOn)
+    </QtMocDependsOn>
+  </PropertyGroup>
   <Target Name="QtMoc"
-    DependsOnTargets="QtPrepare;$(QtMocDependsOn);QtMocPrepare;QtMocSetModified"
+    DependsOnTargets="$(QtMocDependsOn)"
     BeforeTargets="$(QtMocBeforeTargets)" AfterTargets="$(QtMocAfterTargets)"
     Condition="'@(QtMoc)' != ''"
     Inputs="%(QtMoc.FullPath);%(QtMoc.AdditionalDependencies);$(MSBuildProjectFile)"
@@ -326,7 +390,10 @@
     <ItemGroup Condition="'$(run_parallel)' == 'true' OR '$(run_single)' == 'true'">
       <QtWork Include="@(QtMoc)">
         <WorkType>moc</WorkType>
-        <ToolPath>%(QtMoc.QTDIR)\bin\moc.exe</ToolPath>
+        <ToolPath Condition="'$(QtVsProjectSettings)' == 'true'"
+          >$(QtToolsPath)\moc.exe</ToolPath>
+        <ToolPath Condition="'$(QtVsProjectSettings)' != 'true'"
+          >%(QtMoc.QTDIR)\bin\moc.exe</ToolPath>
         <Options>$(options)</Options>
         <Message>%(QtMoc.ExecutionDescription)</Message>
         <DependenciesChanged>$(dependencies_changed)</DependenciesChanged>
@@ -376,4 +443,13 @@
       <moc_OptionsFile      Remove="@(moc_OptionsFile)"/>
     </ItemGroup>
   </Target>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Import dependants
+  // -->
+  <Import
+    Condition="'$(QtMsBuildTargets_AfterMoc)' != ''"
+    Project="$(QtMsBuildTargets_AfterMoc)"/>
+
 </Project>

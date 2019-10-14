@@ -2,7 +2,7 @@
 <!--
 /****************************************************************************
 **
-** Copyright (C) 2018 The Qt Company Ltd.
+** Copyright (C) 2019 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the Qt VS Tools.
@@ -28,55 +28,57 @@
 **
 ****************************************************************************/
 -->
-
 <!--
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// Qt/MSBuild
+// Qt/MSBuild rcc property definitions
 // -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  // Defaults for project version constants
-  // -->
-  <PropertyGroup>
-    <QtVsProjectVersion
-      Condition="'$(QtVsProjectVersion)' == ''"
-      >0</QtVsProjectVersion>
-    <QtVsProjectMinVersion_Settings
-      Condition="'$(QtVsProjectMinVersion_Settings)' == ''"
-      >0</QtVsProjectMinVersion_Settings>
-    <QtVsProjectMinVersion_ClProperties
-      Condition="'$(QtVsProjectMinVersion_ClProperties)' == ''"
-      >0</QtVsProjectMinVersion_ClProperties>
-  </PropertyGroup>
-
-  <!--
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  // Qt Common Targets
-  // -->
-  <Import Project="qt_globals.targets"/>
-  <Import Project="qt_settings.targets"/>
-  <Import Project="qt_tasks.targets"/>
-  <Import Project="qt_vars.targets"/>
-
-  <!--
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  // Import subfolder targets
+  // Import pre-requisites
   // -->
   <Import
-    Condition="'$(VisualStudioVersion)' != '12.0' AND '$(VisualStudioVersion)' != '14.0'"
-    Project="$(QtMsBuildTargets)"/>
-  <ImportGroup
-    Condition="'$(VisualStudioVersion)' == '12.0' OR '$(VisualStudioVersion)' == '14.0'">
-    <!--
-        // WORKAROUND: In VS 2013 and VS 2015 importing a list of files does not work
-        // REMOVE when support for VS 2015 is dropped
-    -->
-    <Import Project="$(MSBuildThisFileDirectory)\moc\qtmoc.targets"/>
-    <Import Project="$(MSBuildThisFileDirectory)\rcc\qtrcc.targets"/>
-    <Import Project="$(MSBuildThisFileDirectory)\qml\qtqml.targets"/>
-    <Import Project="$(MSBuildThisFileDirectory)\repc\qtrepc.targets"/>
-    <Import Project="$(MSBuildThisFileDirectory)\uic\qtuic.targets"/>
-  </ImportGroup>
+    Condition="'$(QtMsBuildProps_BeforeRcc)' != ''"
+    Project="$(QtMsBuildProps_BeforeRcc)"/>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // QtRcc item template
+  // -->
+  <ItemDefinitionGroup>
+    <QtRcc>
+      <ExecutionDescription>rcc %(Identity)</ExecutionDescription>
+
+      <QTDIR Condition="'$(QtVsProjectSettings)' != 'true'"
+        >$(QTDIR)</QTDIR>
+      <QTDIR Condition="'$(QtVsProjectSettings)' == 'true'"
+        >$(QtInstallDir)</QTDIR>
+
+      <InputFile>%(FullPath)</InputFile>
+
+      <OutputFile Condition="'$(QtVsProjectSettings)' != 'true'"
+        >$(ProjectDir)GeneratedFiles\$(Configuration)\qrc_%(Filename).cpp</OutputFile>
+
+      <QtRccDir Condition="'$(QtVsProjectSettings)' == 'true'"
+        >$(IntDir)\rcc\%(RelativeDir)</QtRccDir>
+      <QtRccFileName Condition="'$(QtVsProjectSettings)' == 'true'"
+        >qrc_%(Filename).cpp</QtRccFileName>
+
+      <InitFuncName>%(Filename)</InitFuncName>
+      <Compression>default</Compression>
+      <DynamicSource>output</DynamicSource>
+      <ParallelProcess>true</ParallelProcess>
+      <CommandLineTemplate>[AllOptions] [AdditionalOptions]</CommandLineTemplate>
+      <Outputs>%(OutputFile)</Outputs>
+    </QtRcc>
+  </ItemDefinitionGroup>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Import dependants
+  // -->
+  <Import
+    Condition="'$(QtMsBuildProps_AfterRcc)' != ''"
+    Project="$(QtMsBuildProps_AfterRcc)"/>
 
 </Project>

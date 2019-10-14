@@ -37,81 +37,185 @@
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  // QtMoc
+  // Fail-safe import of default values
   // -->
-  <ItemDefinitionGroup>
-    <QtMoc>
-      <ExecutionDescription>Moc%27ing %(Identity)...</ExecutionDescription>
-      <QTDIR>$(QTDIR)</QTDIR>
-      <InputFile>%(FullPath)</InputFile>
-      <OutputFile>$(ProjectDir)GeneratedFiles\$(Configuration)\moc_%(Filename).cpp</OutputFile>
-      <DynamicSource>output</DynamicSource>
-      <ParallelProcess>true</ParallelProcess>
-      <CommandLineTemplate>[AllOptions] [AdditionalOptions]</CommandLineTemplate>
-      <Outputs>%(OutputFile)</Outputs>
-    </QtMoc>
+  <Import
+    Condition="'$(QtDefaultsLoaded)' != 'true'"
+    Project="$(MSBuildThisFileDirectory)\qt_defaults.props"/>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Qt VS Project Format Version
+  // -->
+  <PropertyGroup>
+    <QtVsProjectVersion>0</QtVsProjectVersion>
+    <QtVsProjectMinVersion_Settings>300</QtVsProjectMinVersion_Settings>
+    <QtVsProjectMinVersion_ClProperties>300</QtVsProjectMinVersion_ClProperties>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Keyword)' != ''">
+    <QtVsProjectVersion Condition="'$(Keyword)' == 'Qt4VSv1.0'">200</QtVsProjectVersion>
+    <QtVsProjectVersion Condition="$(Keyword.StartsWith('QtVS_v'))"
+      >$([System.Convert]::ToInt32($(Keyword.Substring(6))))</QtVsProjectVersion>
+
+    <QtVsProjectSettings Condition="$(QtVsProjectVersion) &gt;= $(QtVsProjectMinVersion_Settings)"
+      >true</QtVsProjectSettings>
+    <QtVsProjectSettings Condition="$(QtVsProjectVersion) &lt; $(QtVsProjectMinVersion_Settings)"
+      >false</QtVsProjectSettings>
+
+    <QtVsProjectClProperties
+      Condition="$(QtVsProjectVersion) &gt;= $(QtVsProjectMinVersion_ClProperties)"
+      >true</QtVsProjectClProperties>
+    <QtVsProjectClProperties
+      Condition="$(QtVsProjectVersion) &lt; $(QtVsProjectMinVersion_ClProperties)"
+      >false</QtVsProjectClProperties>
+  </PropertyGroup>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Setup Qt installation path
+  // -->
+  <PropertyGroup Condition="'$(QtVsProjectSettings)' == 'true'">
+    <QtInstallDir Condition="Exists('$(QtInstall)')">$(QtInstall)</QtInstallDir>
+    <QtInstallRegKey Condition="'$(QtInstall)' != ''"
+      >HKEY_CURRENT_USER\Software\Digia\Versions\$(QtInstall)</QtInstallRegKey>
+    <QtInstallRegDir Condition="'$(QtInstallDir)' == '' AND '$(QtInstallRegKey)' != ''"
+      >$([MSBuild]::GetRegistryValue('$(QtInstallRegKey)','InstallDir'))</QtInstallRegDir>
+    <QtInstallDir Condition="'$(QtInstallDir)' == '' AND Exists('$(QtInstallRegDir)')"
+      >$(QtInstallRegDir)</QtInstallDir>
+    <QtInstallDir Condition="'$(QtInstallDir)' == '' AND !Exists('$(QtInstallRegDir)')"
+      >ERROR: Qt install dir not found</QtInstallDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(QtInstallDir)' != ''">
+    <QtToolsPath Condition="'$(QtToolsPath)' == ''"
+      >$([System.IO.Path]::Combine('$(QtInstallDir)','$(QtPathBinaries)'))</QtToolsPath>
+    <QtDllPath Condition="'$(QtDllPath)' == ''"
+      >$([System.IO.Path]::Combine('$(QtInstallDir)','$(QtPathLibraryExecutables)'))</QtDllPath>
+    <QTDIR>$(QtInstallDir)</QTDIR>
+  </PropertyGroup>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Qt Variables Expansion
+  // -->
+  <PropertyGroup Condition="'$(QtVsProjectSettings)' == 'true'">
+    <ConfigurationEscaped>$(Configuration.Replace(' ','_'))</ConfigurationEscaped>
+    <PlatformEscaped>$(Platform.Replace(' ','_'))</PlatformEscaped>
+
+    <!--// Path to Qt variables property file -->
+    <QtVarsWorkDir
+        >$([System.IO.Path]::Combine(
+            '$(TEMP)', '$([System.IO.Path]::GetRandomFileName())'))\</QtVarsWorkDir>
+    <QtVarsOutputDir
+        >$([System.IO.Path]::Combine('$(ProjectDir)', '$(IntDir)'))</QtVarsOutputDir>
+    <QtVarsFileNameWithoutExt
+        >qtvars_$(PlatformEscaped)_$(ConfigurationEscaped)</QtVarsFileNameWithoutExt>
+    <QtVarsFileName
+        >$(QtVarsFileNameWithoutExt).props</QtVarsFileName>
+    <QtVarsWorkPath
+        >$(QtVarsWorkDir)$(QtVarsFileName)</QtVarsWorkPath>
+    <QtVarsFilePath
+        >$(QtVarsOutputDir)$(QtVarsFileName)</QtVarsFilePath>
+    <QtVarsIndexPathDesignTime
+        >$(QtVarsOutputDir)$(QtVarsFileNameWithoutExt).designtime.idx</QtVarsIndexPathDesignTime>
+    <QtVarsDesignTime Condition="Exists('$(QtVarsIndexPathDesignTime)')"
+        >$([System.String]::Copy($([System.IO.File]::ReadAllText('$(QtVarsIndexPathDesignTime)'))).Replace('&#xD;&#xA;',''))</QtVarsDesignTime>
+  </PropertyGroup>
+
+  <!--// Import Qt variables (full build) -->
+  <Import
+    Condition="'$(DesignTimeBuild)' != 'true' AND Exists('$(QtVarsFilePath)')"
+    Project="$(QtVarsFilePath)"/>
+
+  <!--// Import Qt variables (design-time build) -->
+  <Import
+    Condition="'$(DesignTimeBuild)' == 'true' AND Exists('$(QtVarsDesignTime)')"
+    Project="$(QtVarsDesignTime)"/>
+
+  <!--// Import Qt variables (fall-back) -->
+  <Import
+    Condition=
+"'$(DesignTimeBuild)' == 'true' AND !Exists('$(QtVarsDesignTime)') AND Exists('$(QtVarsFilePath)')"
+    Project="$(QtVarsFilePath)"/>
+
+  <!--// Add Qt variables to compiler and linker options -->
+  <ItemDefinitionGroup Condition="'$(QtVsProjectSettings)' == 'true'">
+    <ClCompile>
+      <PreprocessorDefinitions
+        >$(Qt_DEFINES_);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories
+        >$(Qt_INCLUDEPATH_);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies
+        >$(Qt_LIBS_);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  // QtRcc
+  // Add Qt DLL path to debugger definitions
   // -->
-  <ItemDefinitionGroup>
-    <QtRcc>
-      <ExecutionDescription>Rcc%27ing %(Identity)...</ExecutionDescription>
-      <QTDIR>$(QTDIR)</QTDIR>
-      <InputFile>%(FullPath)</InputFile>
-      <OutputFile>$(ProjectDir)GeneratedFiles\qrc_%(Filename).cpp</OutputFile>
-      <InitFuncName>%(Filename)</InitFuncName>
-      <Compression>default</Compression>
-      <DynamicSource>output</DynamicSource>
-      <ParallelProcess>true</ParallelProcess>
-      <CommandLineTemplate>[AllOptions] [AdditionalOptions]</CommandLineTemplate>
-      <Outputs>%(OutputFile)</Outputs>
+  <PropertyGroup>
+    <LocalDebuggerEnvironment  Condition="'$(QtDllPath)' != ''"
+      >PATH=%PATH%;$(QtDllPath)&#xD;&#xA;$(LocalDebuggerEnvironment)
+    </LocalDebuggerEnvironment>
+  </PropertyGroup>
 
-      <!--
-      /////////////////////////////////////////////////////////////////////////////////////////////
-      // QML Cache Generation
-      // -->
-      <QmlCacheGenerate>false</QmlCacheGenerate>
-      <!--
-      // QML cache generation -->
-      <QmlCacheGenMessage
-        ><![CDATA[Qt Quick Compiler: compiling %<Identity> ahead of time]]></QmlCacheGenMessage>
-      <QmlCacheOutputFile
-        ><![CDATA[$(ProjectDir)GeneratedFiles\%<Filename>_%<Suffix>.cpp]]></QmlCacheOutputFile>
-      <!--
-      // QRC filtering -->
-      <QmlCacheFilterMessage
-        >Qt Quick Compiler: filtering %(Identity)...</QmlCacheFilterMessage>
-      <QmlCacheFilteredFile
-        >$(ProjectDir)GeneratedFiles\%(Filename)_qmlcache.qrc</QmlCacheFilteredFile>
-      <QmlCacheFilteredOutputFile
-        >$(ProjectDir)GeneratedFiles\qrc_%(Filename)_qmlcache.cpp</QmlCacheFilteredOutputFile>
-      <QmlCacheFilteredInitFuncName
-        >%(Filename)_qmlcache</QmlCacheFilteredInitFuncName>
-      <!--
-      // QML cache loader generation -->
-      <QmlCacheLoaderMessage
-        >Qt Quick Compiler: generating cache loader...</QmlCacheLoaderMessage>
-      <QmlCacheLoaderFile
-        >$(ProjectDir)GeneratedFiles\qmlcache_loader.cpp</QmlCacheLoaderFile>
-    </QtRcc>
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // QML debugging
+  // -->
+  <PropertyGroup>
+    <QmlDebug Condition="'$(QtQMLDebugEnable)' == 'true'"
+      >-qmljsdebugger=file:$(ProjectGuid),block</QmlDebug>
+    <LocalDebuggerCommandArguments
+      >$(QmlDebug)</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(QtVsProjectSettings)' == 'true'">
+    <ClCompile Condition="'$(QtQMLDebugEnable)' == 'true'">
+      <PreprocessorDefinitions
+        >QT_QML_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  // QtUic
+  // Read subfolder dependencies (qt_import.props)
   // -->
-  <ItemDefinitionGroup>
-    <QtUic>
-      <ExecutionDescription>Uic%27ing %(Identity)...</ExecutionDescription>
-      <QTDIR>$(QTDIR)</QTDIR>
-      <InputFile>%(FullPath)</InputFile>
-      <OutputFile>$(ProjectDir)GeneratedFiles\ui_%(Filename).h</OutputFile>
-      <ParallelProcess>true</ParallelProcess>
-      <CommandLineTemplate>[AllOptions] [AdditionalOptions]</CommandLineTemplate>
-      <Outputs>%(OutputFile)</Outputs>
-    </QtUic>
-  </ItemDefinitionGroup>
+  <PropertyGroup
+    Condition="'$(VisualStudioVersion)' != '12.0' AND '$(VisualStudioVersion)' != '14.0'">
+    <SubFolder>$([System.IO.Directory]::GetDirectories('$(MSBuildThisFileDirectory)'))</SubFolder>
+    <SubFolderImports Condition="'$(SubFolder)' != ''"
+      >$([System.String]::Join(
+        '\qt_import.props;',
+        $(SubFolder.Split(';'))))\qt_import.props</SubFolderImports>
+    <QtImports>$(SubFolderImports.Split(';'))</QtImports>
+    <SubFolder/>
+    <SubFolderImports/>
+  </PropertyGroup>
+  <Import
+    Condition="'$(VisualStudioVersion)' != '12.0' AND '$(VisualStudioVersion)' != '14.0'"
+    Project="$(QtImports)"/>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Import subfolder props
+  // -->
+  <Import
+    Condition="'$(VisualStudioVersion)' != '12.0' AND '$(VisualStudioVersion)' != '14.0'"
+    Project="$(QtMsBuildProps)"/>
+  <ImportGroup
+    Condition="'$(VisualStudioVersion)' == '12.0' OR '$(VisualStudioVersion)' == '14.0'">
+    <!--
+        // WORKAROUND: In VS 2013 and VS 2015 importing a list of files does not work
+        // REMOVE when support for VS 2015 is dropped
+    -->
+    <Import Project="$(MSBuildThisFileDirectory)\moc\qtmoc.props"/>
+    <Import Project="$(MSBuildThisFileDirectory)\rcc\qtrcc.props"/>
+    <Import Project="$(MSBuildThisFileDirectory)\qml\qtqml.props"/>
+    <Import Project="$(MSBuildThisFileDirectory)\repc\qtrepc.props"/>
+    <Import Project="$(MSBuildThisFileDirectory)\uic\qtuic.props"/>
+  </ImportGroup>
+
 </Project>

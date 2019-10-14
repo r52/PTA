@@ -2,7 +2,7 @@
 <!--
 /****************************************************************************
 **
-** Copyright (C) 2018 The Qt Company Ltd.
+** Copyright (C) 2019 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the Qt VS Tools.
@@ -28,18 +28,12 @@
 **
 ****************************************************************************/
 -->
-
-<!--
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Defines the fields included in the uic property page, as well as any
-// other metadata associated to QtUic items
-// -->
 <ProjectSchemaDefinitions
   xmlns="http://schemas.microsoft.com/build/2009/properties"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:sys="clr-namespace:System;assembly=mscorlib">
   <Rule
-    Name="QtUic"
+    Name="QtRule50_Uic"
     PageTemplate="tool"
     DisplayName="Qt User Interface Compiler"
     Order="9">
@@ -49,12 +43,7 @@
         ItemType="QtUic" />
     </Rule.DataSource>
     <Rule.Categories>
-      <Category
-        Name="General">
-        <Category.DisplayName>
-          <sys:String>uic.exe</sys:String>
-        </Category.DisplayName>
-      </Category>
+      <Category Name="General" DisplayName="uic"/>
     </Rule.Categories>
     <StringListProperty
       Name="Inputs"
@@ -73,21 +62,25 @@
       DisplayName="Execution Description"
       IncludeInCommandLine="False" />
     <StringProperty
+      Name="QtUicDir"
+      DisplayName="Output Directory"
+      Description="Specifies the path of the generated uic output directory."/>
+    <StringProperty
+      Name="QtUicFileName"
+      DisplayName="Output File Name"
+      Description="Specifies the name of the generated uic output file."/>
+    <StringProperty
       Name="QTDIR"
       DisplayName="Qt Directory"
-      Description="Path to installation of Qt."/>
+      Visible="false"/>
     <StringProperty
       Name="InputFile"
-      HelpUrl="http://doc.qt.io/qt-5/uic.html"
       DisplayName="Input File"
-      Description="Specifies the full path of the input file. (&lt;file&gt;)"
-      Switch="&quot;[value]&quot;" />
+      Visible="false"/>
     <StringProperty
       Name="OutputFile"
-      HelpUrl="http://doc.qt.io/qt-5/uic.html"
       DisplayName="Output File"
-      Description="Specifies the full path of the output file. (-o &lt;file&gt;)"
-      Switch="-o &quot;[value]&quot;" />
+      Visible="false"/>
     <BoolProperty
       Name="DisplayDependencies"
       HelpUrl="http://doc.qt.io/qt-5/uic.html"

@@ -35,6 +35,13 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Import pre-requisites
+  // -->
+  <Import
+    Condition="'$(QtMsBuildTargets_BeforeRcc)' != ''"
+    Project="$(QtMsBuildTargets_BeforeRcc)"/>
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,13 +55,46 @@
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Setup item type and property page
   // -->
+  <Choose>
+    <When Condition="'$(QtVsProjectSettings)' == 'true' AND '$(QtVsProjectClProperties)' == 'true'">
+      <ItemGroup>
+        <PropertyPageSchema
+          Include="$(MSBuildThisFileDirectory)qtrcc_v3.xml" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PropertyPageSchema
+          Include="$(MSBuildThisFileDirectory)qtrcc.xml" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
   <ItemGroup>
-    <PropertyPageSchema
-      Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
     <AvailableItemName Include="QtRcc">
       <Targets>Qt;_ClCompile</Targets>
     </AvailableItemName>
   </ItemGroup>
+  <PropertyGroup>
+    <QtRccRuleName>QtRule40_Rcc</QtRccRuleName>
+  </PropertyGroup>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  /// TARGET QtRccInit
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Initialize default metadata
+  // -->
+  <Target Name="QtRccInit">
+    <!--// Initialize %(OutputFile) -->
+    <ItemGroup Condition="'$(QtVsProjectSettings)' == 'true'">
+      <QtRccAux Include="@(QtRcc)">
+        <OutputFile>%(QtRcc.QtRccDir)\%(QtRcc.QtRccFileName)</OutputFile>
+      </QtRccAux>
+      <QtRcc Remove="@(QtRcc)"/>
+      <QtRcc Include="@(QtRccAux)"/>
+      <QtRccAux Remove="@(QtRccAux)"/>
+    </ItemGroup>
+  </Target>
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,12 +102,13 @@
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Add resource files as dependencies of the QRC file
   // -->
-  <Target Name="QtRccSetDependencies" DependsOnTargets="_SelectedFiles"
+  <Target Name="QtRccSetDependencies" DependsOnTargets="_SelectedFiles;QtRccInit"
     Inputs="%(QtRcc.Identity)" Outputs="@(QtRcc->'####### Don't skip this target #######')">
 
     <!--// Parse QRC -->
     <PropertyGroup>
-      <QtRccExeQuoted>&quot;%(QtRcc.QTDIR)\bin\rcc.exe&quot;</QtRccExeQuoted>
+      <QtRccExeQuoted Condition="'$(QtVsProjectSettings)' == 'true'">&quot;$(QtToolsPath)\rcc.exe&quot;</QtRccExeQuoted>
+      <QtRccExeQuoted Condition="'$(QtVsProjectSettings)' != 'true'">&quot;%(QtRcc.QTDIR)\bin\rcc.exe&quot;</QtRccExeQuoted>
       <QtRccQuoted>&quot;%(QtRcc.Identity)&quot;</QtRccQuoted>
       <RccListQuoted>&quot;$(IntDir)rcc_list.txt&quot;</RccListQuoted>
     </PropertyGroup>
@@ -172,12 +213,29 @@
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
+  /// TARGET QtRccOverrideCpp
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //
+  // -->
+  <Import Project="qtrcc_cl.targets"/>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
   /// TARGET QtRcc
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  // Main item processing
+  // Process each QRC file and produce the corresponding QtWork items
   // -->
+  <PropertyGroup>
+    <QtRccDependsOn>
+      QtPrepare;
+      QtRccPrepare;
+      QtRccSetModified;
+      QtRccOverrideCpp;
+      $(QtRccDependsOn)
+    </QtRccDependsOn>
+  </PropertyGroup>
   <Target Name="QtRcc"
-    DependsOnTargets="QtPrepare;$(QtRccDependsOn);QtRccPrepare;QtRccSetModified"
+    DependsOnTargets="$(QtRccDependsOn)"
     BeforeTargets="$(QtRccBeforeTargets)" AfterTargets="$(QtRccAfterTargets)"
     Condition="'@(QtRcc)' != ''"
     Inputs="%(QtRcc.FullPath);%(QtRcc.AdditionalDependencies);$(MSBuildProjectFile)"
@@ -336,7 +394,8 @@
     <ItemGroup Condition="'$(run_parallel)' == 'true' OR '$(run_single)' == 'true'">
       <QtWork Include="@(QtRcc)">
         <WorkType>rcc</WorkType>
-        <ToolPath>%(QtRcc.QTDIR)\bin\rcc.exe</ToolPath>
+        <ToolPath Condition="'$(QtVsProjectSettings)' == 'true'">$(QtToolsPath)\rcc.exe</ToolPath>
+        <ToolPath Condition="'$(QtVsProjectSettings)' != 'true'">%(QtRcc.QTDIR)\bin\rcc.exe</ToolPath>
         <Options>$(options)</Options>
         <Message>%(QtRcc.ExecutionDescription)</Message>
         <DependenciesChanged>$(dependencies_changed)</DependenciesChanged>
@@ -381,4 +440,13 @@
       <rcc_FormatVersion      Remove="@(rcc_FormatVersion)"/>
     </ItemGroup>
   </Target>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Import dependants
+  // -->
+  <Import
+    Condition="'$(QtMsBuildTargets_AfterRcc)' != ''"
+    Project="$(QtMsBuildTargets_AfterRcc)"/>
+
 </Project>

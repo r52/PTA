@@ -35,6 +35,13 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Import pre-requisites
+  // -->
+  <Import
+    Condition="'$(QtMsBuildTargets_BeforeUic)' != ''"
+    Project="$(QtMsBuildTargets_BeforeUic)"/>
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,13 +55,53 @@
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Setup item type and property page
   // -->
+  <Choose>
+    <When Condition="'$(QtVsProjectSettings)' == 'true' AND '$(QtVsProjectClProperties)' == 'true'">
+      <ItemGroup>
+        <PropertyPageSchema
+          Include="$(MSBuildThisFileDirectory)qtuic_v3.xml" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup Condition="'$(QtVsProjectSettings)' == 'false'">
+        <PropertyPageSchema
+          Include="$(MSBuildThisFileDirectory)qtuic.xml" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
   <ItemGroup>
-    <PropertyPageSchema
-      Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
     <AvailableItemName Include="QtUic">
       <Targets>Qt</Targets>
     </AvailableItemName>
   </ItemGroup>
+  <PropertyGroup>
+    <QtUicRuleName>QtRule50_Uic</QtUicRuleName>
+  </PropertyGroup>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  /// TARGET QtUicInit
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Initialize default metadata
+  // -->
+  <Target Name="QtUicInit">
+    <!--// Initialize %(OutputFile) -->
+    <ItemGroup Condition="'$(QtVsProjectSettings)' == 'true'">
+      <QtUicAux Include="@(QtUic)">
+        <OutputFile>%(QtUic.QtUicDir)\%(QtUic.QtUicFileName)</OutputFile>
+      </QtUicAux>
+      <QtUic Remove="@(QtUic)"/>
+      <QtUic Include="@(QtUicAux)"/>
+      <QtUicAux Remove="@(QtUicAux)"/>
+    </ItemGroup>
+    <!--
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Add uic output dir to C++ include path
+    // -->
+    <ItemGroup>
+      <QtIncludePath Include="$([System.IO.Path]::GetDirectoryName('%(QtUic.OutputFile)'))"/>
+    </ItemGroup>
+  </Target>
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +109,7 @@
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Prepare to process sources
   // -->
-  <Target Name="QtUicPrepare" DependsOnTargets="_SelectedFiles"
+  <Target Name="QtUicPrepare" DependsOnTargets="_SelectedFiles;QtUicInit"
     Inputs="%(QtUic.Identity)" Outputs="@(QtUic->'####### Don't skip this target #######')">
 
     <Message Importance="High" Condition="'$(QtDebug)' == 'true'"
@@ -132,8 +179,16 @@
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Process each source file and produce the corresponding QtWork items
   // -->
+  <PropertyGroup>
+    <QtUicDependsOn>
+      QtPrepare;
+      QtUicPrepare;
+      QtUicSetModified;
+      $(QtUicDependsOn)
+    </QtUicDependsOn>
+  </PropertyGroup>
   <Target Name="QtUic"
-    DependsOnTargets="QtPrepare;$(QtUicDependsOn);QtUicPrepare;QtUicSetModified"
+    DependsOnTargets="$(QtUicDependsOn)"
     BeforeTargets="$(QtUicBeforeTargets)" AfterTargets="$(QtUicAfterTargets)"
     Condition="'@(QtUic)' != ''"
     Inputs="%(QtUic.FullPath);%(QtUic.AdditionalDependencies);$(MSBuildProjectFile)"
@@ -242,7 +297,8 @@
     <ItemGroup Condition="'$(run_parallel)' == 'true' OR '$(run_single)' == 'true'">
       <QtWork Include="@(QtUic)">
         <WorkType>uic</WorkType>
-        <ToolPath>%(QtUic.QTDIR)\bin\uic.exe</ToolPath>
+        <ToolPath Condition="'$(QtVsProjectSettings)' == 'true'">$(QtToolsPath)\uic.exe</ToolPath>
+        <ToolPath Condition="'$(QtVsProjectSettings)' != 'true'">%(QtUic.QTDIR)\bin\uic.exe</ToolPath>
         <Options>$(options)</Options>
         <Message>%(QtUic.ExecutionDescription)</Message>
         <DependenciesChanged>$(dependencies_changed)</DependenciesChanged>
@@ -276,4 +332,13 @@
       <uic_IdBased              Remove="@(uic_IdBased)"/>
     </ItemGroup>
   </Target>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Import dependants
+  // -->
+  <Import
+    Condition="'$(QtMsBuildTargets_AfterUic)' != ''"
+    Project="$(QtMsBuildTargets_AfterUic)"/>
+
 </Project>
