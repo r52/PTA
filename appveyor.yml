@@ -18,7 +18,7 @@ environment:
   OPENSSL: C:\OpenSSL-v111-Win64\bin
 # Gotta run this twice because a fresh qtvars build in projects with references results in unresolved entry points for some stupid reason
 build_script:
-  - cmd: msbuild "C:\projects\PTA\PTA.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" & exit 0
+  - cmd: msbuild "C:\projects\PTA\PTA.sln" /m /verbosity:verbose /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" & exit 0
   - cmd: msbuild "C:\projects\PTA\PTA.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 after_build:
 - ps: .\deploy\package.ps1
