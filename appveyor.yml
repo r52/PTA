@@ -1,5 +1,4 @@
 version: '{branch}-{build}'
-skip_non_tags: true
 image: Visual Studio 2019
 configuration: Release
 platform: x64
