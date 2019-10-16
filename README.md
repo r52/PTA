@@ -10,6 +10,8 @@ PTA is licensed under GPL-3.0
 
 ## Installation and Usage
 
+[Download the latest release from Releases](https://github.com/r52/PTA/releases/latest/) **OR** a [development build from the build bot](https://ci.appveyor.com/project/r52/pta/build/artifacts).
+
 Extract the archive and run **PTA.exe**
 
 [Microsoft Visual C++ Redistributable](https://aka.ms/vs/16/release/VC_redist.x64.exe) is required on PCs not running Windows 10 with the latest feature updates.
