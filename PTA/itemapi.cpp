@@ -165,13 +165,19 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     {
         std::string typeName  = o["name"].get<std::string>();
         std::string itemClass = o["item_class"].get<std::string>();
+        size_t      implicits = o["implicits"].size();
 
         auto search = c_baseCat.find(itemClass);
         if (search != c_baseCat.end())
         {
             std::string itemCat = search.value().get<std::string>();
 
-            c_baseMap.insert({{typeName, itemCat}});
+            json cat;
+
+            cat["category"]  = itemCat;
+            cat["implicits"] = implicits;
+
+            c_baseMap.insert({{typeName, cat}});
         }
     }
 
@@ -463,6 +469,12 @@ std::string ItemAPI::readType(PItem* item, QString type)
     type.remove(QRegularExpression("<<.*?>>|<.*?>"));
     type.remove("Superior ");
 
+    if (type.startsWith("Synthesised "))
+    {
+        type.remove("Synthesised ");
+        item->f_misc.synthesised_item = true;
+    }
+
     if (item->f_type.rarity == "Magic")
     {
         // Parse out magic affixes
@@ -741,6 +753,13 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
     if (stat == "Corrupted")
     {
         item->f_misc.corrupted = true;
+        return true;
+    }
+
+    if (stat == "Synthesised Item")
+    {
+        // Should already have been processed
+        item->f_misc.synthesised_item = true;
         return true;
     }
 
@@ -1048,7 +1067,7 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
                 stream.seek(pos);
             }
 
-            if (item->filters.size() < 2 && peek == "---")
+            if (item->base_has_implicits || (item->filters.size() < 2 && peek == "---"))
             {
                 // First stat with a section break, try to look for an implicit or enchant
                 if (entry["type"] == "implicit" || entry["type"] == "enchant")
@@ -1057,6 +1076,12 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
                     filter["type"]  = entry["type"];
                     filter["text"]  = entry["text"];
                     filter["value"] = val;
+
+                    if (entry["type"] == "implicit" && peek == "---")
+                    {
+                        // no more implicits
+                        item->base_has_implicits = false;
+                    }
                 }
             }
         }
@@ -1422,7 +1447,9 @@ PItem* ItemAPI::parse(QString itemText)
         auto base = c_baseMap.find(item->type);
         if (base != c_baseMap.end())
         {
-            item->f_type.category = base->second;
+            json cat                 = base->second;
+            item->f_type.category    = cat["category"];
+            item->base_has_implicits = (cat["implicits"].get<size_t>() > 0);
         }
     }
 
@@ -1727,6 +1754,27 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             item->m_options += ", Disc=" + item->f_misc.disc;
         }
 
+        // Force Shaper
+        if (item->f_misc.shaper_item)
+        {
+            qe["filters"]["misc_filters"]["filters"]["shaper_item"]["option"] = true;
+            item->m_options += ", Shaper Base";
+        }
+
+        // Force Elder
+        if (item->f_misc.elder_item)
+        {
+            qe["filters"]["misc_filters"]["filters"]["elder_item"]["option"] = true;
+            item->m_options += ", Elder Base";
+        }
+
+        // Force Synthesis
+        if (item->f_misc.synthesised_item)
+        {
+            qe["filters"]["misc_filters"]["filters"]["synthesised_item"]["option"] = true;
+            item->m_options += ", Synthesis Base";
+        }
+
         // Default corrupt options
         bool corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
 
@@ -1762,6 +1810,8 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         item->m_options += ", Mods ignored";
 
         auto qba = query.dump();
+
+        qDebug() << QString::fromStdString(qba);
 
         QNetworkRequest request;
         request.setUrl(QUrl(u_trade_search + getLeague()));
@@ -2122,6 +2172,13 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
     {
         qe["filters"]["misc_filters"]["filters"]["elder_item"]["option"] = true;
         item->m_options += ", Elder Base";
+    }
+
+    // Synthesis
+    if (misc.contains("use_synthesis_base") && misc["use_synthesis_base"])
+    {
+        qe["filters"]["misc_filters"]["filters"]["synthesised_item"]["option"] = true;
+        item->m_options += ", Synthesis Base";
     }
 
     // Default corrupt options

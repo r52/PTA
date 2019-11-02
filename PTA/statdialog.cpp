@@ -795,40 +795,25 @@ StatDialog::StatDialog(PItem* item)
     miscLayout->addWidget(ilvlCB);
     miscLayout->addWidget(ilvlEdit);
 
-    QCheckBox* itembaseCB = new QCheckBox(tr("Use Item Base"));
-    connect(itembaseCB, &QCheckBox::stateChanged, [=](int checked) { misc["use_item_base"] = (checked == Qt::Checked); });
-
-    if (prefillbase)
-    {
-        itembaseCB->setChecked(true);
-    }
-
+    QCheckBox* itembaseCB = createMiscCheckBox(tr("Use Item Base"), "use_item_base", prefillbase);
     miscLayout->addWidget(itembaseCB);
 
     if (item->f_misc.shaper_item)
     {
-        QCheckBox* shaperBase = new QCheckBox(tr("Shaper Base"));
-        connect(shaperBase, &QCheckBox::stateChanged, [=](int checked) { misc["use_shaper_base"] = (checked == Qt::Checked); });
-
-        if (prefillbase)
-        {
-            shaperBase->setChecked(true);
-        }
-
-        miscLayout->addWidget(shaperBase);
+        QCheckBox* base = createMiscCheckBox(tr("Shaper Base"), "use_shaper_base", prefillbase);
+        miscLayout->addWidget(base);
     }
 
     if (item->f_misc.elder_item)
     {
-        QCheckBox* elderBase = new QCheckBox(tr("Elder Base"));
-        connect(elderBase, &QCheckBox::stateChanged, [=](int checked) { misc["use_elder_base"] = (checked == Qt::Checked); });
+        QCheckBox* base = createMiscCheckBox(tr("Elder Base"), "use_elder_base", prefillbase);
+        miscLayout->addWidget(base);
+    }
 
-        if (prefillbase)
-        {
-            elderBase->setChecked(true);
-        }
-
-        miscLayout->addWidget(elderBase);
+    if (item->f_misc.synthesised_item)
+    {
+        QCheckBox* base = createMiscCheckBox(tr("Synthesis Base"), "use_synthesis_base", prefillbase);
+        miscLayout->addWidget(base);
     }
 
     miscLayout->addStretch();
@@ -853,4 +838,17 @@ StatDialog::StatDialog(PItem* item)
     connect(buttonBox, &QDialogButtonBox::helpRequested, [=]() { this->done(SEARCH_ON_SITE); });
 
     layout->addWidget(buttonBox);
+}
+
+QCheckBox* StatDialog::createMiscCheckBox(const QString& text, const char* key, bool prefill)
+{
+    QCheckBox* box = new QCheckBox(text);
+    connect(box, &QCheckBox::stateChanged, [=](int checked) { misc[key] = (checked == Qt::Checked); });
+
+    if (prefill)
+    {
+        box->setChecked(true);
+    }
+
+    return box;
 }

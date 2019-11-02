@@ -139,7 +139,7 @@ private:
     std::unordered_map<std::string, std::unordered_set<std::string>> c_discriminators;
     json                                                             c_currency;
 
-    std::map<std::string, std::string> c_baseMap;
+    std::map<std::string, json> c_baseMap;
 
     QString m_section;
 
