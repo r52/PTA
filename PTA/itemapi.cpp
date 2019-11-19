@@ -26,7 +26,7 @@ const QUrl u_api_mods("https://www.pathofexile.com/api/trade/data/stats");
 const QUrl u_api_items("https://www.pathofexile.com/api/trade/data/items");
 
 // repoe
-const QUrl u_repoe_base("https://raw.githubusercontent.com/brather1ng/RePoE/master/data/base_items.min.json");
+const QUrl u_repoe_base("https://raw.githubusercontent.com/brather1ng/RePoE/master/RePoE/data/base_items.min.json");
 
 // pta
 const QUrl u_pta_armourlocals("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/armour_locals.json");
