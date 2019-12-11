@@ -53,12 +53,7 @@ StatDialog::StatDialog(PItem* item)
     layout->addWidget(itemLabel, current_row++, 0, 1, 4);
 
     // separator
-
-    QFrame* line = new QFrame();
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-
-    layout->addWidget(line, current_row++, 0, 1, 4);
+    addSeparator(layout, current_row);
 
     // Headers
     QLabel* modsLabel = new QLabel(tr("Mods"));
@@ -74,12 +69,7 @@ StatDialog::StatDialog(PItem* item)
     current_row++;
 
     // separator
-
-    line = new QFrame();
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-
-    layout->addWidget(line, current_row++, 0, 1, 4);
+    addSeparator(layout, current_row);
 
     // weapon/armour base mods
 
@@ -87,132 +77,34 @@ StatDialog::StatDialog(PItem* item)
     {
         if (item->f_weapon.pdps.avg() > 0)
         {
-            QCheckBox* elab = new QCheckBox("Physical DPS");
-            connect(elab, &QCheckBox::stateChanged, [=](int checked) { item->f_weapon.search_pdps = (checked == Qt::Checked); });
-
-            layout->addWidget(elab, current_row, 0);
-
-            // min box
-            QLineEdit* minEdit = new QLineEdit();
-            minEdit->setMaximumWidth(30);
-            minEdit->setValidator(new QIntValidator(this));
-
-            connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    int val                        = text.toInt();
-                    item->f_weapon.pdps_filter.min = val;
-                }
-            });
-
-            connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(minEdit, current_row, 1);
-
-            // current value label
-            QLabel* curvalLabel = new QLabel();
-            layout->addWidget(curvalLabel, current_row, 2);
-
-            // max box
-            QLineEdit* maxEdit = new QLineEdit();
-            maxEdit->setMaximumWidth(30);
-            maxEdit->setValidator(new QIntValidator(this));
-
-            connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    int val                        = text.toInt();
-                    item->f_weapon.pdps_filter.max = val;
-                }
-            });
-
-            connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(maxEdit, current_row, 3);
-
             // current value
-            int     pdps = (int) (item->f_weapon.pdps.avg() * item->f_weapon.aps);
-            QString currval(QString::number(pdps));
+            int pdps = (int) (item->f_weapon.pdps.avg() * item->f_weapon.aps);
 
-            curvalLabel->setText(currval);
-
-            // Process settings
-            if (prefillmin)
-            {
-                minEdit->setText(currval);
-            }
-
-            if (prefillmax)
-            {
-                maxEdit->setText(currval);
-            }
-
-            current_row++;
+            createBaseMod(layout,
+                          current_row,
+                          tr("Physical DPS"),
+                          item->f_weapon.search_pdps,
+                          item->f_weapon.pdps_filter.min,
+                          item->f_weapon.pdps_filter.max,
+                          QString::number(pdps),
+                          prefillmin,
+                          prefillmax);
         }
 
         if (item->f_weapon.edps.avg() > 0)
         {
-            QCheckBox* elab = new QCheckBox("Elemental DPS");
-            connect(elab, &QCheckBox::stateChanged, [=](int checked) { item->f_weapon.search_edps = (checked == Qt::Checked); });
-
-            layout->addWidget(elab, current_row, 0);
-
-            // min box
-            QLineEdit* minEdit = new QLineEdit();
-            minEdit->setMaximumWidth(30);
-            minEdit->setValidator(new QIntValidator(this));
-
-            connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    int val                        = text.toInt();
-                    item->f_weapon.edps_filter.min = val;
-                }
-            });
-
-            connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(minEdit, current_row, 1);
-
-            // current value label
-            QLabel* curvalLabel = new QLabel();
-            layout->addWidget(curvalLabel, current_row, 2);
-
-            // max box
-            QLineEdit* maxEdit = new QLineEdit();
-            maxEdit->setMaximumWidth(30);
-            maxEdit->setValidator(new QIntValidator(this));
-
-            connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    int val                        = text.toInt();
-                    item->f_weapon.edps_filter.max = val;
-                }
-            });
-
-            connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(maxEdit, current_row, 3);
-
             // current value
-            int     edps = (int) (item->f_weapon.edps.avg() * item->f_weapon.aps);
-            QString currval(QString::number(edps));
+            int edps = (int) (item->f_weapon.edps.avg() * item->f_weapon.aps);
 
-            curvalLabel->setText(currval);
-
-            // Process settings
-            if (prefillmin)
-            {
-                minEdit->setText(currval);
-            }
-
-            if (prefillmax)
-            {
-                maxEdit->setText(currval);
-            }
-
-            current_row++;
+            createBaseMod(layout,
+                          current_row,
+                          tr("Elemental DPS"),
+                          item->f_weapon.search_edps,
+                          item->f_weapon.edps_filter.min,
+                          item->f_weapon.edps_filter.max,
+                          QString::number(edps),
+                          prefillmin,
+                          prefillmax);
         }
     }
 
@@ -220,214 +112,54 @@ StatDialog::StatDialog(PItem* item)
     {
         if (item->f_armour.ar > 0)
         {
-            QCheckBox* elab = new QCheckBox("Armour");
-            connect(elab, &QCheckBox::stateChanged, [=](int checked) { item->f_armour.search_ar = (checked == Qt::Checked); });
-
-            layout->addWidget(elab, current_row, 0);
-
-            // min box
-            QLineEdit* minEdit = new QLineEdit();
-            minEdit->setMaximumWidth(30);
-            minEdit->setValidator(new QIntValidator(this));
-
-            connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    int val                      = text.toInt();
-                    item->f_armour.ar_filter.min = val;
-                }
-            });
-
-            connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(minEdit, current_row, 1);
-
-            // current value label
-            QLabel* curvalLabel = new QLabel();
-            layout->addWidget(curvalLabel, current_row, 2);
-
-            // max box
-            QLineEdit* maxEdit = new QLineEdit();
-            maxEdit->setMaximumWidth(30);
-            maxEdit->setValidator(new QIntValidator(this));
-
-            connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    int val                      = text.toInt();
-                    item->f_armour.ar_filter.max = val;
-                }
-            });
-
-            connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(maxEdit, current_row, 3);
-
-            // current value
-            QString currval(QString::number(item->f_armour.ar));
-
-            curvalLabel->setText(currval);
-
-            // Process settings
-            if (prefillmin)
-            {
-                minEdit->setText(currval);
-            }
-
-            if (prefillmax)
-            {
-                maxEdit->setText(currval);
-            }
-
-            current_row++;
+            createBaseMod(layout,
+                          current_row,
+                          tr("Armour"),
+                          item->f_armour.search_ar,
+                          item->f_armour.ar_filter.min,
+                          item->f_armour.ar_filter.max,
+                          QString::number(item->f_armour.ar),
+                          prefillmin,
+                          prefillmax);
         }
 
         if (item->f_armour.ev > 0)
         {
-            QCheckBox* elab = new QCheckBox("Evasion");
-            connect(elab, &QCheckBox::stateChanged, [=](int checked) { item->f_armour.search_ev = (checked == Qt::Checked); });
-
-            layout->addWidget(elab, current_row, 0);
-
-            // min box
-            QLineEdit* minEdit = new QLineEdit();
-            minEdit->setMaximumWidth(30);
-            minEdit->setValidator(new QIntValidator(this));
-
-            connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    int val                      = text.toInt();
-                    item->f_armour.ev_filter.min = val;
-                }
-            });
-
-            connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(minEdit, current_row, 1);
-
-            // current value label
-            QLabel* curvalLabel = new QLabel();
-            layout->addWidget(curvalLabel, current_row, 2);
-
-            // max box
-            QLineEdit* maxEdit = new QLineEdit();
-            maxEdit->setMaximumWidth(30);
-            maxEdit->setValidator(new QIntValidator(this));
-
-            connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    int val                      = text.toInt();
-                    item->f_armour.ev_filter.max = val;
-                }
-            });
-
-            connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(maxEdit, current_row, 3);
-
-            // current value
-            QString currval(QString::number(item->f_armour.ev));
-
-            curvalLabel->setText(currval);
-
-            // Process settings
-            if (prefillmin)
-            {
-                minEdit->setText(currval);
-            }
-
-            if (prefillmax)
-            {
-                maxEdit->setText(currval);
-            }
-
-            current_row++;
+            createBaseMod(layout,
+                          current_row,
+                          tr("Evasion"),
+                          item->f_armour.search_ev,
+                          item->f_armour.ev_filter.min,
+                          item->f_armour.ev_filter.max,
+                          QString::number(item->f_armour.ev),
+                          prefillmin,
+                          prefillmax);
         }
 
         if (item->f_armour.es > 0)
         {
-            QCheckBox* elab = new QCheckBox("Energy Shield");
-            connect(elab, &QCheckBox::stateChanged, [=](int checked) { item->f_armour.search_es = (checked == Qt::Checked); });
-
-            layout->addWidget(elab, current_row, 0);
-
-            // min box
-            QLineEdit* minEdit = new QLineEdit();
-            minEdit->setMaximumWidth(30);
-            minEdit->setValidator(new QIntValidator(this));
-
-            connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    int val                      = text.toInt();
-                    item->f_armour.es_filter.min = val;
-                }
-            });
-
-            connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(minEdit, current_row, 1);
-
-            // current value label
-            QLabel* curvalLabel = new QLabel();
-            layout->addWidget(curvalLabel, current_row, 2);
-
-            // max box
-            QLineEdit* maxEdit = new QLineEdit();
-            maxEdit->setMaximumWidth(30);
-            maxEdit->setValidator(new QIntValidator(this));
-
-            connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    int val                      = text.toInt();
-                    item->f_armour.es_filter.max = val;
-                }
-            });
-
-            connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(maxEdit, current_row, 3);
-
-            // current value
-            QString currval(QString::number(item->f_armour.es));
-
-            curvalLabel->setText(currval);
-
-            // Process settings
-            if (prefillmin)
-            {
-                minEdit->setText(currval);
-            }
-
-            if (prefillmax)
-            {
-                maxEdit->setText(currval);
-            }
-
-            current_row++;
+            createBaseMod(layout,
+                          current_row,
+                          tr("Energy Shield"),
+                          item->f_armour.search_es,
+                          item->f_armour.es_filter.min,
+                          item->f_armour.es_filter.max,
+                          QString::number(item->f_armour.es),
+                          prefillmin,
+                          prefillmax);
         }
     }
 
     if (item->is_weapon || item->is_armour)
     {
         // separator
-
-        line = new QFrame();
-        line->setFrameShape(QFrame::HLine);
-        line->setFrameShadow(QFrame::Sunken);
-
-        layout->addWidget(line, current_row++, 0, 1, 4);
+        addSeparator(layout, current_row);
     }
 
     // mods
 
     for (auto [f, e] : item->filters.items())
     {
-        std::string id = e["id"].get<std::string>();
-
         QString modLabel = QString::fromStdString(e["text"].get<std::string>());
 
         if (e["type"] == "crafted" || e["type"] == "implicit" || e["type"] == "enchant")
@@ -435,320 +167,29 @@ StatDialog::StatDialog(PItem* item)
             modLabel += QString(" (%1)").arg(QString::fromStdString(e["type"].get<std::string>()));
         }
 
-        QCheckBox* elab = new QCheckBox(modLabel);
-        connect(elab, &QCheckBox::stateChanged, [=](int checked) { filters[id]["disabled"] = !(checked == Qt::Checked); });
+        auto val_count = e["value"].size();
+        bool vcount    = (val_count > 0 && val_count < 3);
 
-        layout->addWidget(elab, current_row, 0);
-
-        auto val_count    = e["value"].size();
-        bool val_is_float = val_count ? e["value"][0].is_number_float() : false;
-
-        // min box
-        QLineEdit* minEdit = new QLineEdit();
-        minEdit->setMaximumWidth(30);
-
-        // Only support single or range values
-        if (val_count > 0 && val_count < 3)
-        {
-            if (val_is_float)
-            {
-                minEdit->setValidator(new QDoubleValidator(this));
-            }
-            else
-            {
-                minEdit->setValidator(new QIntValidator(this));
-            }
-        }
-        else
-        {
-            minEdit->setEnabled(false);
-        }
-
-        connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
-            if (!text.isEmpty())
-            {
-                if (val_is_float)
-                {
-                    double val                  = text.toDouble();
-                    filters[id]["value"]["min"] = val;
-                }
-                else
-                {
-                    int val                     = text.toInt();
-                    filters[id]["value"]["min"] = val;
-                }
-            }
-            else
-            {
-                filters[id]["value"].erase("min");
-            }
-        });
-
-        connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-        layout->addWidget(minEdit, current_row, 1);
-
-        // current value label
-        QLabel* curvalLabel = new QLabel();
-        layout->addWidget(curvalLabel, current_row, 2);
-
-        // max box
-        QLineEdit* maxEdit = new QLineEdit();
-        maxEdit->setMaximumWidth(30);
-
-        // Only support single or range values
-        if (val_count > 0 && val_count < 3)
-        {
-            if (val_is_float)
-            {
-                maxEdit->setValidator(new QDoubleValidator(this));
-            }
-            else
-            {
-                maxEdit->setValidator(new QIntValidator(this));
-            }
-        }
-        else
-        {
-            maxEdit->setEnabled(false);
-        }
-
-        connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
-            if (!text.isEmpty())
-            {
-                if (val_is_float)
-                {
-                    double val                  = text.toDouble();
-                    filters[id]["value"]["max"] = val;
-                }
-                else
-                {
-                    int val                     = text.toInt();
-                    filters[id]["value"]["max"] = val;
-                }
-            }
-            else
-            {
-                filters[id]["value"].erase("max");
-            }
-        });
-
-        connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-        layout->addWidget(maxEdit, current_row, 3);
-
-        // current value
-        QString currval("");
-
-        // Only support single or range values
-        if (val_count > 0 && val_count < 3)
-        {
-            int    curr_val_int = e["value"][0].get<int>();
-            double curr_val_dbl = e["value"][0].get<double>();
-
-            if (val_count > 1)
-            {
-                for (size_t i = 1; i < val_count; i++)
-                {
-                    curr_val_int += e["value"][i].get<int>();
-                    curr_val_dbl += e["value"][i].get<double>();
-                }
-
-                curr_val_int /= val_count;
-                curr_val_dbl /= val_count;
-            }
-
-            currval = val_is_float ? QString::number(curr_val_dbl) : QString::number(curr_val_int);
-        }
-
-        curvalLabel->setText(currval);
-
-        // Process settings
-        if (prefillmin)
-        {
-            minEdit->setText(currval);
-        }
-
-        if (prefillmax)
-        {
-            maxEdit->setText(currval);
-        }
-
-        if (prefillnormals)
-        {
-            elab->setChecked(true);
-        }
-
-        current_row++;
+        createModLine(layout, current_row, modLabel, e, vcount, prefillmin, prefillmax, prefillnormals);
     }
 
     // separator
-
-    line = new QFrame();
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-
-    layout->addWidget(line, current_row++, 0, 1, 4);
+    addSeparator(layout, current_row);
 
     // pseudos
     if (item->pseudos.size())
     {
         for (auto [f, e] : item->pseudos.items())
         {
-            std::string id       = e["id"].get<std::string>();
-            QString     modLabel = "(pseudo) " + QString::fromStdString(e["text"].get<std::string>());
+            QString modLabel = "(pseudo) " + QString::fromStdString(e["text"].get<std::string>());
 
-            QCheckBox* elab = new QCheckBox(modLabel);
-            connect(elab, &QCheckBox::stateChanged, [=](int checked) { filters[id]["disabled"] = !(checked == Qt::Checked); });
+            auto val_count = e["value"].size();
 
-            layout->addWidget(elab, current_row, 0);
-
-            auto val_count    = e["value"].size();
-            bool val_is_float = val_count ? e["value"][0].is_number_float() : false;
-
-            // min box
-            QLineEdit* minEdit = new QLineEdit();
-            minEdit->setMaximumWidth(30);
-
-            if (val_count)
-            {
-                if (val_is_float)
-                {
-                    minEdit->setValidator(new QDoubleValidator(this));
-                }
-                else
-                {
-                    minEdit->setValidator(new QIntValidator(this));
-                }
-            }
-            else
-            {
-                minEdit->setEnabled(false);
-            }
-
-            connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    if (val_is_float)
-                    {
-                        double val                  = text.toDouble();
-                        filters[id]["value"]["min"] = val;
-                    }
-                    else
-                    {
-                        int val                     = text.toInt();
-                        filters[id]["value"]["min"] = val;
-                    }
-                }
-                else
-                {
-                    filters[id]["value"].erase("min");
-                }
-            });
-
-            connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(minEdit, current_row, 1);
-
-            // current value label
-            QLabel* curvalLabel = new QLabel();
-            layout->addWidget(curvalLabel, current_row, 2);
-
-            // max box
-            QLineEdit* maxEdit = new QLineEdit();
-            maxEdit->setMaximumWidth(30);
-
-            if (val_count)
-            {
-                if (val_is_float)
-                {
-                    maxEdit->setValidator(new QDoubleValidator(this));
-                }
-                else
-                {
-                    maxEdit->setValidator(new QIntValidator(this));
-                }
-            }
-            else
-            {
-                maxEdit->setEnabled(false);
-            }
-
-            connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
-                if (!text.isEmpty())
-                {
-                    if (val_is_float)
-                    {
-                        double val                  = text.toDouble();
-                        filters[id]["value"]["max"] = val;
-                    }
-                    else
-                    {
-                        int val                     = text.toInt();
-                        filters[id]["value"]["max"] = val;
-                    }
-                }
-                else
-                {
-                    filters[id]["value"].erase("max");
-                }
-            });
-
-            connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
-
-            layout->addWidget(maxEdit, current_row, 3);
-
-            // current value
-            QString currval("");
-
-            if (val_count)
-            {
-                int    curr_val_int = e["value"][0].get<int>();
-                double curr_val_dbl = e["value"][0].get<double>();
-
-                if (val_count > 1)
-                {
-                    for (size_t i = 1; i < val_count; i++)
-                    {
-                        curr_val_int += e["value"][i].get<int>();
-                        curr_val_dbl += e["value"][i].get<double>();
-                    }
-
-                    curr_val_int /= val_count;
-                    curr_val_dbl /= val_count;
-                }
-
-                currval = val_is_float ? QString::number(curr_val_dbl) : QString::number(curr_val_int);
-            }
-
-            curvalLabel->setText(currval);
-
-            // Process settings
-            if (prefillmin)
-            {
-                minEdit->setText(currval);
-            }
-
-            if (prefillmax)
-            {
-                maxEdit->setText(currval);
-            }
-
-            if (prefillpseudos)
-            {
-                elab->setChecked(true);
-            }
-
-            current_row++;
+            createModLine(layout, current_row, modLabel, e, val_count, prefillmin, prefillmax, prefillpseudos);
         }
 
         // separator
-
-        line = new QFrame();
-        line->setFrameShape(QFrame::HLine);
-        line->setFrameShadow(QFrame::Sunken);
-
-        layout->addWidget(line, current_row++, 0, 1, 4);
+        addSeparator(layout, current_row);
     }
 
     // Misc options
@@ -756,21 +197,17 @@ StatDialog::StatDialog(PItem* item)
 
     if (item->f_socket.sockets.total() > 0)
     {
-        QCheckBox* socketCB = new QCheckBox(tr("Use Sockets") + QString(" (%1)").arg(item->f_socket.sockets.total()));
-        connect(socketCB, &QCheckBox::stateChanged, [=](int checked) { misc["use_sockets"] = (checked == Qt::Checked); });
-
+        QCheckBox* socketCB = createMiscCheckBox(tr("Use Sockets") + QString(" (%1)").arg(item->f_socket.sockets.total()), "use_sockets", false);
         miscLayout->addWidget(socketCB);
     }
 
     if (item->f_socket.links > 0)
     {
-        QCheckBox* linkCB = new QCheckBox(tr("Use Links") + QString(" (%1)").arg(item->f_socket.links));
-        connect(linkCB, &QCheckBox::stateChanged, [=](int checked) { misc["use_links"] = (checked == Qt::Checked); });
+        QCheckBox* linkCB = createMiscCheckBox(tr("Use Links") + QString(" (%1)").arg(item->f_socket.links), "use_links", false);
         miscLayout->addWidget(linkCB);
     }
 
-    QCheckBox* ilvlCB = new QCheckBox(tr("iLvl (min):"));
-    connect(ilvlCB, &QCheckBox::stateChanged, [=](int checked) { misc["use_ilvl"] = (checked == Qt::Checked); });
+    QCheckBox* ilvlCB = createMiscCheckBox(tr("iLvl (min):"), "use_ilvl", prefillilvl);
 
     QLineEdit* ilvlEdit = new QLineEdit();
     ilvlEdit->setValidator(new QIntValidator(1, 100, this));
@@ -786,11 +223,6 @@ StatDialog::StatDialog(PItem* item)
     ilvlEdit->setText(QString::number(item->f_misc.ilvl));
 
     connect(ilvlEdit, &QLineEdit::textEdited, [=](const QString& text) { ilvlCB->setChecked(true); });
-
-    if (prefillilvl)
-    {
-        ilvlCB->setChecked(true);
-    }
 
     miscLayout->addWidget(ilvlCB);
     miscLayout->addWidget(ilvlEdit);
@@ -821,12 +253,7 @@ StatDialog::StatDialog(PItem* item)
     layout->addLayout(miscLayout, current_row++, 0, 1, 4);
 
     // separator
-
-    line = new QFrame();
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
-
-    layout->addWidget(line, current_row++, 0, 1, 4);
+    addSeparator(layout, current_row);
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox();
     buttonBox->addButton("Search", QDialogButtonBox::AcceptRole);
@@ -851,4 +278,233 @@ QCheckBox* StatDialog::createMiscCheckBox(const QString& text, const char* key, 
     }
 
     return box;
+}
+
+void StatDialog::addSeparator(QGridLayout* layout, int& curRow)
+{
+    QFrame* line = new QFrame();
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+
+    layout->addWidget(line, curRow++, 0, 1, 4);
+}
+
+void StatDialog::createBaseMod(QGridLayout*   layout,
+                               int&           curRow,
+                               const QString& label,
+                               bool&          checker,
+                               int&           min,
+                               int&           max,
+                               const QString& curval,
+                               bool           prefillmin,
+                               bool           prefillmax)
+{
+    QCheckBox* elab = new QCheckBox(label);
+    connect(elab, &QCheckBox::stateChanged, [&](int checked) { checker = (checked == Qt::Checked); });
+
+    layout->addWidget(elab, curRow, 0);
+
+    // min box
+    QLineEdit* minEdit = new QLineEdit();
+    minEdit->setMaximumWidth(30);
+    minEdit->setValidator(new QIntValidator(this));
+
+    connect(minEdit, &QLineEdit::textChanged, [&](const QString& text) {
+        if (!text.isEmpty())
+        {
+            int val = text.toInt();
+            min     = val;
+        }
+    });
+
+    connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
+
+    layout->addWidget(minEdit, curRow, 1);
+
+    // current value label
+    QLabel* curvalLabel = new QLabel();
+    layout->addWidget(curvalLabel, curRow, 2);
+
+    // max box
+    QLineEdit* maxEdit = new QLineEdit();
+    maxEdit->setMaximumWidth(30);
+    maxEdit->setValidator(new QIntValidator(this));
+
+    connect(maxEdit, &QLineEdit::textChanged, [&](const QString& text) {
+        if (!text.isEmpty())
+        {
+            int val = text.toInt();
+            max     = val;
+        }
+    });
+
+    connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
+
+    layout->addWidget(maxEdit, curRow, 3);
+
+    // current value
+    curvalLabel->setText(curval);
+
+    // Process settings
+    if (prefillmin)
+    {
+        minEdit->setText(curval);
+    }
+
+    if (prefillmax)
+    {
+        maxEdit->setText(curval);
+    }
+
+    curRow++;
+}
+
+template <typename E>
+void StatDialog::createModLine(QGridLayout* layout, int& curRow, const QString& label, E e, bool vcount, bool prefillmin, bool prefillmax, bool prefillmod)
+{
+    std::string id = e["id"].get<std::string>();
+
+    QCheckBox* elab = new QCheckBox(label);
+    connect(elab, &QCheckBox::stateChanged, [=](int checked) { filters[id]["disabled"] = !(checked == Qt::Checked); });
+
+    layout->addWidget(elab, curRow, 0);
+
+    auto val_count    = e["value"].size();
+    bool val_is_float = val_count ? e["value"][0].is_number_float() : false;
+
+    // min box
+    QLineEdit* minEdit = new QLineEdit();
+    minEdit->setMaximumWidth(30);
+
+    // Only support single or range values
+    if (val_count > 0 && val_count < 3)
+    {
+        if (val_is_float)
+        {
+            minEdit->setValidator(new QDoubleValidator(this));
+        }
+        else
+        {
+            minEdit->setValidator(new QIntValidator(this));
+        }
+    }
+    else
+    {
+        minEdit->setEnabled(false);
+    }
+
+    connect(minEdit, &QLineEdit::textChanged, [=](const QString& text) {
+        if (!text.isEmpty())
+        {
+            if (val_is_float)
+            {
+                double val                  = text.toDouble();
+                filters[id]["value"]["min"] = val;
+            }
+            else
+            {
+                int val                     = text.toInt();
+                filters[id]["value"]["min"] = val;
+            }
+        }
+        else
+        {
+            filters[id]["value"].erase("min");
+        }
+    });
+
+    connect(minEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
+
+    layout->addWidget(minEdit, curRow, 1);
+
+    // current value label
+    QLabel* curvalLabel = new QLabel();
+    layout->addWidget(curvalLabel, curRow, 2);
+
+    // max box
+    QLineEdit* maxEdit = new QLineEdit();
+    maxEdit->setMaximumWidth(30);
+
+    if (vcount)
+    {
+        if (val_is_float)
+        {
+            maxEdit->setValidator(new QDoubleValidator(this));
+        }
+        else
+        {
+            maxEdit->setValidator(new QIntValidator(this));
+        }
+    }
+    else
+    {
+        maxEdit->setEnabled(false);
+    }
+
+    connect(maxEdit, &QLineEdit::textChanged, [=](const QString& text) {
+        if (!text.isEmpty())
+        {
+            if (val_is_float)
+            {
+                double val                  = text.toDouble();
+                filters[id]["value"]["max"] = val;
+            }
+            else
+            {
+                int val                     = text.toInt();
+                filters[id]["value"]["max"] = val;
+            }
+        }
+        else
+        {
+            filters[id]["value"].erase("max");
+        }
+    });
+
+    connect(maxEdit, &QLineEdit::textEdited, [=](const QString& text) { elab->setChecked(true); });
+
+    layout->addWidget(maxEdit, curRow, 3);
+
+    // current value
+    QString currval("");
+
+    if (vcount)
+    {
+        int    curr_val_int = e["value"][0].get<int>();
+        double curr_val_dbl = e["value"][0].get<double>();
+
+        if (val_count > 1)
+        {
+            for (size_t i = 1; i < val_count; i++)
+            {
+                curr_val_int += e["value"][i].get<int>();
+                curr_val_dbl += e["value"][i].get<double>();
+            }
+
+            curr_val_int /= val_count;
+            curr_val_dbl /= val_count;
+        }
+
+        currval = val_is_float ? QString::number(curr_val_dbl) : QString::number(curr_val_int);
+    }
+
+    curvalLabel->setText(currval);
+
+    // Process settings
+    if (prefillmin)
+    {
+        minEdit->setText(currval);
+    }
+
+    if (prefillmax)
+    {
+        maxEdit->setText(currval);
+    }
+
+    if (prefillmod)
+    {
+        elab->setChecked(true);
+    }
+
+    curRow++;
 }
