@@ -808,14 +808,21 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
         return true;
     }
 
-    bool stat_is_crafted = false;
+    // PoE 3.9 adds the "(implicit)" description so we no longer have to guess
+    std::string stat_type;
 
     if (stat.endsWith("(crafted)"))
     {
-        stat_is_crafted = true;
+        stat_type = "crafted";
+    }
+
+    if (stat.endsWith("(implicit)"))
+    {
+        stat_type = "implicit";
     }
 
     stat.replace(" (crafted)", "");
+    stat.replace(" (implicit)", "");
 
     // Match numerics
     QRegularExpression   re("([\\+\\-]?[\\d\\.]+)");
@@ -1055,9 +1062,9 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
             captured.insert(captured.end(), lcap.begin(), lcap.end());
         }
 
-        if (stat_is_crafted)
+        if (!stat_type.empty())
         {
-            if (entry["type"] != "crafted")
+            if (entry["type"] != stat_type)
             {
                 // skip this entry
                 continue;
@@ -1105,21 +1112,15 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
                 stream.seek(pos);
             }
 
-            if (item->base_has_implicits || (item->filters.size() < 2 && peek == "---"))
+            if (item->filters.size() < 2 && peek == "---")
             {
-                // First stat with a section break, try to look for an implicit or enchant
-                if (entry["type"] == "implicit" || entry["type"] == "enchant")
+                // First stat with a section break, try to look for an enchant
+                if (entry["type"] == "enchant")
                 {
                     filter["id"]    = entry["id"];
                     filter["type"]  = entry["type"];
                     filter["text"]  = entry["text"];
                     filter["value"] = val;
-
-                    if (entry["type"] == "implicit" && peek == "---")
-                    {
-                        // no more implicits
-                        item->base_has_implicits = false;
-                    }
                 }
             }
         }
@@ -1485,9 +1486,8 @@ PItem* ItemAPI::parse(QString itemText)
         auto base = c_baseMap.find(item->type);
         if (base != c_baseMap.end())
         {
-            json cat                 = base->second;
-            item->f_type.category    = cat["category"];
-            item->base_has_implicits = (cat["implicits"].get<size_t>() > 0);
+            json cat              = base->second;
+            item->f_type.category = cat["category"];
         }
     }
 
@@ -1812,7 +1812,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             for (auto i : item->f_misc.influences)
             {
                 qe["filters"]["misc_filters"]["filters"]["influences"][i] = true;
-                item->m_options += ", " + c_influenceMap[i] + " base";
+                item->m_options += ", " + i + " base";
             }
         }
         // XXX (subject to change): 3.9 Influences

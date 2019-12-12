@@ -120,8 +120,6 @@ struct PItem
     bool is_armour;
     bool is_prediction = false;
 
-    bool base_has_implicits;
-
     json filters;
     json pseudos;
 
