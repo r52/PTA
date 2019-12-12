@@ -741,14 +741,52 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
     if (stat == "Shaper Item")
     {
         item->f_misc.shaper_item = true;
+
+        // New style influence
+        item->f_misc.influences.push_back(c_influenceMap[shaper]);
+
         return true;
     }
 
     if (stat == "Elder Item")
     {
         item->f_misc.elder_item = true;
+
+        // New style influence
+        item->f_misc.influences.push_back(c_influenceMap[elder]);
+
         return true;
     }
+
+    // XXX (subject to change): 3.9 Influences
+    if (stat == "Crusader Item")
+    {
+        item->f_misc.influences.push_back(c_influenceMap[crusader]);
+
+        return true;
+    }
+
+    if (stat == "Redeemer Item")
+    {
+        item->f_misc.influences.push_back(c_influenceMap[redeemer]);
+
+        return true;
+    }
+
+    if (stat == "Hunter Item")
+    {
+        item->f_misc.influences.push_back(c_influenceMap[hunter]);
+
+        return true;
+    }
+
+    if (stat == "Warlord Item")
+    {
+        item->f_misc.influences.push_back(c_influenceMap[warlord]);
+
+        return true;
+    }
+    // XXX (subject to change): 3.9 Influences
 
     if (stat == "Corrupted")
     {
@@ -1767,6 +1805,17 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             qe["filters"]["misc_filters"]["filters"]["elder_item"]["option"] = true;
             item->m_options += ", Elder Base";
         }
+
+        // XXX (subject to change): Force 3.9 Influences
+        if (!item->f_misc.influences.empty())
+        {
+            for (auto i : item->f_misc.influences)
+            {
+                qe["filters"]["misc_filters"]["filters"]["influences"][i] = true;
+                item->m_options += ", " + c_influenceMap[i] + " base";
+            }
+        }
+        // XXX (subject to change): 3.9 Influences
 
         // Force Synthesis
         if (item->f_misc.synthesised_item)

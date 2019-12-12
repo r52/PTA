@@ -82,23 +82,24 @@ struct req_filters_t
 
 struct misc_filters_t
 {
-    int         quality;
-    int         ilvl;
-    int         gem_level;
-    int         gem_level_progress;
-    bool        shaper_item;
-    bool        elder_item;
-    bool        fractured_item;
-    bool        synthesised_item;
-    bool        identified = true;
-    bool        corrupted;
-    bool        mirrored;
-    bool        crafted;
-    bool        veiled;
-    bool        enchanted;
-    int         talisman_tier;
-    int         map_tier;
-    std::string disc;
+    int                      quality;
+    int                      ilvl;
+    int                      gem_level;
+    int                      gem_level_progress;
+    bool                     shaper_item;
+    bool                     elder_item;
+    bool                     fractured_item;
+    bool                     synthesised_item;
+    bool                     identified = true;
+    bool                     corrupted;
+    bool                     mirrored;
+    bool                     crafted;
+    bool                     veiled;
+    bool                     enchanted;
+    int                      talisman_tier;
+    int                      map_tier;
+    std::string              disc;
+    std::vector<std::string> influences;
 };
 
 struct PItem
