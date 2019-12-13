@@ -740,21 +740,13 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
 
     if (stat == "Shaper Item")
     {
-        item->f_misc.shaper_item = true;
-
-        // New style influence
         item->f_misc.influences.push_back(c_influenceMap[shaper]);
-
         return true;
     }
 
     if (stat == "Elder Item")
     {
-        item->f_misc.elder_item = true;
-
-        // New style influence
         item->f_misc.influences.push_back(c_influenceMap[elder]);
-
         return true;
     }
 
@@ -762,7 +754,6 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
     if (stat == "Crusader Item")
     {
         item->f_misc.influences.push_back(c_influenceMap[crusader]);
-
         return true;
     }
 
@@ -786,7 +777,6 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
 
         return true;
     }
-    // XXX (subject to change): 3.9 Influences
 
     if (stat == "Corrupted")
     {
@@ -1618,9 +1608,17 @@ QString ItemAPI::toJson(PItem* item)
         j["ilvl"]    = item->f_misc.ilvl;
         j["quality"] = item->f_misc.quality;
 
-        j["elder_item"]  = item->f_misc.elder_item;
-        j["shaper_item"] = item->f_misc.shaper_item;
-        j["corrupted"]   = item->f_misc.corrupted;
+        if (!item->f_misc.influences.empty())
+        {
+            j["influences"] = json::array();
+
+            for (auto i : item->f_misc.influences)
+            {
+                j["influences"].push_back(i);
+            }
+        }
+
+        j["corrupted"] = item->f_misc.corrupted;
     }
 
     if (!item->m_options.empty())
@@ -1792,30 +1790,17 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             item->m_options += ", Disc=" + item->f_misc.disc;
         }
 
-        // Force Shaper
-        if (item->f_misc.shaper_item)
-        {
-            qe["filters"]["misc_filters"]["filters"]["shaper_item"]["option"] = true;
-            item->m_options += ", Shaper Base";
-        }
-
-        // Force Elder
-        if (item->f_misc.elder_item)
-        {
-            qe["filters"]["misc_filters"]["filters"]["elder_item"]["option"] = true;
-            item->m_options += ", Elder Base";
-        }
-
-        // XXX (subject to change): Force 3.9 Influences
+        // Force Influences
         if (!item->f_misc.influences.empty())
         {
             for (auto i : item->f_misc.influences)
             {
-                qe["filters"]["misc_filters"]["filters"]["influences"][i] = true;
+                std::string inftype = i + "_item";
+
+                qe["filters"]["misc_filters"]["filters"][inftype]["option"] = true;
                 item->m_options += ", " + i + " base";
             }
         }
-        // XXX (subject to change): 3.9 Influences
 
         // Force Synthesis
         if (item->f_misc.synthesised_item)

@@ -60,12 +60,8 @@
             color: #d20000;
         }
 
-        .shaperItem {
+        .influenceItem {
             color: #8e44ad;
-        }
-
-        .elderItem {
-            color: #3498db;
         }
 
         .Unique {
@@ -113,11 +109,8 @@
         <div>
             <span id="item-type"></span>
         </div>
-        <div class="shaperItem">
-            <span id="shaper"></span>
-        </div>
-        <div class="elderItem">
-            <span id="elder"></span>
+        <div class="influenceItem">
+            <span id="influences"></span>
         </div>
         <div class="corruptedItem">
             <span id="corrupted"></span>
@@ -308,12 +301,9 @@
             document.getElementById("item-type").innerText = item["type"];
         }
 
-        if (item["shaper_item"]) {
-            document.getElementById("shaper").innerText = "Shaper Item";
-        }
-
-        if (item["elder_item"]) {
-            document.getElementById("elder").innerText = "Elder Item";
+        if ("influences" in item) {
+            var influences = item[influences].join(", ");
+            document.getElementById("influences").innerText = influences;
         }
 
         if (!item["identified"]) {

@@ -86,8 +86,6 @@ struct misc_filters_t
     int                      ilvl;
     int                      gem_level;
     int                      gem_level_progress;
-    bool                     shaper_item;
-    bool                     elder_item;
     bool                     fractured_item;
     bool                     synthesised_item;
     bool                     identified = true;

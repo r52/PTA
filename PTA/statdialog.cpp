@@ -230,16 +230,20 @@ StatDialog::StatDialog(PItem* item)
     QCheckBox* itembaseCB = createMiscCheckBox(tr("Use Item Base"), "use_item_base", prefillbase);
     miscLayout->addWidget(itembaseCB);
 
-    if (item->f_misc.shaper_item)
+    if (!item->f_misc.influences.empty())
     {
-        QCheckBox* base = createMiscCheckBox(tr("Shaper Base"), "use_shaper_base", prefillbase);
-        miscLayout->addWidget(base);
-    }
+        for (auto i : item->f_misc.influences)
+        {
+            QString influence = QString::fromStdString(i);
+            QString influcap  = influence;
+            influcap[0]       = influcap.at(0).toTitleCase();
 
-    if (item->f_misc.elder_item)
-    {
-        QCheckBox* base = createMiscCheckBox(tr("Elder Base"), "use_elder_base", prefillbase);
-        miscLayout->addWidget(base);
+            QString     lbl = influcap + " Base";
+            std::string key = "use_" + i + "_base";
+
+            QCheckBox* base = createMiscCheckBox(lbl, key.c_str(), prefillbase);
+            miscLayout->addWidget(base);
+        }
     }
 
     if (item->f_misc.synthesised_item)
