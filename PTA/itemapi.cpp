@@ -740,13 +740,41 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
 
     if (stat == "Shaper Item")
     {
-        item->f_misc.shaper_item = true;
+        item->f_misc.influences.push_back(c_influenceMap[shaper]);
         return true;
     }
 
     if (stat == "Elder Item")
     {
-        item->f_misc.elder_item = true;
+        item->f_misc.influences.push_back(c_influenceMap[elder]);
+        return true;
+    }
+
+    // XXX (subject to change): 3.9 Influences
+    if (stat == "Crusader Item")
+    {
+        item->f_misc.influences.push_back(c_influenceMap[crusader]);
+        return true;
+    }
+
+    if (stat == "Redeemer Item")
+    {
+        item->f_misc.influences.push_back(c_influenceMap[redeemer]);
+
+        return true;
+    }
+
+    if (stat == "Hunter Item")
+    {
+        item->f_misc.influences.push_back(c_influenceMap[hunter]);
+
+        return true;
+    }
+
+    if (stat == "Warlord Item")
+    {
+        item->f_misc.influences.push_back(c_influenceMap[warlord]);
+
         return true;
     }
 
@@ -770,14 +798,21 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
         return true;
     }
 
-    bool stat_is_crafted = false;
+    // PoE 3.9 adds the "(implicit)" description so we no longer have to guess
+    std::string stat_type;
 
     if (stat.endsWith("(crafted)"))
     {
-        stat_is_crafted = true;
+        stat_type = "crafted";
+    }
+
+    if (stat.endsWith("(implicit)"))
+    {
+        stat_type = "implicit";
     }
 
     stat.replace(" (crafted)", "");
+    stat.replace(" (implicit)", "");
 
     // Match numerics
     QRegularExpression   re("([\\+\\-]?[\\d\\.]+)");
@@ -1017,9 +1052,9 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
             captured.insert(captured.end(), lcap.begin(), lcap.end());
         }
 
-        if (stat_is_crafted)
+        if (!stat_type.empty())
         {
-            if (entry["type"] != "crafted")
+            if (entry["type"] != stat_type)
             {
                 // skip this entry
                 continue;
@@ -1067,21 +1102,15 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
                 stream.seek(pos);
             }
 
-            if (item->base_has_implicits || (item->filters.size() < 2 && peek == "---"))
+            if (item->filters.size() < 2 && peek == "---")
             {
-                // First stat with a section break, try to look for an implicit or enchant
-                if (entry["type"] == "implicit" || entry["type"] == "enchant")
+                // First stat with a section break, try to look for an enchant
+                if (entry["type"] == "enchant")
                 {
                     filter["id"]    = entry["id"];
                     filter["type"]  = entry["type"];
                     filter["text"]  = entry["text"];
                     filter["value"] = val;
-
-                    if (entry["type"] == "implicit" && peek == "---")
-                    {
-                        // no more implicits
-                        item->base_has_implicits = false;
-                    }
                 }
             }
         }
@@ -1447,9 +1476,8 @@ PItem* ItemAPI::parse(QString itemText)
         auto base = c_baseMap.find(item->type);
         if (base != c_baseMap.end())
         {
-            json cat                 = base->second;
-            item->f_type.category    = cat["category"];
-            item->base_has_implicits = (cat["implicits"].get<size_t>() > 0);
+            json cat              = base->second;
+            item->f_type.category = cat["category"];
         }
     }
 
@@ -1580,9 +1608,17 @@ QString ItemAPI::toJson(PItem* item)
         j["ilvl"]    = item->f_misc.ilvl;
         j["quality"] = item->f_misc.quality;
 
-        j["elder_item"]  = item->f_misc.elder_item;
-        j["shaper_item"] = item->f_misc.shaper_item;
-        j["corrupted"]   = item->f_misc.corrupted;
+        if (!item->f_misc.influences.empty())
+        {
+            j["influences"] = json::array();
+
+            for (auto i : item->f_misc.influences)
+            {
+                j["influences"].push_back(i);
+            }
+        }
+
+        j["corrupted"] = item->f_misc.corrupted;
     }
 
     if (!item->m_options.empty())
@@ -1754,18 +1790,16 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             item->m_options += ", Disc=" + item->f_misc.disc;
         }
 
-        // Force Shaper
-        if (item->f_misc.shaper_item)
+        // Force Influences
+        if (!item->f_misc.influences.empty())
         {
-            qe["filters"]["misc_filters"]["filters"]["shaper_item"]["option"] = true;
-            item->m_options += ", Shaper Base";
-        }
+            for (auto i : item->f_misc.influences)
+            {
+                std::string inftype = i + "_item";
 
-        // Force Elder
-        if (item->f_misc.elder_item)
-        {
-            qe["filters"]["misc_filters"]["filters"]["elder_item"]["option"] = true;
-            item->m_options += ", Elder Base";
+                qe["filters"]["misc_filters"]["filters"][inftype]["option"] = true;
+                item->m_options += ", " + i + " base";
+            }
         }
 
         // Force Synthesis

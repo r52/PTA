@@ -110,7 +110,27 @@ private:
         misc_filter_map_tier
     };
 
+    enum misc_influences_e : uint8_t
+    {
+        shaper = 0,
+        elder,
+        crusader,
+        redeemer,
+        hunter,
+        warlord,
+        influences_max
+    };
+
+    const std::array<std::string, influences_max> c_influenceMap = {"shaper", "elder", "crusader", "redeemer", "hunter", "warlord"};
+
     const QMap<QString, QVector<uint8_t>> c_propMap = {{"Quality", {misc_filter, misc_filter_quality}},
+                                                       {"Quality (Elemental Damage)", {misc_filter, misc_filter_quality}},
+                                                       {"Quality (Caster Modifiers)", {misc_filter, misc_filter_quality}},
+                                                       {"Quality (Attack Modifiers)", {misc_filter, misc_filter_quality}},
+                                                       {"Quality (Defence Modifiers)", {misc_filter, misc_filter_quality}},
+                                                       {"Quality (Life and Mana Modifiers)", {misc_filter, misc_filter_quality}},
+                                                       {"Quality (Resistance Modifiers)", {misc_filter, misc_filter_quality}},
+                                                       {"Quality (Attribute Modifiers)", {misc_filter, misc_filter_quality}},
                                                        {"Evasion Rating", {armour_filter, armour_filter_ev}},
                                                        {"Energy Shield", {armour_filter, armour_filter_es}},
                                                        {"Armour", {armour_filter, armour_filter_ar}},
