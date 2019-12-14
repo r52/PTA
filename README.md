@@ -14,7 +14,7 @@ PTA is licensed under GPL-3.0
 
 Extract the archive and run **PTA.exe**
 
-[Microsoft Visual C++ Redistributable](https://aka.ms/vs/16/release/VC_redist.x64.exe) is required on PCs not running Windows 10 with the latest feature updates.
+**If your PC is not running Windows 10 with the latest feature updates or you are getting a VC runtime error, you MUST download and install the [Microsoft Visual C++ Redistributable](https://aka.ms/vs/16/release/VC_redist.x64.exe)!**
 
 PTA provides the **Ctrl+D** and **Ctrl+Alt+D** shortcuts much like [PoE-TradeMacro](https://github.com/PoE-TradeMacro/POE-TradeMacro), which provides simple and advanced (by mods) item searches on www.pathofexile.com/trade. These shortcuts can be re-configured in the settings.
 
