@@ -20,7 +20,8 @@ public:
     json misc;
 
 private:
-    QCheckBox* createMiscCheckBox(const QString& text, const char* key, bool prefill);
+    QCheckBox* createMiscCheckBox(const QString& text, std::string key, bool prefill);
+    QCheckBox* createInfluenceCheckBox(const QString& text, std::string infl, bool prefill);
     void       addSeparator(QGridLayout* layout, int& curRow);
     void       createBaseMod(QGridLayout*   layout,
                              int&           curRow,

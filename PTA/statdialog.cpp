@@ -238,10 +238,9 @@ StatDialog::StatDialog(PItem* item)
             QString influcap  = influence;
             influcap[0]       = influcap.at(0).toTitleCase();
 
-            QString     lbl = influcap + " Base";
-            std::string key = "use_" + i + "_base";
+            QString lbl = influcap + " Influence";
 
-            QCheckBox* base = createMiscCheckBox(lbl, key.c_str(), prefillbase);
+            QCheckBox* base = createInfluenceCheckBox(lbl, i, prefillbase);
             miscLayout->addWidget(base);
         }
     }
@@ -271,10 +270,23 @@ StatDialog::StatDialog(PItem* item)
     layout->addWidget(buttonBox);
 }
 
-QCheckBox* StatDialog::createMiscCheckBox(const QString& text, const char* key, bool prefill)
+QCheckBox* StatDialog::createMiscCheckBox(const QString& text, std::string key, bool prefill)
 {
     QCheckBox* box = new QCheckBox(text);
     connect(box, &QCheckBox::stateChanged, [=](int checked) { misc[key] = (checked == Qt::Checked); });
+
+    if (prefill)
+    {
+        box->setChecked(true);
+    }
+
+    return box;
+}
+
+QCheckBox* StatDialog::createInfluenceCheckBox(const QString& text, std::string infl, bool prefill)
+{
+    QCheckBox* box = new QCheckBox(text);
+    connect(box, &QCheckBox::stateChanged, [=](int checked) { misc["influences"][infl] = (checked == Qt::Checked); });
 
     if (prefill)
     {

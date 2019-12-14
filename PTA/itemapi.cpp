@@ -1614,7 +1614,10 @@ QString ItemAPI::toJson(PItem* item)
 
             for (auto i : item->f_misc.influences)
             {
-                j["influences"].push_back(i);
+                std::string inf = i;
+                inf[0]          = toupper(inf[0]);
+
+                j["influences"].push_back(inf);
             }
         }
 
@@ -1798,7 +1801,9 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
                 std::string inftype = i + "_item";
 
                 qe["filters"]["misc_filters"]["filters"][inftype]["option"] = true;
-                item->m_options += ", " + i + " base";
+
+                i[0] = toupper(i[0]);
+                item->m_options += ", " + i + " Influence";
             }
         }
 
@@ -2194,18 +2199,23 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
         item->m_options += ", Use Base Type";
     }
 
-    // Shaper
-    if (misc.contains("use_shaper_base") && misc["use_shaper_base"])
-    {
-        qe["filters"]["misc_filters"]["filters"]["shaper_item"]["option"] = true;
-        item->m_options += ", Shaper Base";
-    }
+    // Influences
 
-    // Elder
-    if (misc.contains("use_elder_base") && misc["use_elder_base"])
+    if (misc.contains("influences"))
     {
-        qe["filters"]["misc_filters"]["filters"]["elder_item"]["option"] = true;
-        item->m_options += ", Elder Base";
+        for (auto [key, value] : misc["influences"].items())
+        {
+            if (!key.empty() && value.get<bool>())
+            {
+                std::string inf    = key;
+                std::string infkey = inf + "_item";
+
+                qe["filters"]["misc_filters"]["filters"][infkey]["option"] = true;
+
+                inf[0] = toupper(inf[0]);
+                item->m_options += ", " + inf + " Influence";
+            }
+        }
     }
 
     // Synthesis
