@@ -161,6 +161,17 @@ HotkeyPage::HotkeyPage(json& set, QWidget* parent) : QWidget(parent)
 
     formLayout->addRow(ampLabel, akeyedit);
 
+    // ------------------Ctrl Scroll Wheel
+
+    QCheckBox* sclLabel = new QCheckBox(tr("Ctrl+Mouse Wheel scrolls through stash tabs"));
+    sclLabel->setChecked(settings.value(PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED, true).toBool());
+
+    connect(sclLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED] = (checked == Qt::Checked); });
+
+    formLayout->addRow(sclLabel);
+
+    // =============END
+
     configGroup->setLayout(formLayout);
 
     QVBoxLayout* mainLayout = new QVBoxLayout;

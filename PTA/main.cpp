@@ -7,6 +7,8 @@
 #include <QSplashScreen>
 #include <QtWidgets/QApplication>
 
+#include <Windows.h>
+
 int main(int argc, char* argv[])
 {
     RunGuard guard("pta_app_key");
@@ -33,6 +35,10 @@ int main(int argc, char* argv[])
     a.processEvents();
 
     PTA w(log);
+
+    // Install native input handler
+    a.installNativeEventFilter(&w.m_inputhandler);
+
     w.hide();
 
     splash.finish(&w);

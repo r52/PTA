@@ -19,7 +19,11 @@
 
 #include <Windows.h>
 
-const std::wstring g_poeCls = L"POEWindowClass";
+namespace
+{
+    const std::wstring g_poeCls   = L"POEWindowClass";
+    bool               g_CtrlDown = false;
+}
 
 INPUT createInput(WORD vk, bool isDown)
 {
@@ -33,7 +37,7 @@ INPUT createInput(WORD vk, bool isDown)
     return input;
 }
 
-PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log), m_blockHotkeys(false)
+PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log), m_blockHotkeys(false), m_inputhandler(this)
 {
     if (nullptr == m_logWindow)
     {
@@ -312,6 +316,29 @@ void PTA::setupFunctionality()
 
         connect(m_advancedKey.get(), &QHotkey::activated, this, &PTA::advancedPriceCheckActivated);
     }
+
+    auto hwnd = (HWND) winId();
+
+    // Setup Raw Input
+    RAWINPUTDEVICE rid[2];
+
+    // Keyboard
+    rid[0].usUsagePage = 1;
+    rid[0].usUsage     = 6;
+    rid[0].dwFlags     = RIDEV_INPUTSINK;
+    rid[0].hwndTarget  = hwnd;
+
+    // Mouse
+    rid[1].usUsagePage = 1;
+    rid[1].usUsage     = 2;
+    rid[1].dwFlags     = RIDEV_INPUTSINK;
+    rid[1].hwndTarget  = hwnd;
+
+    if (RegisterRawInputDevices(rid, 2, sizeof(RAWINPUTDEVICE)) == FALSE)
+    {
+        qWarning() << "Error registering Raw Input devices. Mouse macros disabled.";
+        qWarning() << "Error code:" << QString::number(GetLastError());
+    }
 }
 
 void PTA::priceCheckActivated()
@@ -451,4 +478,93 @@ void PTA::advancedPriceCheckActivated()
     SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
 
     m_blockHotkeys = false;
+}
+
+void PTA::handleScrollHotkey(quint16 data)
+{
+    // Check for PoE window
+    HWND hwnd = GetForegroundWindow();
+
+    if (nullptr == hwnd)
+        return;
+
+    wchar_t cls[512];
+    GetClassName(hwnd, cls, std::size(cls));
+
+    if (g_poeCls != cls)
+        return;
+
+    qint16 dirdat = (qint16) data;
+
+    if (g_CtrlDown)
+    {
+        QSettings settings;
+        bool      scrollEnabled = settings.value(PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED, true).toBool();
+
+        if (scrollEnabled)
+        {
+            WORD key = (dirdat > 0 ? VK_LEFT : VK_RIGHT);
+
+            // Send input
+            std::vector<INPUT> keystroke;
+
+            keystroke.push_back(createInput(key, true));
+            keystroke.push_back(createInput(key, false));
+
+            SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
+        }
+    }
+}
+
+PTA::InputHandler::InputHandler(QObject* parent) : m_parent(parent) {}
+
+bool PTA::InputHandler::nativeEventFilter(const QByteArray& eventType, void* message, long* result)
+{
+    if (eventType == "windows_generic_MSG")
+    {
+        MSG* msg = reinterpret_cast<MSG*>(message);
+
+        if (msg->message == WM_INPUT)
+        {
+            UINT dwSize;
+            GetRawInputData((HRAWINPUT) msg->lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+
+            LPBYTE lpb = new BYTE[dwSize];
+            if (lpb == nullptr)
+            {
+                return false;
+            }
+            if (GetRawInputData((HRAWINPUT) msg->lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+            {
+                qDebug() << "GetRawInputData did not return correct size";
+            }
+            else
+            {
+                RAWINPUT* raw = (RAWINPUT*) lpb;
+                if (raw->header.dwType == RIM_TYPEMOUSE)
+                {
+                    if (raw->data.mouse.usButtonFlags == RI_MOUSE_WHEEL)
+                    {
+                        if (m_parent)
+                        {
+                            QMetaObject::invokeMethod(m_parent, "handleScrollHotkey", Qt::AutoConnection, Q_ARG(quint16, raw->data.mouse.usButtonData));
+                        }
+                    }
+                }
+
+                if (raw->header.dwType == RIM_TYPEKEYBOARD)
+                {
+                    USHORT keyCode = raw->data.keyboard.VKey;
+                    bool   keyUp   = raw->data.keyboard.Flags & RI_KEY_BREAK;
+
+                    if (keyCode == VK_CONTROL)
+                    {
+                        g_CtrlDown = !keyUp;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
 }

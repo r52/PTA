@@ -20,6 +20,7 @@ constexpr auto PTA_CONFIG_SIMPLE_CHECK_HOTKEY         = "hotkey/simplecheck";
 constexpr auto PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED = "hotkey/simplecheck/enabled";
 constexpr auto PTA_CONFIG_ADV_CHECK_HOTKEY            = "hotkey/advcheck";
 constexpr auto PTA_CONFIG_ADV_CHECK_HOTKEY_ENABLED    = "hotkey/advcheck/enabled";
+constexpr auto PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED  = "hotkey/cscroll/enabled";
 
 constexpr auto PTA_CONFIG_LEAGUE             = "pricecheck/league";
 constexpr auto PTA_CONFIG_DISPLAYLIMIT       = "pricecheck/displaylimit";

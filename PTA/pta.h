@@ -4,6 +4,7 @@
 
 #include <memory>
 
+#include <QAbstractNativeEventFilter>
 #include <QHotkey>
 #include <QSystemTrayIcon>
 #include <QtWidgets/QMainWindow>
@@ -16,6 +17,17 @@ struct PItem;
 class PTA : public QMainWindow
 {
     Q_OBJECT
+
+    class InputHandler : public QAbstractNativeEventFilter
+    {
+    public:
+        InputHandler(QObject* parent = nullptr);
+
+        virtual bool nativeEventFilter(const QByteArray& eventType, void* message, long* result) override;
+
+    private:
+        QObject* m_parent;
+    };
 
 public:
     explicit PTA(LogWindow* log, QWidget* parent = Q_NULLPTR);
@@ -38,6 +50,11 @@ private slots:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     void priceCheckActivated();
     void advancedPriceCheckActivated();
+    void handleScrollHotkey(quint16 data);
+
+public:
+    // Input Handler
+    InputHandler m_inputhandler;
 
 private:
     Ui::PTAClass ui;
