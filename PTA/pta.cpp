@@ -7,8 +7,6 @@
 #include "version.h"
 #include "webwidget.h"
 
-#include <once/once.h>
-
 #include <QApplication>
 #include <QClipboard>
 #include <QMenu>
@@ -198,7 +196,7 @@ void PTA::createActions()
                     m_simpleKey.reset(new QHotkey(QKeySequence(seq), true));
                     qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
 
-                    connect(m_simpleKey.get(), &QHotkey::activated, this, &PTA::priceCheckActivated);
+                    connect(m_simpleKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_SIMPLE); });
                 }
             }
 
@@ -217,7 +215,7 @@ void PTA::createActions()
                     m_advancedKey.reset(new QHotkey(QKeySequence(seq), true));
                     qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
 
-                    connect(m_advancedKey.get(), &QHotkey::activated, this, &PTA::advancedPriceCheckActivated);
+                    connect(m_advancedKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_ADVANCED); });
                 }
             }
 
@@ -302,7 +300,7 @@ void PTA::setupFunctionality()
         m_simpleKey.reset(new QHotkey(QKeySequence(seq), true));
         qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
 
-        connect(m_simpleKey.get(), &QHotkey::activated, this, &PTA::priceCheckActivated);
+        connect(m_simpleKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_SIMPLE); });
     }
 
     bool advEnabled = settings.value(PTA_CONFIG_ADV_CHECK_HOTKEY_ENABLED, true).toBool();
@@ -314,8 +312,11 @@ void PTA::setupFunctionality()
         m_advancedKey.reset(new QHotkey(QKeySequence(seq), true));
         qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
 
-        connect(m_advancedKey.get(), &QHotkey::activated, this, &PTA::advancedPriceCheckActivated);
+        connect(m_advancedKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_ADVANCED); });
     }
+
+    // Clipboard
+    connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, this, &PTA::handleClipboard);
 
     auto hwnd = (HWND) winId();
 
@@ -339,145 +340,6 @@ void PTA::setupFunctionality()
         qWarning() << "Error registering Raw Input devices. Mouse macros disabled.";
         qWarning() << "Error code:" << QString::number(GetLastError());
     }
-}
-
-void PTA::priceCheckActivated()
-{
-    if (m_blockHotkeys)
-    {
-        // Currently blocked
-        return;
-    }
-
-    m_blockHotkeys = true;
-
-    // Check for PoE window
-    HWND hwnd = GetForegroundWindow();
-
-    if (nullptr == hwnd)
-    {
-        m_blockHotkeys = false;
-        qDebug() << "Null active window.";
-        return;
-    }
-
-    wchar_t cls[512];
-    GetClassName(hwnd, cls, std::size(cls));
-
-    if (g_poeCls != cls)
-    {
-        m_blockHotkeys = false;
-        qDebug() << "Active window not PoE";
-        return;
-    }
-
-    // Set up clipboard signal
-    Once::connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, [=]() {
-        QString itemText = QGuiApplication::clipboard()->text();
-
-        if (itemText.isEmpty())
-        {
-            showToolTip("Failed to retrieve item text from clipboard. Please try again");
-            qWarning() << "Failed to retrieve item text from clipboard.";
-            return;
-        }
-
-        showToolTip("Searching...");
-
-        std::shared_ptr<PItem> item(m_api->parse(itemText));
-
-        if (!item)
-        {
-            showToolTip("Error parsing item text. Check log for more details.");
-            qWarning() << "Error parsing item" << itemText;
-            return;
-        }
-
-        m_api->simplePriceCheck(item);
-    });
-
-    // Send ctrl-c
-    std::vector<INPUT> keystroke;
-
-    keystroke.push_back(createInput(VK_CONTROL, true));
-    keystroke.push_back(createInput('C', true));
-    keystroke.push_back(createInput('C', false));
-    keystroke.push_back(createInput(VK_CONTROL, false));
-
-    SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
-
-    m_blockHotkeys = false;
-}
-
-void PTA::advancedPriceCheckActivated()
-{
-    if (m_blockHotkeys)
-    {
-        // Currently blocked
-        return;
-    }
-
-    m_blockHotkeys = true;
-
-    // Check for PoE window
-    HWND hwnd = GetForegroundWindow();
-
-    if (nullptr == hwnd)
-    {
-        m_blockHotkeys = false;
-        qDebug() << "Null active window.";
-        return;
-    }
-
-    wchar_t cls[512];
-    GetClassName(hwnd, cls, std::size(cls));
-
-    if (g_poeCls != cls)
-    {
-        m_blockHotkeys = false;
-        qDebug() << "Active window not PoE";
-        return;
-    }
-
-    // Set up clipboard signal
-    Once::connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, [=]() {
-        QString itemText = QGuiApplication::clipboard()->text();
-
-        if (itemText.isEmpty())
-        {
-            showToolTip("Failed to retrieve item text from clipboard. Please try again");
-            qWarning() << "Failed to retrieve item text from clipboard.";
-            return;
-        }
-
-        showToolTip("Searching...");
-
-        std::shared_ptr<PItem> item(m_api->parse(itemText));
-
-        if (!item)
-        {
-            showToolTip("Error parsing item text. Check log for more details.");
-            qWarning() << "Error parsing item text" << itemText;
-            return;
-        }
-
-        m_api->advancedPriceCheck(item);
-    });
-
-    // Send ctrl-c
-    std::vector<INPUT> keystroke;
-
-    // ensure alt is up
-    keystroke.push_back(createInput(VK_MENU, false));
-
-    keystroke.push_back(createInput(VK_CONTROL, true));
-    keystroke.push_back(createInput('C', true));
-    keystroke.push_back(createInput('C', false));
-    keystroke.push_back(createInput(VK_CONTROL, false));
-
-    SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
-
-    m_blockHotkeys = false;
 }
 
 void PTA::handleScrollHotkey(quint16 data)
@@ -513,6 +375,138 @@ void PTA::handleScrollHotkey(quint16 data)
 
             SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
         }
+    }
+}
+
+void PTA::handlePriceCheckHotkey(uint32_t flag)
+{
+    if (m_blockHotkeys)
+    {
+        // Currently blocked
+        return;
+    }
+
+    if (m_pcTriggered)
+    {
+        // Another search triggered
+        return;
+    }
+
+    m_blockHotkeys = true;
+
+    // Check for PoE window
+    HWND hwnd = GetForegroundWindow();
+
+    if (nullptr == hwnd)
+    {
+        m_blockHotkeys = false;
+        qDebug() << "Null active window.";
+        return;
+    }
+
+    wchar_t cls[512];
+    GetClassName(hwnd, cls, std::size(cls));
+
+    if (g_poeCls != cls)
+    {
+        m_blockHotkeys = false;
+        qDebug() << "Active window not PoE";
+        return;
+    }
+
+    // Arm trigger
+    m_pctype      = flag;
+    m_pcTriggered = true;
+
+    QTimer::singleShot(100, [=]() {
+        // Reset trigger if still armed
+        if (m_pcTriggered)
+        {
+            m_pcTriggered = false;
+        }
+    });
+
+    // Send ctrl-c
+    std::vector<INPUT> keystroke;
+
+    // ensure alt is up
+    keystroke.push_back(createInput(VK_MENU, false));
+
+    keystroke.push_back(createInput(VK_CONTROL, true));
+    keystroke.push_back(createInput('C', true));
+    keystroke.push_back(createInput('C', false));
+    keystroke.push_back(createInput(VK_CONTROL, false));
+
+    SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
+
+    m_blockHotkeys = false;
+}
+
+void PTA::handleClipboard()
+{
+    // Handle false cases:
+    if (!m_pcTriggered)
+    {
+        // No search triggered
+        return;
+    }
+
+    m_pcTriggered = false; // handled
+
+    // Check for PoE window
+    HWND hwnd = GetForegroundWindow();
+
+    if (nullptr == hwnd)
+    {
+        m_blockHotkeys = false;
+        qDebug() << "Null active window.";
+        return;
+    }
+
+    wchar_t cls[512];
+    GetClassName(hwnd, cls, std::size(cls));
+
+    if (g_poeCls != cls)
+    {
+        m_blockHotkeys = false;
+        qDebug() << "Active window not PoE";
+        return;
+    }
+
+    if (m_pctype < 0 || m_pctype >= PC_MAX)
+    {
+        qDebug() << "Bad price check type:" << m_pctype;
+        return;
+    }
+
+    QString itemText = QGuiApplication::clipboard()->text();
+
+    if (itemText.isEmpty())
+    {
+        showToolTip("Failed to retrieve item text from clipboard. Please try again");
+        qWarning() << "Failed to retrieve item text from clipboard.";
+        return;
+    }
+
+    showToolTip("Searching...");
+
+    std::shared_ptr<PItem> item(m_api->parse(itemText));
+
+    if (!item)
+    {
+        showToolTip("Error parsing item text. Check log for more details.");
+        qWarning() << "Error parsing item text" << itemText;
+        return;
+    }
+
+    switch (m_pctype)
+    {
+        case PC_SIMPLE:
+            m_api->simplePriceCheck(item);
+            break;
+        case PC_ADVANCED:
+            m_api->advancedPriceCheck(item);
+            break;
     }
 }
 

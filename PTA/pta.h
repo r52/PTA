@@ -14,6 +14,13 @@ QT_FORWARD_DECLARE_CLASS(ItemAPI)
 
 struct PItem;
 
+enum price_check_flag : uint32_t
+{
+    PC_SIMPLE = 0,
+    PC_ADVANCED,
+    PC_MAX
+};
+
 class PTA : public QMainWindow
 {
     Q_OBJECT
@@ -48,9 +55,10 @@ private:
 
 private slots:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
-    void priceCheckActivated();
-    void advancedPriceCheckActivated();
+
     void handleScrollHotkey(quint16 data);
+    void handlePriceCheckHotkey(uint32_t flag);
+    void handleClipboard();
 
 public:
     // Input Handler
@@ -81,7 +89,9 @@ private:
     std::unique_ptr<QHotkey> m_simpleKey;
     std::unique_ptr<QHotkey> m_advancedKey;
 
-    bool m_blockHotkeys;
+    bool     m_blockHotkeys;
+    bool     m_pcTriggered;
+    uint32_t m_pctype;
 
     Q_DISABLE_COPY(PTA);
 };
