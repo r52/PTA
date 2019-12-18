@@ -34,7 +34,7 @@ class PTA : public QMainWindow
 
     private:
         QObject* m_parent;
-        bool     m_ctrldown;
+        bool     m_ctrldown = false;
     };
 
 public:
@@ -90,8 +90,8 @@ private:
     std::unique_ptr<QHotkey> m_simpleKey;
     std::unique_ptr<QHotkey> m_advancedKey;
 
-    bool     m_blockHotkeys;
-    bool     m_pcTriggered;
+    bool     m_blockHotkeys = false;
+    bool     m_pcTriggered  = false;
     uint32_t m_pctype;
 
     Q_DISABLE_COPY(PTA);

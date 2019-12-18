@@ -34,7 +34,7 @@ INPUT createInput(WORD vk, bool isDown)
     return input;
 }
 
-PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log), m_blockHotkeys(false), m_inputhandler(this)
+PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log), m_inputhandler(this)
 {
     if (nullptr == m_logWindow)
     {
@@ -509,7 +509,7 @@ void PTA::handleClipboard()
     }
 }
 
-PTA::InputHandler::InputHandler(QObject* parent) : m_parent(parent), m_ctrldown(false) {}
+PTA::InputHandler::InputHandler(QObject* parent) : m_parent(parent) {}
 
 bool PTA::InputHandler::nativeEventFilter(const QByteArray& eventType, void* message, long* result)
 {
