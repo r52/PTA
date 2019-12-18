@@ -19,8 +19,7 @@
 
 namespace
 {
-    const std::wstring g_poeCls   = L"POEWindowClass";
-    bool               g_CtrlDown = false;
+    const std::wstring g_poeCls = L"POEWindowClass";
 }
 
 INPUT createInput(WORD vk, bool isDown)
@@ -342,7 +341,7 @@ void PTA::setupFunctionality()
     }
 }
 
-void PTA::handleScrollHotkey(quint16 data)
+void PTA::handleScrollHotkey(bool ctrldown, quint16 data)
 {
     // Check for PoE window
     HWND hwnd = GetForegroundWindow();
@@ -358,7 +357,7 @@ void PTA::handleScrollHotkey(quint16 data)
 
     qint16 dirdat = (qint16) data;
 
-    if (g_CtrlDown)
+    if (ctrldown)
     {
         QSettings settings;
         bool      scrollEnabled = settings.value(PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED, true).toBool();
@@ -510,7 +509,7 @@ void PTA::handleClipboard()
     }
 }
 
-PTA::InputHandler::InputHandler(QObject* parent) : m_parent(parent) {}
+PTA::InputHandler::InputHandler(QObject* parent) : m_parent(parent), m_ctrldown(false) {}
 
 bool PTA::InputHandler::nativeEventFilter(const QByteArray& eventType, void* message, long* result)
 {
@@ -539,9 +538,10 @@ bool PTA::InputHandler::nativeEventFilter(const QByteArray& eventType, void* mes
                 {
                     if (raw->data.mouse.usButtonFlags == RI_MOUSE_WHEEL)
                     {
-                        if (m_parent)
+                        if (m_parent && m_ctrldown)
                         {
-                            QMetaObject::invokeMethod(m_parent, "handleScrollHotkey", Qt::AutoConnection, Q_ARG(quint16, raw->data.mouse.usButtonData));
+                            QMetaObject::invokeMethod(
+                                m_parent, "handleScrollHotkey", Qt::AutoConnection, Q_ARG(bool, m_ctrldown), Q_ARG(quint16, raw->data.mouse.usButtonData));
                         }
                     }
                 }
@@ -553,7 +553,7 @@ bool PTA::InputHandler::nativeEventFilter(const QByteArray& eventType, void* mes
 
                     if (keyCode == VK_CONTROL)
                     {
-                        g_CtrlDown = !keyUp;
+                        m_ctrldown = !keyUp;
                     }
                 }
             }

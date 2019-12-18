@@ -34,6 +34,7 @@ class PTA : public QMainWindow
 
     private:
         QObject* m_parent;
+        bool     m_ctrldown;
     };
 
 public:
@@ -56,7 +57,7 @@ private:
 private slots:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 
-    void handleScrollHotkey(quint16 data);
+    void handleScrollHotkey(bool ctrldown, quint16 data);
     void handlePriceCheckHotkey(uint32_t flag);
     void handleClipboard();
 
