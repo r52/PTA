@@ -98,6 +98,7 @@ struct misc_filters_t
     int                      map_tier;
     std::string              disc;
     std::vector<std::string> influences;
+    bool                     exchange = false; // currency exchange format
 };
 
 struct PItem

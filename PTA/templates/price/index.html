@@ -238,7 +238,7 @@
                     }
                 }
             ],
-            "currency": [{
+            "currency-exchange": [{
                     "title": "Account Name",
                     "field": function (entry) {
                         return entry["listing"]["account"]["name"];
@@ -337,7 +337,11 @@
         }
 
         if (item["prediction"]) {
-            clm = "prediction"
+            clm = "prediction";
+        }
+
+        if (item["exchange"]) {
+            clm = "currency-exchange";
         }
 
         var tr = table.insertRow(-1);

@@ -1287,6 +1287,9 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
         return;
     }
 
+    // currency exchange format
+    item->f_misc.exchange = true;
+
     std::string want = c_currency[item->type].get<std::string>();
     std::string have = p_curr;
 
@@ -1577,6 +1580,8 @@ QString ItemAPI::toJson(PItem* item)
 
     j["prediction"] = item->is_prediction;
 
+    j["exchange"] = item->f_misc.exchange;
+
     j["name"] = item->name;
 
     j["rarity"] = item->f_type.rarity;
@@ -1634,7 +1639,9 @@ QString ItemAPI::toJson(PItem* item)
 
 void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 {
-    if (item->f_type.category == "currency")
+    // If its a currency and the currency is listed in the bulk exchange, try that first
+    // Otherwise, try a regular search
+    if (item->f_type.category == "currency" && c_currency.contains(item->type))
     {
         doCurrencySearch(item);
         return;
