@@ -1801,7 +1801,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         }
 
         // Force Influences
-        if (!item->f_misc.influences.empty())
+        if (item->f_type.category != "card" && !item->f_misc.influences.empty())
         {
             for (auto i : item->f_misc.influences)
             {
