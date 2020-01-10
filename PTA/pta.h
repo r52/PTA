@@ -60,6 +60,7 @@ private slots:
     void handleScrollHotkey(bool ctrldown, quint16 data);
     void handlePriceCheckHotkey(uint32_t flag);
     void handleClipboard();
+    void processClipboard();
 
 public:
     // Input Handler

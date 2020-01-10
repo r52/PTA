@@ -428,8 +428,10 @@ void PTA::handlePriceCheckHotkey(uint32_t flag)
     // Send ctrl-c
     std::vector<INPUT> keystroke;
 
-    // ensure alt is up
+    // ensure ctrl/alt/c is up
     keystroke.push_back(createInput(VK_MENU, false));
+    keystroke.push_back(createInput(VK_CONTROL, false));
+    keystroke.push_back(createInput('C', false));
 
     keystroke.push_back(createInput(VK_CONTROL, true));
     keystroke.push_back(createInput('C', true));
@@ -442,6 +444,12 @@ void PTA::handlePriceCheckHotkey(uint32_t flag)
 }
 
 void PTA::handleClipboard()
+{
+    // delay this a bit
+    QTimer::singleShot(10, this, &PTA::processClipboard);
+}
+
+void PTA::processClipboard()
 {
     // Handle false cases:
     if (!m_pcTriggered)
