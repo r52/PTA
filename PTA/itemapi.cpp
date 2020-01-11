@@ -863,24 +863,24 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
         if (stat.contains("reduced"))
         {
             stat.replace("reduced", "increased");
-            orig_stat.replace("reduced", "increased");
+            // orig_stat.replace("reduced", "increased");
         }
         else
         {
             stat.replace("less", "more");
-            orig_stat.replace("less", "more");
+            // orig_stat.replace("less", "more");
         }
 
-        for (auto& v : val)
+        // replace last
+        auto& v = val[val.size() - 1];
+
+        if (v.is_number_float())
         {
-            if (v.is_number_float())
-            {
-                v = v.get<double>() * -1.0;
-            }
-            else
-            {
-                v = v.get<int>() * -1;
-            }
+            v = v.get<double>() * -1.0;
+        }
+        else
+        {
+            v = v.get<int>() * -1;
         }
 
         stoken = stat.toStdString();
