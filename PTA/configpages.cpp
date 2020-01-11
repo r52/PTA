@@ -290,7 +290,7 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
     pcLayout->addWidget(pcCombo);
 
     // ------------------Secondary Currency
-    QLabel* scLabel = new QLabel(tr("Primary Currency:"));
+    QLabel* scLabel = new QLabel(tr("Secondary Currency:"));
 
     QComboBox* scCombo = new QComboBox;
     scCombo->addItem("Orb of Alteration", "alt");

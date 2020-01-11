@@ -157,7 +157,8 @@ private:
     std::unordered_set<std::string>                                  c_weaponLocals;
     std::unordered_set<std::string>                                  c_armourLocals;
     std::unordered_map<std::string, std::unordered_set<std::string>> c_discriminators;
-    json                                                             c_currency;
+    json                                                             c_currencyMap;
+    std::unordered_set<std::string>                                  c_currencyCodes;
 
     std::map<std::string, json> c_baseMap;
 

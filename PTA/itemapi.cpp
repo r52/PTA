@@ -321,15 +321,20 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     {
         QByteArray cdat = curr.readAll();
 
-        c_currency = json::parse(cdat.toStdString());
+        c_currencyMap = json::parse(cdat.toStdString());
     }
     else if (synchronizedGetJSON(QNetworkRequest(u_pta_currency), data))
     {
-        c_currency = data;
+        c_currencyMap = data;
     }
     else
     {
         throw std::runtime_error("Cannot open currency.json");
+    }
+
+    for (auto& [k, v] : c_currencyMap.items())
+    {
+        c_currencyCodes.insert(v.get<std::string>());
     }
 
     qInfo() << "Currency rules loaded";
@@ -1266,20 +1271,20 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
     std::string s_curr = settings.value(PTA_CONFIG_SECONDARY_CURRENCY, PTA_CONFIG_DEFAULT_SECONDARY_CURRENCY).toString().toStdString();
 
     // Reset setting that no longer exists
-    if (!c_currency.contains(p_curr))
+    if (!c_currencyCodes.contains(p_curr))
     {
         p_curr = PTA_CONFIG_DEFAULT_PRIMARY_CURRENCY;
         settings.setValue(PTA_CONFIG_PRIMARY_CURRENCY, QString::fromStdString(p_curr));
     }
 
-    if (!c_currency.contains(s_curr))
+    if (!c_currencyCodes.contains(s_curr))
     {
         s_curr = PTA_CONFIG_DEFAULT_SECONDARY_CURRENCY;
         settings.setValue(PTA_CONFIG_SECONDARY_CURRENCY, QString::fromStdString(s_curr));
     }
 
     // Check for existing currencies
-    if (!c_currency.contains(item->type))
+    if (!c_currencyMap.contains(item->type))
     {
         emit humour(tr("Could not find this currency in the database. See log for details."));
         qWarning() << "Currency not found:" << QString::fromStdString(item->type);
@@ -1290,7 +1295,7 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
     // currency exchange format
     item->f_misc.exchange = true;
 
-    std::string want = c_currency[item->type].get<std::string>();
+    std::string want = c_currencyMap[item->type].get<std::string>();
     std::string have = p_curr;
 
     if (want == p_curr)
@@ -1298,19 +1303,27 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
         have = s_curr;
     }
 
-    item->m_options = "To " + have;
-
     query["exchange"]["want"].push_back(want);
-    query["exchange"]["have"].push_back(have);
 
-    auto qba = query.dump();
+    while (true)
+    {
+        item->m_options = "To " + have;
 
-    QNetworkRequest request;
-    request.setUrl(QUrl(u_trade_exchange + getLeague()));
-    request.setRawHeader("Content-Type", "application/json");
+        query["exchange"]["have"].clear();
+        query["exchange"]["have"].push_back(have);
 
-    auto req = m_manager->post(request, QByteArray::fromStdString(qba));
-    connect(req, &QNetworkReply::finished, [=]() {
+        auto qba = query.dump();
+
+        QNetworkRequest request;
+        request.setUrl(QUrl(u_trade_exchange + getLeague()));
+        request.setRawHeader("Content-Type", "application/json");
+
+        QEventLoop loop;
+        connect(m_manager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+
+        auto req = m_manager->post(request, QByteArray::fromStdString(qba));
+        loop.exec();
+
         req->deleteLater();
 
         if (req->error() != QNetworkReply::NoError)
@@ -1340,6 +1353,13 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
 
         if (resp["result"].size() == 0)
         {
+            // try secondary currency
+            if (have != s_curr)
+            {
+                have = s_curr;
+                continue;
+            }
+
             emit humour(tr("No results found."));
             qDebug() << "No results";
             return;
@@ -1347,7 +1367,8 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
 
         // else process the results
         processPriceResults(item, resp, true);
-    });
+        return;
+    }
 }
 
 bool ItemAPI::synchronizedGetJSON(const QNetworkRequest& req, json& result)
@@ -1641,7 +1662,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
 {
     // If its a currency and the currency is listed in the bulk exchange, try that first
     // Otherwise, try a regular search
-    if (item->f_type.category == "currency" && c_currency.contains(item->type))
+    if (item->f_type.category == "currency" && c_currencyMap.contains(item->type))
     {
         doCurrencySearch(item);
         return;
