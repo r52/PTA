@@ -19,7 +19,8 @@
 
 namespace
 {
-    const std::wstring g_poeCls = L"POEWindowClass";
+    const std::wstring g_poeCls            = L"POEWindowClass";
+    bool               g_ctrlScrollEnabled = false;
 }
 
 INPUT createInput(WORD vk, bool isDown)
@@ -249,6 +250,11 @@ void PTA::createActions()
                     }
                 }
             }
+
+            if (k == PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED)
+            {
+                g_ctrlScrollEnabled = v.get<bool>();
+            }
         }
     });
 
@@ -314,12 +320,15 @@ void PTA::setupFunctionality()
         connect(m_advancedKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_ADVANCED); });
     }
 
+    // ctrl + scroll
+    g_ctrlScrollEnabled = settings.value(PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED, true).toBool();
+
     // Clipboard
     connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, this, &PTA::handleClipboard);
 
+    // Setup Raw Input
     auto hwnd = (HWND) winId();
 
-    // Setup Raw Input
     RAWINPUTDEVICE rid[2];
 
     // Keyboard
@@ -341,40 +350,19 @@ void PTA::setupFunctionality()
     }
 }
 
-void PTA::handleScrollHotkey(bool ctrldown, quint16 data)
+void PTA::handleScrollHotkey(quint16 data)
 {
-    // Check for PoE window
-    HWND hwnd = GetForegroundWindow();
-
-    if (nullptr == hwnd)
-        return;
-
-    wchar_t cls[512];
-    GetClassName(hwnd, cls, std::size(cls));
-
-    if (g_poeCls != cls)
-        return;
-
     qint16 dirdat = (qint16) data;
 
-    if (ctrldown)
-    {
-        QSettings settings;
-        bool      scrollEnabled = settings.value(PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED, true).toBool();
+    WORD key = (dirdat > 0 ? VK_LEFT : VK_RIGHT);
 
-        if (scrollEnabled)
-        {
-            WORD key = (dirdat > 0 ? VK_LEFT : VK_RIGHT);
+    // Send input
+    std::vector<INPUT> keystroke;
 
-            // Send input
-            std::vector<INPUT> keystroke;
+    keystroke.push_back(createInput(key, true));
+    keystroke.push_back(createInput(key, false));
 
-            keystroke.push_back(createInput(key, true));
-            keystroke.push_back(createInput(key, false));
-
-            SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
-        }
-    }
+    SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
 }
 
 void PTA::handlePriceCheckHotkey(uint32_t flag)
@@ -566,10 +554,23 @@ bool PTA::InputHandler::nativeEventFilter(const QByteArray& eventType, void* mes
                 {
                     if (raw->data.mouse.usButtonFlags == RI_MOUSE_WHEEL)
                     {
-                        if (m_parent && m_ctrldown)
+                        if (m_parent && m_ctrldown && g_ctrlScrollEnabled)
                         {
-                            QMetaObject::invokeMethod(
-                                m_parent, "handleScrollHotkey", Qt::AutoConnection, Q_ARG(bool, m_ctrldown), Q_ARG(quint16, raw->data.mouse.usButtonData));
+                            // Check for PoE window
+                            HWND hwnd = GetForegroundWindow();
+
+                            if (nullptr == hwnd)
+                                return false;
+
+                            wchar_t cls[512];
+                            GetClassName(hwnd, cls, std::size(cls));
+
+                            if (g_poeCls != cls)
+                                return false;
+
+                            QMetaObject::invokeMethod(m_parent, "handleScrollHotkey", Qt::AutoConnection, Q_ARG(quint16, raw->data.mouse.usButtonData));
+
+                            return true;
                         }
                     }
                 }

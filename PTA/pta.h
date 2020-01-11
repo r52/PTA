@@ -57,7 +57,7 @@ private:
 private slots:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 
-    void handleScrollHotkey(bool ctrldown, quint16 data);
+    void handleScrollHotkey(quint16 data);
     void handlePriceCheckHotkey(uint32_t flag);
     void handleClipboard();
     void processClipboard();
