@@ -2010,21 +2010,21 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
         return;
     }
 
-    StatDialog dlg(item.get());
-    auto       result = dlg.exec();
+    StatDialog* dlg = new StatDialog(item.get());
 
-    if (result == QDialog::Rejected)
-    {
-        // cancelled
-        return;
-    }
+    connect(dlg, &QDialog::finished, [=](int result) {
+        if (result == QDialog::Rejected)
+        {
+            // cancelled
+            return;
+        }
 
-    bool searchonsite = (result == SEARCH_ON_SITE);
+        bool searchonsite = (result == SEARCH_ON_SITE);
 
-    json filters = dlg.filters;
-    json misc    = dlg.misc;
+        json filters = dlg->filters;
+        json misc    = dlg->misc;
 
-    auto query = R"(
+        auto query = R"(
     {
         "query": {
             "status": {
@@ -2041,293 +2041,296 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
     }
     )"_json;
 
-    QSettings settings;
-    auto&     qe = query["query"];
+        QSettings settings;
+        auto&     qe = query["query"];
 
-    // Take care of settings
-    bool onlineonly = settings.value(PTA_CONFIG_ONLINE_ONLY, PTA_CONFIG_DEFAULT_ONLINE_ONLY).toBool();
-    if (!onlineonly)
-    {
-        query["query"]["status"]["option"] = "any";
-    }
-
-    bool buyoutonly = settings.value(PTA_CONFIG_BUYOUT_ONLY, PTA_CONFIG_DEFAULT_BUYOUT_ONLY).toBool();
-    if (buyoutonly)
-    {
-        query["query"]["filters"]["trade_filters"]["filters"]["sale_type"]["option"] = "priced";
-    }
-
-    bool        is_unique_base = false;
-    std::string searchToken;
-
-    if (!item->name.empty())
-    {
-        is_unique_base = m_uniques.contains(item->name);
-        searchToken    = item->name;
-    }
-    else
-    {
-        is_unique_base = m_uniques.contains(item->type);
-        searchToken    = item->type;
-    }
-
-    // Force rarity
-    std::string rarity = "nonunique";
-
-    if (item->f_type.rarity == "Unique")
-    {
-        rarity = item->f_type.rarity;
-        std::transform(rarity.begin(), rarity.end(), rarity.begin(), ::tolower);
-    }
-
-    query["query"]["filters"]["type_filters"]["filters"]["rarity"]["option"] = rarity;
-
-    // Force category
-    if (!item->f_type.category.empty())
-    {
-        std::string category = item->f_type.category;
-        std::transform(category.begin(), category.end(), category.begin(), ::tolower);
-
-        query["query"]["filters"]["type_filters"]["filters"]["category"]["option"] = category;
-    }
-
-    // weapon/armour base mods
-
-    if (item->f_weapon.search_pdps)
-    {
-        if (item->f_weapon.pdps_filter.min > 0)
+        // Take care of settings
+        bool onlineonly = settings.value(PTA_CONFIG_ONLINE_ONLY, PTA_CONFIG_DEFAULT_ONLINE_ONLY).toBool();
+        if (!onlineonly)
         {
-            query["query"]["filters"]["weapon_filters"]["filters"]["pdps"]["min"] = item->f_weapon.pdps_filter.min;
+            query["query"]["status"]["option"] = "any";
         }
 
-        if (item->f_weapon.pdps_filter.max > 0)
+        bool buyoutonly = settings.value(PTA_CONFIG_BUYOUT_ONLY, PTA_CONFIG_DEFAULT_BUYOUT_ONLY).toBool();
+        if (buyoutonly)
         {
-            query["query"]["filters"]["weapon_filters"]["filters"]["pdps"]["max"] = item->f_weapon.pdps_filter.max;
-        }
-    }
-
-    if (item->f_weapon.search_edps)
-    {
-        if (item->f_weapon.edps_filter.min > 0)
-        {
-            query["query"]["filters"]["weapon_filters"]["filters"]["edps"]["min"] = item->f_weapon.edps_filter.min;
+            query["query"]["filters"]["trade_filters"]["filters"]["sale_type"]["option"] = "priced";
         }
 
-        if (item->f_weapon.edps_filter.max > 0)
+        bool        is_unique_base = false;
+        std::string searchToken;
+
+        if (!item->name.empty())
         {
-            query["query"]["filters"]["weapon_filters"]["filters"]["edps"]["max"] = item->f_weapon.edps_filter.max;
-        }
-    }
-
-    if (item->f_armour.search_ar)
-    {
-        if (item->f_armour.ar_filter.min > 0)
-        {
-            query["query"]["filters"]["armour_filters"]["filters"]["ar"]["min"] = item->f_armour.ar_filter.min;
-        }
-
-        if (item->f_armour.ar_filter.max > 0)
-        {
-            query["query"]["filters"]["armour_filters"]["filters"]["ar"]["max"] = item->f_armour.ar_filter.max;
-        }
-    }
-
-    if (item->f_armour.search_ev)
-    {
-        if (item->f_armour.ev_filter.min > 0)
-        {
-            query["query"]["filters"]["armour_filters"]["filters"]["ev"]["min"] = item->f_armour.ev_filter.min;
-        }
-
-        if (item->f_armour.ev_filter.max > 0)
-        {
-            query["query"]["filters"]["armour_filters"]["filters"]["ev"]["max"] = item->f_armour.ev_filter.max;
-        }
-    }
-
-    if (item->f_armour.search_es)
-    {
-        if (item->f_armour.es_filter.min > 0)
-        {
-            query["query"]["filters"]["armour_filters"]["filters"]["es"]["min"] = item->f_armour.es_filter.min;
-        }
-
-        if (item->f_armour.es_filter.max > 0)
-        {
-            query["query"]["filters"]["armour_filters"]["filters"]["es"]["max"] = item->f_armour.es_filter.max;
-        }
-    }
-
-    // Checked mods
-    for (auto& [k, e] : filters.items())
-    {
-        // set id
-        e["id"] = k;
-
-        if (e["disabled"] == false)
-        {
-            qe["stats"][0]["filters"].push_back(e);
-        }
-    }
-
-    // Check for unique items
-    if (is_unique_base)
-    {
-        auto range = m_uniques.equal_range(searchToken);
-        for (auto it = range.first; it != range.second; ++it)
-        {
-            auto& entry = it->second;
-
-            // For everything else, match type
-            if (entry["type"] == item->type)
-            {
-                qe["type"] = entry["type"];
-
-                if (entry.contains("name"))
-                {
-                    qe["name"] = entry["name"];
-                }
-
-                break;
-            }
-        }
-    }
-
-    item->m_options = getLeague().toStdString();
-
-    // Use sockets
-    if (misc.contains("use_sockets") && misc["use_sockets"])
-    {
-        qe["filters"]["socket_filters"]["filters"]["sockets"]["min"] = item->f_socket.sockets.total();
-
-        item->m_options += ", " + std::to_string(item->f_socket.sockets.total()) + "S";
-    }
-
-    // Use links
-    if (misc.contains("use_links") && misc["use_links"])
-    {
-        qe["filters"]["socket_filters"]["filters"]["links"]["min"] = item->f_socket.links;
-
-        item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
-    }
-
-    // Use iLvl
-    if (misc.contains("use_ilvl") && misc["use_ilvl"])
-    {
-        qe["filters"]["misc_filters"]["filters"]["ilvl"]["min"] = misc["ilvl"];
-
-        item->m_options += ", iLvl=" + std::to_string(misc["ilvl"].get<int>());
-    }
-
-    // Use item base
-    if (misc.contains("use_item_base") && misc["use_item_base"])
-    {
-        qe["type"] = item->type;
-
-        item->m_options += ", Use Base Type";
-    }
-
-    // Influences
-
-    if (misc.contains("influences"))
-    {
-        for (auto [key, value] : misc["influences"].items())
-        {
-            if (!key.empty() && value.get<bool>())
-            {
-                std::string inf    = key;
-                std::string infkey = inf + "_item";
-
-                qe["filters"]["misc_filters"]["filters"][infkey]["option"] = true;
-
-                inf[0] = toupper(inf[0]);
-                item->m_options += ", " + inf + " Influence";
-            }
-        }
-    }
-
-    // Synthesis
-    if (misc.contains("use_synthesis_base") && misc["use_synthesis_base"])
-    {
-        qe["filters"]["misc_filters"]["filters"]["synthesised_item"]["option"] = true;
-        item->m_options += ", Synthesis Base";
-    }
-
-    // Default corrupt options
-    bool corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
-
-    if (corrupt_override)
-    {
-        QString corrupt_search = settings.value(PTA_CONFIG_CORRUPTSEARCH, PTA_CONFIG_DEFAULT_CORRUPTSEARCH).toString();
-
-        if (corrupt_search != "Any")
-        {
-            qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = (corrupt_search == "Yes");
-
-            item->m_options += ", Corrupted=" + corrupt_search.toStdString();
+            is_unique_base = m_uniques.contains(item->name);
+            searchToken    = item->name;
         }
         else
         {
-            item->m_options += ", Corrupted=Any";
+            is_unique_base = m_uniques.contains(item->type);
+            searchToken    = item->type;
         }
-    }
-    else
-    {
-        qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item->f_misc.corrupted;
 
-        item->m_options += ", Corrupted=";
-        item->m_options += item->f_misc.corrupted ? "Yes" : "No";
-    }
+        // Force rarity
+        std::string rarity = "nonunique";
 
-    auto qba = query.dump();
-
-    QNetworkRequest request;
-    request.setUrl(QUrl(u_trade_search + getLeague()));
-    request.setRawHeader("Content-Type", "application/json");
-
-    auto req = m_manager->post(request, QByteArray::fromStdString(qba));
-    connect(req, &QNetworkReply::finished, [=]() {
-        req->deleteLater();
-
-        if (req->error() != QNetworkReply::NoError)
+        if (item->f_type.rarity == "Unique")
         {
-            emit humour(tr("Error querying trade API. See log for details"));
-            qWarning() << "PAPI: Error querying trade API" << req->error() << req->errorString();
-            return;
+            rarity = item->f_type.rarity;
+            std::transform(rarity.begin(), rarity.end(), rarity.begin(), ::tolower);
         }
 
-        auto respdata = req->readAll();
+        query["query"]["filters"]["type_filters"]["filters"]["rarity"]["option"] = rarity;
 
-        if (!respdata.size())
+        // Force category
+        if (!item->f_type.category.empty())
         {
-            emit humour(tr("Error querying trade API. See log for details"));
-            qWarning() << "PAPI: Error querying trade API - returned no data";
-            return;
+            std::string category = item->f_type.category;
+            std::transform(category.begin(), category.end(), category.begin(), ::tolower);
+
+            query["query"]["filters"]["type_filters"]["filters"]["category"]["option"] = category;
         }
 
-        auto resp = json::parse(respdata.toStdString());
-        if (!resp.contains("result") || !resp.contains("id"))
+        // weapon/armour base mods
+
+        if (item->f_weapon.search_pdps)
         {
-            emit humour(tr("Error querying trade API. See log for details"));
-            qWarning() << "PAPI: Error querying trade API";
-            qWarning() << "PAPI: Site responded with" << respdata;
-            return;
+            if (item->f_weapon.pdps_filter.min > 0)
+            {
+                query["query"]["filters"]["weapon_filters"]["filters"]["pdps"]["min"] = item->f_weapon.pdps_filter.min;
+            }
+
+            if (item->f_weapon.pdps_filter.max > 0)
+            {
+                query["query"]["filters"]["weapon_filters"]["filters"]["pdps"]["max"] = item->f_weapon.pdps_filter.max;
+            }
         }
 
-        if (searchonsite)
+        if (item->f_weapon.search_edps)
         {
-            QDesktopServices::openUrl(QUrl(u_trade_site + getLeague() + "/" + QString::fromStdString(resp["id"].get<std::string>())));
-            return;
+            if (item->f_weapon.edps_filter.min > 0)
+            {
+                query["query"]["filters"]["weapon_filters"]["filters"]["edps"]["min"] = item->f_weapon.edps_filter.min;
+            }
+
+            if (item->f_weapon.edps_filter.max > 0)
+            {
+                query["query"]["filters"]["weapon_filters"]["filters"]["edps"]["max"] = item->f_weapon.edps_filter.max;
+            }
         }
 
-        if (resp["result"].size() == 0)
+        if (item->f_armour.search_ar)
         {
-            emit humour(tr("No results found."));
-            qDebug() << "No results";
-            return;
+            if (item->f_armour.ar_filter.min > 0)
+            {
+                query["query"]["filters"]["armour_filters"]["filters"]["ar"]["min"] = item->f_armour.ar_filter.min;
+            }
+
+            if (item->f_armour.ar_filter.max > 0)
+            {
+                query["query"]["filters"]["armour_filters"]["filters"]["ar"]["max"] = item->f_armour.ar_filter.max;
+            }
         }
 
-        // else process the results
-        processPriceResults(item, resp);
+        if (item->f_armour.search_ev)
+        {
+            if (item->f_armour.ev_filter.min > 0)
+            {
+                query["query"]["filters"]["armour_filters"]["filters"]["ev"]["min"] = item->f_armour.ev_filter.min;
+            }
+
+            if (item->f_armour.ev_filter.max > 0)
+            {
+                query["query"]["filters"]["armour_filters"]["filters"]["ev"]["max"] = item->f_armour.ev_filter.max;
+            }
+        }
+
+        if (item->f_armour.search_es)
+        {
+            if (item->f_armour.es_filter.min > 0)
+            {
+                query["query"]["filters"]["armour_filters"]["filters"]["es"]["min"] = item->f_armour.es_filter.min;
+            }
+
+            if (item->f_armour.es_filter.max > 0)
+            {
+                query["query"]["filters"]["armour_filters"]["filters"]["es"]["max"] = item->f_armour.es_filter.max;
+            }
+        }
+
+        // Checked mods
+        for (auto& [k, e] : filters.items())
+        {
+            // set id
+            e["id"] = k;
+
+            if (e["disabled"] == false)
+            {
+                qe["stats"][0]["filters"].push_back(e);
+            }
+        }
+
+        // Check for unique items
+        if (is_unique_base)
+        {
+            auto range = m_uniques.equal_range(searchToken);
+            for (auto it = range.first; it != range.second; ++it)
+            {
+                auto& entry = it->second;
+
+                // For everything else, match type
+                if (entry["type"] == item->type)
+                {
+                    qe["type"] = entry["type"];
+
+                    if (entry.contains("name"))
+                    {
+                        qe["name"] = entry["name"];
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        item->m_options = getLeague().toStdString();
+
+        // Use sockets
+        if (misc.contains("use_sockets") && misc["use_sockets"])
+        {
+            qe["filters"]["socket_filters"]["filters"]["sockets"]["min"] = item->f_socket.sockets.total();
+
+            item->m_options += ", " + std::to_string(item->f_socket.sockets.total()) + "S";
+        }
+
+        // Use links
+        if (misc.contains("use_links") && misc["use_links"])
+        {
+            qe["filters"]["socket_filters"]["filters"]["links"]["min"] = item->f_socket.links;
+
+            item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
+        }
+
+        // Use iLvl
+        if (misc.contains("use_ilvl") && misc["use_ilvl"])
+        {
+            qe["filters"]["misc_filters"]["filters"]["ilvl"]["min"] = misc["ilvl"];
+
+            item->m_options += ", iLvl=" + std::to_string(misc["ilvl"].get<int>());
+        }
+
+        // Use item base
+        if (misc.contains("use_item_base") && misc["use_item_base"])
+        {
+            qe["type"] = item->type;
+
+            item->m_options += ", Use Base Type";
+        }
+
+        // Influences
+
+        if (misc.contains("influences"))
+        {
+            for (auto [key, value] : misc["influences"].items())
+            {
+                if (!key.empty() && value.get<bool>())
+                {
+                    std::string inf    = key;
+                    std::string infkey = inf + "_item";
+
+                    qe["filters"]["misc_filters"]["filters"][infkey]["option"] = true;
+
+                    inf[0] = toupper(inf[0]);
+                    item->m_options += ", " + inf + " Influence";
+                }
+            }
+        }
+
+        // Synthesis
+        if (misc.contains("use_synthesis_base") && misc["use_synthesis_base"])
+        {
+            qe["filters"]["misc_filters"]["filters"]["synthesised_item"]["option"] = true;
+            item->m_options += ", Synthesis Base";
+        }
+
+        // Default corrupt options
+        bool corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
+
+        if (corrupt_override)
+        {
+            QString corrupt_search = settings.value(PTA_CONFIG_CORRUPTSEARCH, PTA_CONFIG_DEFAULT_CORRUPTSEARCH).toString();
+
+            if (corrupt_search != "Any")
+            {
+                qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = (corrupt_search == "Yes");
+
+                item->m_options += ", Corrupted=" + corrupt_search.toStdString();
+            }
+            else
+            {
+                item->m_options += ", Corrupted=Any";
+            }
+        }
+        else
+        {
+            qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item->f_misc.corrupted;
+
+            item->m_options += ", Corrupted=";
+            item->m_options += item->f_misc.corrupted ? "Yes" : "No";
+        }
+
+        auto qba = query.dump();
+
+        QNetworkRequest request;
+        request.setUrl(QUrl(u_trade_search + getLeague()));
+        request.setRawHeader("Content-Type", "application/json");
+
+        auto req = m_manager->post(request, QByteArray::fromStdString(qba));
+        connect(req, &QNetworkReply::finished, [=]() {
+            req->deleteLater();
+
+            if (req->error() != QNetworkReply::NoError)
+            {
+                emit humour(tr("Error querying trade API. See log for details"));
+                qWarning() << "PAPI: Error querying trade API" << req->error() << req->errorString();
+                return;
+            }
+
+            auto respdata = req->readAll();
+
+            if (!respdata.size())
+            {
+                emit humour(tr("Error querying trade API. See log for details"));
+                qWarning() << "PAPI: Error querying trade API - returned no data";
+                return;
+            }
+
+            auto resp = json::parse(respdata.toStdString());
+            if (!resp.contains("result") || !resp.contains("id"))
+            {
+                emit humour(tr("Error querying trade API. See log for details"));
+                qWarning() << "PAPI: Error querying trade API";
+                qWarning() << "PAPI: Site responded with" << respdata;
+                return;
+            }
+
+            if (searchonsite)
+            {
+                QDesktopServices::openUrl(QUrl(u_trade_site + getLeague() + "/" + QString::fromStdString(resp["id"].get<std::string>())));
+                return;
+            }
+
+            if (resp["result"].size() == 0)
+            {
+                emit humour(tr("No results found."));
+                qDebug() << "No results";
+                return;
+            }
+
+            // else process the results
+            processPriceResults(item, resp);
+        });
     });
+
+    dlg->open();
 }

@@ -17,6 +17,8 @@ StatDialog::StatDialog(PItem* item)
     bool prefillilvl    = settings.value(PTA_CONFIG_PREFILL_ILVL, PTA_CONFIG_DEFAULT_PREFILL_ILVL).toBool();
     bool prefillbase    = settings.value(PTA_CONFIG_PREFILL_BASE, PTA_CONFIG_DEFAULT_PREFILL_BASE).toBool();
 
+    setAttribute(Qt::WA_DeleteOnClose);
+
     int current_row = 0;
 
     Qt::WindowFlags flags = Qt::WindowTitleHint | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint;
