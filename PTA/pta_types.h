@@ -40,6 +40,8 @@ constexpr auto PTA_CONFIG_PREFILL_PSEUDOS    = "pricecheck/prefillpseudos";
 constexpr auto PTA_CONFIG_PREFILL_ILVL       = "pricecheck/prefillilvl";
 constexpr auto PTA_CONFIG_PREFILL_BASE       = "pricecheck/prefillbase";
 
+constexpr auto PTA_CONFIG_CUSTOM_MACROS = "macro/list";
+
 // defaults
 constexpr auto PTA_CONFIG_DEFAULT_PRICE_TEMPLATE  = "templates/price/index.html";
 constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH  = 600;
@@ -65,6 +67,13 @@ constexpr auto PTA_CONFIG_DEFAULT_PREFILL_NORMALS    = false;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_PSEUDOS    = true;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_ILVL       = false;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_BASE       = false;
+
+enum MacroType : uint8_t
+{
+    MACRO_TYPE_CHAT = 0,
+    MACRO_TYPE_URL,
+    MACRO_TYPE_MAX
+};
 
 #ifndef NDEBUG
 #    define PTA_CONFIG_DEFAULT_LOGLEVEL PTA_LOG_DEBUG

@@ -2,6 +2,8 @@
 
 #include "ui_pta.h"
 
+#include "macrohandler.h"
+
 #include <memory>
 
 #include <QAbstractNativeEventFilter>
@@ -40,8 +42,6 @@ class PTA : public QMainWindow
 public:
     explicit PTA(LogWindow* log, QWidget* parent = Q_NULLPTR);
     ~PTA();
-
-    bool isPoEForeground();
 
 public slots:
     void showToolTip(QString message);
@@ -92,6 +92,9 @@ private:
     // Hotkeys
     std::unique_ptr<QHotkey> m_simpleKey;
     std::unique_ptr<QHotkey> m_advancedKey;
+
+    // Macros
+    MacroHandler m_macrohandler;
 
     bool     m_blockHotkeys = false;
     bool     m_pcTriggered  = false;

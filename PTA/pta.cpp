@@ -4,6 +4,7 @@
 #include "itemapi.h"
 #include "logwindow.h"
 #include "pta_types.h"
+#include "putil.h"
 #include "version.h"
 #include "webwidget.h"
 
@@ -22,19 +23,7 @@ namespace
     bool g_ctrlScrollEnabled = false;
 }
 
-INPUT createInput(WORD vk, bool isDown)
-{
-    INPUT input          = {};
-    input.type           = INPUT_KEYBOARD;
-    input.ki.wVk         = vk;
-    input.ki.wScan       = 0;
-    input.ki.dwFlags     = (isDown ? 0 : KEYEVENTF_KEYUP);
-    input.ki.time        = 0;
-    input.ki.dwExtraInfo = 0;
-    return input;
-}
-
-PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log), m_inputhandler(this)
+PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log), m_inputhandler(this), m_macrohandler(this)
 {
     if (nullptr == m_logWindow)
     {
@@ -99,29 +88,6 @@ PTA::~PTA()
 {
     m_simpleKey.reset();
     m_advancedKey.reset();
-}
-
-bool PTA::isPoEForeground()
-{
-    static const std::wstring s_poeCls = L"POEWindowClass";
-
-    HWND hwnd = GetForegroundWindow();
-
-    if (nullptr == hwnd)
-    {
-        return false;
-    }
-
-    wchar_t cls[512];
-    GetClassName(hwnd, cls, std::size(cls));
-
-    if (s_poeCls != cls)
-    {
-        qDebug() << "Active window not PoE";
-        return false;
-    }
-
-    return true;
 }
 
 void PTA::showToolTip(QString message)
@@ -277,6 +243,15 @@ void PTA::createActions()
             {
                 g_ctrlScrollEnabled = v.get<bool>();
             }
+
+            if (k == PTA_CONFIG_CUSTOM_MACROS)
+            {
+                auto mcs = v.dump();
+
+                settings.setValue(PTA_CONFIG_CUSTOM_MACROS, QString::fromStdString(mcs));
+
+                m_macrohandler.setMacros(v);
+            }
         }
     });
 
@@ -381,8 +356,8 @@ void PTA::handleScrollHotkey(quint16 data)
     // Send input
     std::vector<INPUT> keystroke;
 
-    keystroke.push_back(createInput(key, true));
-    keystroke.push_back(createInput(key, false));
+    keystroke.push_back(pta::CreateInput(key, true));
+    keystroke.push_back(pta::CreateInput(key, false));
 
     SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
 }
@@ -404,7 +379,7 @@ void PTA::handlePriceCheckHotkey(uint32_t flag)
     m_blockHotkeys = true;
 
     // Check for PoE window
-    if (!isPoEForeground())
+    if (!pta::IsPoEForeground())
     {
         m_blockHotkeys = false;
         return;
@@ -426,14 +401,14 @@ void PTA::handlePriceCheckHotkey(uint32_t flag)
     std::vector<INPUT> keystroke;
 
     // ensure ctrl/alt/c is up
-    keystroke.push_back(createInput(VK_MENU, false));
-    keystroke.push_back(createInput(VK_CONTROL, false));
-    keystroke.push_back(createInput('C', false));
+    keystroke.push_back(pta::CreateInput(VK_MENU, false));
+    keystroke.push_back(pta::CreateInput(VK_CONTROL, false));
+    keystroke.push_back(pta::CreateInput('C', false));
 
-    keystroke.push_back(createInput(VK_CONTROL, true));
-    keystroke.push_back(createInput('C', true));
-    keystroke.push_back(createInput('C', false));
-    keystroke.push_back(createInput(VK_CONTROL, false));
+    keystroke.push_back(pta::CreateInput(VK_CONTROL, true));
+    keystroke.push_back(pta::CreateInput('C', true));
+    keystroke.push_back(pta::CreateInput('C', false));
+    keystroke.push_back(pta::CreateInput(VK_CONTROL, false));
 
     SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
 
@@ -457,7 +432,7 @@ void PTA::processClipboard()
 
     m_pcTriggered = false; // handled
 
-    if (!isPoEForeground())
+    if (!pta::IsPoEForeground())
     {
         m_blockHotkeys = false;
         return;
@@ -551,10 +526,8 @@ bool PTA::InputHandler::nativeEventFilter(const QByteArray& eventType, void* mes
                     {
                         if (m_parent && m_ctrldown && g_ctrlScrollEnabled)
                         {
-                            if (!m_parent->isPoEForeground())
-                            {
+                            if (!pta::IsPoEForeground())
                                 return false;
-                            }
 
                             QMetaObject::invokeMethod(m_parent, "handleScrollHotkey", Qt::AutoConnection, Q_ARG(quint16, raw->data.mouse.usButtonData));
                         }

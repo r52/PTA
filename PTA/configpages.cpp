@@ -5,6 +5,12 @@
 
 #include <QtWidgets>
 
+namespace
+{
+    constexpr const char*    s_MacroType[MACRO_TYPE_MAX] = {"Chat", "URL"};
+    const QMap<QString, int> s_MacroTypeMap              = {{"Chat", 0}, {"URL", 1}};
+}
+
 GeneralPage::GeneralPage(json& set, QWidget* parent) : QWidget(parent)
 {
     QSettings settings;
@@ -439,4 +445,291 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
     mainLayout->addWidget(selGroup);
     mainLayout->addStretch(1);
     setLayout(mainLayout);
+}
+
+class MacroEditDialog : public QDialog
+{
+public:
+    MacroEditDialog(QString  title,
+                    QWidget* parent = nullptr,
+                    QString  key    = QString(),
+                    QString  seq    = QString(),
+                    QString  type   = "Chat",
+                    QString  cmd    = QString()) :
+        QDialog(parent)
+    {
+        setMinimumWidth(400);
+        setWindowTitle(title);
+
+        QLabel*      keyLabel  = nullptr;
+        QLineEdit*   keyEdit   = nullptr;
+        QHBoxLayout* keylayout = nullptr;
+
+        if (key.isEmpty())
+        {
+            keyLabel = new QLabel(tr("Macro Name:"));
+            keyEdit  = new QLineEdit;
+            keyEdit->setText(key);
+
+            keylayout = new QHBoxLayout();
+            keylayout->addWidget(keyLabel);
+            keylayout->addWidget(keyEdit);
+        }
+
+        QLabel*           seqLabel = new QLabel(tr("Hotkey:"));
+        QKeySequenceEdit* seqEdit  = new QKeySequenceEdit(QKeySequence(seq, QKeySequence::PortableText));
+
+        QHBoxLayout* seqlayout = new QHBoxLayout();
+        seqlayout->addWidget(seqLabel);
+        seqlayout->addWidget(seqEdit);
+
+        QLabel*    typeLabel = new QLabel(tr("Macro Type:"));
+        QComboBox* typeCombo = new QComboBox();
+        typeCombo->addItem("Chat");
+        typeCombo->addItem("URL");
+
+        int tidx = typeCombo->findData(type);
+        typeCombo->setCurrentIndex(tidx);
+
+        QHBoxLayout* typelayout = new QHBoxLayout();
+        typelayout->addWidget(typeLabel);
+        typelayout->addWidget(typeCombo);
+
+        QLabel*    cmdLabel = new QLabel(tr("Command:"));
+        QLineEdit* cmdEdit  = new QLineEdit;
+        cmdEdit->setText(cmd);
+
+        QHBoxLayout* cmdlayout = new QHBoxLayout();
+        cmdlayout->addWidget(cmdLabel);
+        cmdlayout->addWidget(cmdEdit);
+
+        QPushButton* okBtn     = new QPushButton(tr("OK"));
+        QPushButton* cancelBtn = new QPushButton(tr("Cancel"));
+
+        okBtn->setDefault(true);
+
+        QHBoxLayout* btnlayout = new QHBoxLayout;
+        btnlayout->addWidget(okBtn);
+        btnlayout->addWidget(cancelBtn);
+
+        QVBoxLayout* layout = new QVBoxLayout;
+
+        if (keylayout)
+        {
+            layout->addLayout(keylayout);
+        }
+
+        layout->addLayout(seqlayout);
+        layout->addLayout(typelayout);
+        layout->addLayout(cmdlayout);
+        layout->addLayout(btnlayout);
+
+        // cancel button
+        connect(cancelBtn, &QPushButton::clicked, [=](bool checked) { close(); });
+
+        // ok button
+        connect(okBtn, &QPushButton::clicked, [=](bool checked) {
+            // validate
+            auto seq = seqEdit->keySequence().toString();
+
+            if ((keyEdit && keyEdit->text().isEmpty()) || seq.isEmpty() || cmdEdit->text().isEmpty())
+            {
+                QMessageBox::warning(this, title, "All fields must be filled out.");
+            }
+            else
+            {
+                if (keyEdit)
+                {
+                    m_key = keyEdit->text();
+                }
+
+                m_sequence = seq;
+
+                int tidx  = typeCombo->currentIndex();
+                m_type    = typeCombo->itemText(tidx);
+                m_command = cmdEdit->text();
+                accept();
+            }
+        });
+
+        setLayout(layout);
+    };
+
+    QString& getKey() { return m_key; };
+    QString& getSequence() { return m_sequence; };
+    QString& getType() { return m_type; };
+    QString& getCommand() { return m_command; };
+
+private:
+    QString m_key;
+    QString m_sequence;
+    QString m_type;
+    QString m_command;
+};
+
+MacrosPage::MacrosPage(json& set, QWidget* parent) : QWidget(parent)
+{
+    QLabel* label = new QLabel(tr("Macros:"));
+
+    QTableWidget* table = new QTableWidget();
+    table->setSelectionMode(QAbstractItemView::SingleSelection);
+    table->setColumnCount(4);
+    table->setHorizontalHeaderLabels(QStringList() << "Name"
+                                                   << "Hotkey"
+                                                   << "Type"
+                                                   << "Command");
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    {
+        QSettings settings;
+        int       row = 0;
+
+        auto macstr = settings.value(PTA_CONFIG_CUSTOM_MACROS).toString().toStdString();
+
+        auto macrolist = json::object();
+
+        if (!macstr.empty())
+        {
+            macrolist = json::parse(macstr);
+        }
+
+        set[PTA_CONFIG_CUSTOM_MACROS] = macrolist;
+
+        for (auto& [k, v] : macrolist.items())
+        {
+            auto key  = QString::fromStdString(k);
+            auto seq  = QString::fromStdString(v["sequence"].get<std::string>());
+            auto type = QString(s_MacroType[v["type"].get<int>()]);
+            auto cmd  = QString::fromStdString(v["command"].get<std::string>());
+
+            table->insertRow(row);
+            QTableWidgetItem* keyitem  = new QTableWidgetItem(key);
+            QTableWidgetItem* seqitem  = new QTableWidgetItem(seq);
+            QTableWidgetItem* typeitem = new QTableWidgetItem(type);
+            QTableWidgetItem* cmditem  = new QTableWidgetItem(cmd);
+
+            table->setItem(row, 0, keyitem);
+            table->setItem(row, 1, seqitem);
+            table->setItem(row, 2, typeitem);
+            table->setItem(row, 3, cmditem);
+
+            ++row;
+        }
+    }
+
+    QPushButton* deleteButton = new QPushButton(tr("Delete"));
+
+    connect(deleteButton, &QPushButton::clicked, [=, &set](bool checked) {
+        int row = table->currentRow();
+        if (row >= 0)
+        {
+            QTableWidgetItem* keyitem = table->item(row, 0);
+            auto              key     = keyitem->text().toStdString();
+
+            set[PTA_CONFIG_CUSTOM_MACROS].erase(key);
+
+            table->removeRow(table->currentRow());
+        }
+    });
+
+    QPushButton* editButton = new QPushButton(tr("Edit"));
+
+    connect(editButton, &QPushButton::clicked, [=, &set](bool checked) {
+        int row = table->currentRow();
+
+        if (row >= 0)
+        {
+            QTableWidgetItem* keyitem  = table->item(row, 0);
+            QTableWidgetItem* seqitem  = table->item(row, 1);
+            QTableWidgetItem* typeitem = table->item(row, 2);
+            QTableWidgetItem* cmditem  = table->item(row, 3);
+
+            auto key  = keyitem->text();
+            auto seq  = keyitem->text();
+            auto type = keyitem->text();
+            auto cmd  = keyitem->text();
+
+            MacroEditDialog editdialog("Edit Macro", this, key, seq, type, cmd);
+
+            if (editdialog.exec() == QDialog::Accepted)
+            {
+                seq  = editdialog.getSequence();
+                type = editdialog.getType();
+                cmd  = editdialog.getCommand();
+
+                seqitem->setText(seq);
+                typeitem->setText(type);
+                cmditem->setText(cmd);
+
+                auto& macros = set[PTA_CONFIG_CUSTOM_MACROS];
+
+                json nmac = json::object();
+
+                nmac["sequence"] = seq.toStdString();
+                nmac["type"]     = s_MacroTypeMap[type];
+                nmac["command"]  = cmd.toStdString();
+
+                macros[key.toStdString()] = nmac;
+            }
+        }
+    });
+
+    QPushButton* addButton = new QPushButton(tr("Add"));
+
+    connect(addButton, &QPushButton::clicked, [=, &set](bool checked) {
+        MacroEditDialog editdialog("New Macro", this);
+
+        if (editdialog.exec() == QDialog::Accepted)
+        {
+            QString key  = editdialog.getKey();
+            QString seq  = editdialog.getSequence();
+            QString type = editdialog.getType();
+            QString cmd  = editdialog.getCommand();
+
+            auto elist = table->findItems(key, Qt::MatchFixedString);
+
+            if (!elist.isEmpty())
+            {
+                QMessageBox::warning(this, "Duplicate Macro", "Macros must have a unique name");
+            }
+            else
+            {
+                int row = table->rowCount();
+                table->insertRow(row);
+
+                QTableWidgetItem* keyitem  = new QTableWidgetItem(key);
+                QTableWidgetItem* seqitem  = new QTableWidgetItem(seq);
+                QTableWidgetItem* typeitem = new QTableWidgetItem(type);
+                QTableWidgetItem* cmditem  = new QTableWidgetItem(cmd);
+
+                table->setItem(row, 0, keyitem);
+                table->setItem(row, 1, seqitem);
+                table->setItem(row, 2, typeitem);
+                table->setItem(row, 3, cmditem);
+
+                auto& macros = set[PTA_CONFIG_CUSTOM_MACROS];
+
+                json nmac = json::object();
+
+                nmac["sequence"] = seq.toStdString();
+                nmac["type"]     = s_MacroTypeMap[type];
+                nmac["command"]  = cmd.toStdString();
+
+                macros[key.toStdString()] = nmac;
+            }
+        }
+    });
+
+    QHBoxLayout* buttonLayout = new QHBoxLayout;
+    buttonLayout->addWidget(deleteButton);
+    buttonLayout->addWidget(editButton);
+    buttonLayout->addWidget(addButton);
+
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addWidget(label);
+    layout->addWidget(table);
+    layout->addLayout(buttonLayout);
+    layout->addStretch(1);
+    setLayout(layout);
 }

@@ -55,6 +55,12 @@
     <ClCompile Include="configpages.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="macrohandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="putil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="pta.h">
@@ -76,6 +82,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="configpages.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="macrohandler.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -103,6 +112,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="putil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

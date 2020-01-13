@@ -40,3 +40,11 @@ class PriceCheckPage : public QWidget
 public:
     PriceCheckPage(json& set, ItemAPI* api, QWidget* parent = 0);
 };
+
+class MacrosPage : public QWidget
+{
+    Q_OBJECT
+
+public:
+    MacrosPage(json& set, QWidget* parent = 0);
+};
