@@ -19,8 +19,7 @@
 
 namespace
 {
-    const std::wstring g_poeCls            = L"POEWindowClass";
-    bool               g_ctrlScrollEnabled = false;
+    bool g_ctrlScrollEnabled = false;
 }
 
 INPUT createInput(WORD vk, bool isDown)
@@ -100,6 +99,29 @@ PTA::~PTA()
 {
     m_simpleKey.reset();
     m_advancedKey.reset();
+}
+
+bool PTA::isPoEForeground()
+{
+    static const std::wstring s_poeCls = L"POEWindowClass";
+
+    HWND hwnd = GetForegroundWindow();
+
+    if (nullptr == hwnd)
+    {
+        return false;
+    }
+
+    wchar_t cls[512];
+    GetClassName(hwnd, cls, std::size(cls));
+
+    if (s_poeCls != cls)
+    {
+        qDebug() << "Active window not PoE";
+        return false;
+    }
+
+    return true;
 }
 
 void PTA::showToolTip(QString message)
@@ -382,22 +404,9 @@ void PTA::handlePriceCheckHotkey(uint32_t flag)
     m_blockHotkeys = true;
 
     // Check for PoE window
-    HWND hwnd = GetForegroundWindow();
-
-    if (nullptr == hwnd)
+    if (!isPoEForeground())
     {
         m_blockHotkeys = false;
-        qDebug() << "Null active window.";
-        return;
-    }
-
-    wchar_t cls[512];
-    GetClassName(hwnd, cls, std::size(cls));
-
-    if (g_poeCls != cls)
-    {
-        m_blockHotkeys = false;
-        qDebug() << "Active window not PoE";
         return;
     }
 
@@ -448,23 +457,9 @@ void PTA::processClipboard()
 
     m_pcTriggered = false; // handled
 
-    // Check for PoE window
-    HWND hwnd = GetForegroundWindow();
-
-    if (nullptr == hwnd)
+    if (!isPoEForeground())
     {
         m_blockHotkeys = false;
-        qDebug() << "Null active window.";
-        return;
-    }
-
-    wchar_t cls[512];
-    GetClassName(hwnd, cls, std::size(cls));
-
-    if (g_poeCls != cls)
-    {
-        m_blockHotkeys = false;
-        qDebug() << "Active window not PoE";
         return;
     }
 
@@ -525,7 +520,7 @@ void PTA::processClipboard()
     }
 }
 
-PTA::InputHandler::InputHandler(QObject* parent) : m_parent(parent) {}
+PTA::InputHandler::InputHandler(PTA* parent) : m_parent(parent) {}
 
 bool PTA::InputHandler::nativeEventFilter(const QByteArray& eventType, void* message, long* result)
 {
@@ -556,21 +551,12 @@ bool PTA::InputHandler::nativeEventFilter(const QByteArray& eventType, void* mes
                     {
                         if (m_parent && m_ctrldown && g_ctrlScrollEnabled)
                         {
-                            // Check for PoE window
-                            HWND hwnd = GetForegroundWindow();
-
-                            if (nullptr == hwnd)
+                            if (!m_parent->isPoEForeground())
+                            {
                                 return false;
-
-                            wchar_t cls[512];
-                            GetClassName(hwnd, cls, std::size(cls));
-
-                            if (g_poeCls != cls)
-                                return false;
+                            }
 
                             QMetaObject::invokeMethod(m_parent, "handleScrollHotkey", Qt::AutoConnection, Q_ARG(quint16, raw->data.mouse.usButtonData));
-
-                            return true;
                         }
                     }
                 }

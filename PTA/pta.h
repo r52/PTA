@@ -28,18 +28,20 @@ class PTA : public QMainWindow
     class InputHandler : public QAbstractNativeEventFilter
     {
     public:
-        InputHandler(QObject* parent = nullptr);
+        InputHandler(PTA* parent = nullptr);
 
         virtual bool nativeEventFilter(const QByteArray& eventType, void* message, long* result) override;
 
     private:
-        QObject* m_parent;
-        bool     m_ctrldown = false;
+        PTA* m_parent;
+        bool m_ctrldown = false;
     };
 
 public:
     explicit PTA(LogWindow* log, QWidget* parent = Q_NULLPTR);
     ~PTA();
+
+    bool isPoEForeground();
 
 public slots:
     void showToolTip(QString message);
