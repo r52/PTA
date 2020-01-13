@@ -488,7 +488,7 @@ public:
         typeCombo->addItem("Chat");
         typeCombo->addItem("URL");
 
-        int tidx = typeCombo->findData(type);
+        int tidx = typeCombo->findText(type);
         typeCombo->setCurrentIndex(tidx);
 
         QHBoxLayout* typelayout = new QHBoxLayout();
@@ -646,9 +646,9 @@ MacrosPage::MacrosPage(json& set, QWidget* parent) : QWidget(parent)
             QTableWidgetItem* cmditem  = table->item(row, 3);
 
             auto key  = keyitem->text();
-            auto seq  = keyitem->text();
-            auto type = keyitem->text();
-            auto cmd  = keyitem->text();
+            auto seq  = seqitem->text();
+            auto type = typeitem->text();
+            auto cmd  = cmditem->text();
 
             MacroEditDialog editdialog("Edit Macro", this, key, seq, type, cmd);
 

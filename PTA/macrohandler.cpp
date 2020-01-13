@@ -9,7 +9,7 @@
 #include <QSettings>
 #include <QUrl>
 
-MacroHandler::MacroHandler(QObject* parent) : m_parent(parent)
+MacroHandler::MacroHandler(QObject* parent) : QObject(parent)
 {
     QSettings settings;
 
@@ -21,6 +21,10 @@ MacroHandler::MacroHandler(QObject* parent) : m_parent(parent)
 
         setMacros(macrolist);
     }
+
+    m_monitor = new QTimer(this);
+    connect(m_monitor, &QTimer::timeout, this, &MacroHandler::monitorPoEForeground);
+    m_monitor->start(500);
 }
 
 void MacroHandler::setMacros(json macrolist)
@@ -36,12 +40,22 @@ void MacroHandler::setMacros(json macrolist)
 
         std::unique_ptr<QHotkey> macro(new QHotkey(QKeySequence(seq), true));
 
+        if (!macro->isRegistered())
+        {
+            qWarning() << "Macro" << key << "failed to register";
+        }
+
         qDebug() << "Macro" << key << "Registered:" << macro->isRegistered();
 
         connect(macro.get(), &QHotkey::activated, [=]() { handleMacro(key); });
 
         m_macros.push_back(std::move(macro));
     }
+}
+
+void MacroHandler::clearMacros()
+{
+    m_macros.clear();
 }
 
 void MacroHandler::insertKeyPress(std::vector<INPUT>& keystrokes, WORD key)
@@ -89,6 +103,21 @@ void MacroHandler::sendChatCommand(std::string command)
 
     // Send input
     SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
+}
+
+void MacroHandler::monitorPoEForeground()
+{
+    // Gotta do this because hotkeys are consumed by the app :(
+
+    bool enabled = true;
+
+    if (!pta::IsPoEForeground())
+        enabled = false;
+
+    for (auto& macro : m_macros)
+    {
+        macro->setRegistered(enabled);
+    }
 }
 
 void MacroHandler::handleMacro(QString key)
