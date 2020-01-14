@@ -261,9 +261,9 @@ StatDialog::StatDialog(PItem* item)
     addSeparator(layout, current_row);
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox();
-    buttonBox->addButton("Search", QDialogButtonBox::AcceptRole);
-    buttonBox->addButton("Open on pathofexile.com", QDialogButtonBox::HelpRole);
-    buttonBox->addButton("Close", QDialogButtonBox::RejectRole);
+    buttonBox->addButton("&Search", QDialogButtonBox::AcceptRole);
+    buttonBox->addButton("Op&en on pathofexile.com", QDialogButtonBox::HelpRole);
+    buttonBox->addButton("&Close", QDialogButtonBox::RejectRole);
 
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
