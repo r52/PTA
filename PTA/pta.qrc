@@ -8,5 +8,6 @@
         <file>Resources/logo.svg</file>
         <file>Resources/splash.png</file>
         <file>Resources/logo.ico</file>
+        <file>Resources/macros.png</file>
     </qresource>
 </RCC>

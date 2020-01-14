@@ -22,6 +22,7 @@ ConfigDialog::ConfigDialog(json& set, ItemAPI* api)
     pagesWidget->addWidget(new UIPage(set));
     pagesWidget->addWidget(new HotkeyPage(set));
     pagesWidget->addWidget(new PriceCheckPage(set, api));
+    pagesWidget->addWidget(new MacrosPage(set));
 
     QPushButton* saveButton  = new QPushButton(tr("Save"));
     QPushButton* closeButton = new QPushButton(tr("Close"));
@@ -76,6 +77,12 @@ void ConfigDialog::createIcons()
     pcButton->setTextAlignment(Qt::AlignHCenter);
     pcButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     pcButton->setIcon(QIcon(":/Resources/pricing.png"));
+
+    QListWidgetItem* macroButton = new QListWidgetItem(contentsWidget);
+    macroButton->setText(tr("Custom Macros"));
+    macroButton->setTextAlignment(Qt::AlignHCenter);
+    macroButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    macroButton->setIcon(QIcon(":/Resources/macros.png"));
 
     connect(contentsWidget, &QListWidget::currentItemChanged, this, &ConfigDialog::changePage);
 }
