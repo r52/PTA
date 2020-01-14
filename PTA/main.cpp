@@ -36,9 +36,6 @@ int main(int argc, char* argv[])
 
     PTA w(log);
 
-    // Install native input handler
-    a.installNativeEventFilter(&w.m_inputhandler);
-
     w.hide();
 
     splash.finish(&w);

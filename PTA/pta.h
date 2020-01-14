@@ -27,12 +27,14 @@ class PTA : public QMainWindow
 {
     Q_OBJECT
 
-    class InputHandler : public QAbstractNativeEventFilter
+    class InputHandler
     {
     public:
         InputHandler(PTA* parent = nullptr);
 
-        virtual bool nativeEventFilter(const QByteArray& eventType, void* message, long* result) override;
+    private:
+        bool handleKeyboardEvent(WPARAM wParam, LPARAM lParam);
+        bool handleMouseEvent(WPARAM wParam, LPARAM lParam);
 
     private:
         PTA* m_parent;
@@ -59,14 +61,10 @@ private:
 private slots:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 
-    void handleScrollHotkey(quint16 data);
+    void handleScrollHotkey(short data);
     void handlePriceCheckHotkey(uint32_t flag);
     void handleClipboard();
     void processClipboard();
-
-public:
-    // Input Handler
-    InputHandler m_inputhandler;
 
 private:
     Ui::PTAClass ui;
@@ -95,6 +93,9 @@ private:
 
     // Macros
     MacroHandler m_macrohandler;
+
+    // Input Handler
+    InputHandler m_inputhandler;
 
     bool     m_blockHotkeys = false;
     bool     m_pcTriggered  = false;

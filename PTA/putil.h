@@ -13,6 +13,8 @@ namespace pta
     {
         void InitializeHooks();
         void ShutdownHooks();
-        void SetForegroundHookCb(std::function<void(bool)> fgcb);
+        void InstallForegroundHookCb(std::function<void(bool)> fgcb);
+        void InstallMouseHookCb(std::function<bool(WPARAM wParam, LPARAM lParam)> cb);
+        void InstallKeyboardHookCb(std::function<bool(WPARAM wParam, LPARAM lParam)> cb);
     }
 }

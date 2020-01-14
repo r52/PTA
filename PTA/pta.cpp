@@ -327,36 +327,11 @@ void PTA::setupFunctionality()
 
     // Clipboard
     connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, this, &PTA::handleClipboard);
-
-    // Setup Raw Input
-    auto hwnd = (HWND) winId();
-
-    RAWINPUTDEVICE rid[2];
-
-    // Keyboard
-    rid[0].usUsagePage = 1;
-    rid[0].usUsage     = 6;
-    rid[0].dwFlags     = RIDEV_INPUTSINK;
-    rid[0].hwndTarget  = hwnd;
-
-    // Mouse
-    rid[1].usUsagePage = 1;
-    rid[1].usUsage     = 2;
-    rid[1].dwFlags     = RIDEV_INPUTSINK;
-    rid[1].hwndTarget  = hwnd;
-
-    if (RegisterRawInputDevices(rid, 2, sizeof(RAWINPUTDEVICE)) == FALSE)
-    {
-        qWarning() << "Error registering Raw Input devices. Mouse macros disabled.";
-        qWarning() << "Error code:" << QString::number(GetLastError());
-    }
 }
 
-void PTA::handleScrollHotkey(quint16 data)
+void PTA::handleScrollHotkey(short data)
 {
-    qint16 dirdat = (qint16) data;
-
-    WORD key = (dirdat > 0 ? VK_LEFT : VK_RIGHT);
+    WORD key = (data > 0 ? VK_LEFT : VK_RIGHT);
 
     // Send input
     std::vector<INPUT> keystroke;
@@ -500,57 +475,39 @@ void PTA::processClipboard()
     }
 }
 
-PTA::InputHandler::InputHandler(PTA* parent) : m_parent(parent) {}
-
-bool PTA::InputHandler::nativeEventFilter(const QByteArray& eventType, void* message, long* result)
+PTA::InputHandler::InputHandler(PTA* parent) : m_parent(parent)
 {
-    if (eventType == "windows_generic_MSG")
+    using namespace std::placeholders;
+
+    // Install hook
+    pta::hook::InstallMouseHookCb(std::bind(&InputHandler::handleMouseEvent, this, _1, _2));
+    pta::hook::InstallKeyboardHookCb(std::bind(&InputHandler::handleKeyboardEvent, this, _1, _2));
+}
+
+bool PTA::InputHandler::handleKeyboardEvent(WPARAM wParam, LPARAM lParam)
+{
+    KBDLLHOOKSTRUCT* kb = (KBDLLHOOKSTRUCT*) lParam;
+
+    if (kb->vkCode == VK_CONTROL || kb->vkCode == VK_LCONTROL || kb->vkCode == VK_RCONTROL)
     {
-        MSG* msg = reinterpret_cast<MSG*>(message);
+        m_ctrldown = (wParam == WM_KEYDOWN);
+    }
 
-        if (msg->message == WM_INPUT)
-        {
-            UINT dwSize;
-            GetRawInputData((HRAWINPUT) msg->lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+    return false;
+}
 
-            LPBYTE lpb = new BYTE[dwSize];
-            if (lpb == nullptr)
-            {
-                return false;
-            }
-            if (GetRawInputData((HRAWINPUT) msg->lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
-            {
-                qDebug() << "GetRawInputData did not return correct size";
-            }
-            else
-            {
-                RAWINPUT* raw = (RAWINPUT*) lpb;
-                if (raw->header.dwType == RIM_TYPEMOUSE)
-                {
-                    if (raw->data.mouse.usButtonFlags == RI_MOUSE_WHEEL)
-                    {
-                        if (m_parent && m_ctrldown && g_ctrlScrollEnabled)
-                        {
-                            if (!pta::IsPoEForeground())
-                                return false;
+bool PTA::InputHandler::handleMouseEvent(WPARAM wParam, LPARAM lParam)
+{
+    if (wParam == WM_MOUSEWHEEL && m_parent && m_ctrldown && g_ctrlScrollEnabled && pta::IsPoEForeground())
+    {
+        MSLLHOOKSTRUCT* mhs = (MSLLHOOKSTRUCT*) lParam;
 
-                            QMetaObject::invokeMethod(m_parent, "handleScrollHotkey", Qt::AutoConnection, Q_ARG(quint16, raw->data.mouse.usButtonData));
-                        }
-                    }
-                }
+        auto zDelta = GET_WHEEL_DELTA_WPARAM(mhs->mouseData);
 
-                if (raw->header.dwType == RIM_TYPEKEYBOARD)
-                {
-                    USHORT keyCode = raw->data.keyboard.VKey;
-                    bool   keyUp   = raw->data.keyboard.Flags & RI_KEY_BREAK;
+        QMetaObject::invokeMethod(m_parent, "handleScrollHotkey", Qt::AutoConnection, Q_ARG(short, zDelta));
 
-                    if (keyCode == VK_CONTROL)
-                    {
-                        m_ctrldown = !keyUp;
-                    }
-                }
-            }
-        }
+        // consume the input
+        return true;
     }
 
     return false;

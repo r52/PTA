@@ -14,7 +14,7 @@ MacroHandler::MacroHandler(QObject* parent) : QObject(parent)
     using namespace std::placeholders;
 
     // Install hook
-    pta::hook::SetForegroundHookCb(std::bind(&MacroHandler::monitorPoEForeground, this, _1));
+    pta::hook::InstallForegroundHookCb(std::bind(&MacroHandler::monitorPoEForeground, this, _1));
 
     QSettings settings;
 

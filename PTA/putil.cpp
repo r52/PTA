@@ -8,8 +8,13 @@
 
 namespace
 {
-    HWINEVENTHOOK             g_ForegroundHook   = nullptr;
-    std::function<void(bool)> g_ForegroundHookCb = nullptr;
+    HWINEVENTHOOK g_ForegroundHook = nullptr;
+    HHOOK         g_MouseHook      = nullptr;
+    HHOOK         g_KeyboardHook   = nullptr;
+
+    std::function<void(bool)>                         g_ForegroundHookCb = nullptr;
+    std::function<bool(WPARAM wParam, LPARAM lParam)> g_MouseHookCb      = nullptr;
+    std::function<bool(WPARAM wParam, LPARAM lParam)> g_KeyboardHookCb   = nullptr;
 }
 
 namespace pta
@@ -57,6 +62,28 @@ namespace pta
             }
         }
 
+        LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+        {
+            if (nCode >= HC_ACTION && g_MouseHookCb && g_MouseHookCb(wParam, lParam))
+            {
+                // consume the input
+                return -1;
+            }
+
+            return CallNextHookEx(g_MouseHook, nCode, wParam, lParam);
+        }
+
+        LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
+        {
+            if (nCode >= HC_ACTION && g_KeyboardHookCb && g_KeyboardHookCb(wParam, lParam))
+            {
+                // consume the input
+                return -1;
+            }
+
+            return CallNextHookEx(g_KeyboardHook, nCode, wParam, lParam);
+        }
+
         void InitializeHooks()
         {
             g_ForegroundHook = SetWinEventHook(
@@ -66,6 +93,20 @@ namespace pta
             {
                 qWarning() << "Failed to set foreground event hook. Macros may not work.";
             }
+
+            g_MouseHook = SetWindowsHookEx(WH_MOUSE_LL, &LowLevelMouseProc, GetModuleHandle(NULL), NULL);
+
+            if (!g_MouseHook)
+            {
+                qWarning() << "Failed to set mouse event hook. Some functions may not work.";
+            }
+
+            g_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, &LowLevelKeyboardProc, GetModuleHandle(NULL), NULL);
+
+            if (!g_KeyboardHook)
+            {
+                qWarning() << "Failed to set keyboard event hook. Some functions may not work.";
+            }
         }
 
         void ShutdownHooks()
@@ -74,13 +115,39 @@ namespace pta
             {
                 UnhookWinEvent(g_ForegroundHook);
             }
+
+            if (g_MouseHook)
+            {
+                UnhookWindowsHookEx(g_MouseHook);
+            }
+
+            if (g_KeyboardHook)
+            {
+                UnhookWindowsHookEx(g_KeyboardHook);
+            }
         }
 
-        void SetForegroundHookCb(std::function<void(bool)> fgcb)
+        void InstallForegroundHookCb(std::function<void(bool)> fgcb)
         {
             if (fgcb)
             {
                 g_ForegroundHookCb = fgcb;
+            }
+        }
+
+        void InstallMouseHookCb(std::function<bool(WPARAM wParam, LPARAM lParam)> cb)
+        {
+            if (cb)
+            {
+                g_MouseHookCb = cb;
+            }
+        }
+
+        void InstallKeyboardHookCb(std::function<bool(WPARAM wParam, LPARAM lParam)> cb)
+        {
+            if (cb)
+            {
+                g_KeyboardHookCb = cb;
             }
         }
     }
