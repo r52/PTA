@@ -3,7 +3,6 @@
 #include <nlohmann/json.hpp>
 
 #include <QHotkey>
-#include <QTimer>
 #include <Windows.h>
 
 using json = nlohmann::json;
@@ -22,14 +21,12 @@ private:
     void insertKeyPress(std::vector<INPUT>& keystrokes, WORD key);
     void insertChatCommand(std::vector<INPUT>& keystrokes, std::string command);
     void sendChatCommand(std::string command);
+    void monitorPoEForeground(bool isPoeFg);
 
 private slots:
     void handleMacro(QString key);
-    void monitorPoEForeground();
 
 private:
-    QTimer* m_monitor;
-
     json                                  m_macrolist;
     std::vector<std::unique_ptr<QHotkey>> m_macros;
 };

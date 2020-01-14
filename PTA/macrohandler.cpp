@@ -11,6 +11,11 @@
 
 MacroHandler::MacroHandler(QObject* parent) : QObject(parent)
 {
+    using namespace std::placeholders;
+
+    // Install hook
+    pta::hook::SetForegroundHookCb(std::bind(&MacroHandler::monitorPoEForeground, this, _1));
+
     QSettings settings;
 
     auto macstr = settings.value(PTA_CONFIG_CUSTOM_MACROS).toString().toStdString();
@@ -21,10 +26,6 @@ MacroHandler::MacroHandler(QObject* parent) : QObject(parent)
 
         setMacros(macrolist);
     }
-
-    m_monitor = new QTimer(this);
-    connect(m_monitor, &QTimer::timeout, this, &MacroHandler::monitorPoEForeground);
-    m_monitor->start(500);
 }
 
 void MacroHandler::setMacros(json macrolist)
@@ -105,18 +106,12 @@ void MacroHandler::sendChatCommand(std::string command)
     SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
 }
 
-void MacroHandler::monitorPoEForeground()
+void MacroHandler::monitorPoEForeground(bool isPoeFg)
 {
     // Gotta do this because hotkeys are consumed by the app :(
-
-    bool enabled = true;
-
-    if (!pta::IsPoEForeground())
-        enabled = false;
-
     for (auto& macro : m_macros)
     {
-        macro->setRegistered(enabled);
+        macro->setRegistered(isPoeFg);
     }
 }
 

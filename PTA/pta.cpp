@@ -65,6 +65,9 @@ PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log
 
     // Setup functionality
     setupFunctionality();
+
+    // Initialize hooks
+    pta::hook::InitializeHooks();
 }
 
 void PTA::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
@@ -88,6 +91,8 @@ PTA::~PTA()
 {
     m_simpleKey.reset();
     m_advancedKey.reset();
+
+    pta::hook::ShutdownHooks();
 }
 
 void PTA::showToolTip(QString message)
@@ -430,11 +435,11 @@ void PTA::processClipboard()
         return;
     }
 
-    m_pcTriggered = false; // handled
+    m_pcTriggered  = false; // handled
+    m_blockHotkeys = false;
 
     if (!pta::IsPoEForeground())
     {
-        m_blockHotkeys = false;
         return;
     }
 
@@ -457,7 +462,7 @@ void PTA::processClipboard()
                 LPTSTR lpszData = (LPTSTR) GlobalLock(hGlobal);
                 if (lpszData != NULL)
                 {
-                    itemText.fromLocal8Bit((const char*) lpszData);
+                    itemText = QString::fromLocal8Bit((const char*) lpszData);
                     GlobalUnlock(hGlobal);
                 }
             }
