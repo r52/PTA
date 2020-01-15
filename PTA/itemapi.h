@@ -159,6 +159,7 @@ private:
     std::unordered_map<std::string, std::unordered_set<std::string>> c_discriminators;
     json                                                             c_currencyMap;
     std::unordered_set<std::string>                                  c_currencyCodes;
+    std::unordered_set<std::string>                                  c_excludes;
 
     std::map<std::string, json> c_baseMap;
 

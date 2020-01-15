@@ -36,6 +36,7 @@ const QUrl u_pta_disc("https://raw.githubusercontent.com/r52/PTA/master/PTA/data
 const QUrl u_pta_enchantrules("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/enchant_rules.json");
 const QUrl u_pta_pseudorules("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/pseudo_rules.json");
 const QUrl u_pta_weaponlocals("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/weapon_locals.json");
+const QUrl u_pta_excludes("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/excludes.json");
 
 // trade site
 const QString u_trade_fetch("https://www.pathofexile.com/api/trade/fetch/%1?query=%2");
@@ -75,6 +76,34 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "League data loaded. Setting league to" << setlg;
 
+    // Load excludes (needs to be loaded BEFORE stats)
+    QFile excl("data/excludes.json");
+
+    if (excl.open(QIODevice::ReadOnly))
+    {
+        QByteArray edat = excl.readAll();
+
+        json excj = json::parse(edat.toStdString());
+
+        for (auto& e : excj["excludes"])
+        {
+            c_excludes.insert(e.get<std::string>());
+        }
+    }
+    else if (synchronizedGetJSON(QNetworkRequest(u_pta_armourlocals), data))
+    {
+        for (auto& e : data["excludes"])
+        {
+            c_excludes.insert(e.get<std::string>());
+        }
+    }
+    else
+    {
+        throw std::runtime_error("Cannot open excludes.json");
+    }
+
+    qInfo() << "Exclude rules loaded";
+
     // Download stats
     if (!synchronizedGetJSON(QNetworkRequest(u_api_mods), data))
     {
@@ -92,13 +121,18 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
             // Cut the key for multiline mods
             std::string::size_type nl;
             std::string            text = et["text"].get<std::string>();
+            std::string            id   = et["id"].get<std::string>();
+
             if ((nl = text.find("\n")) != std::string::npos)
             {
                 text = text.substr(0, nl);
             }
 
-            m_stats_by_text.insert({{text, et}});
-            m_stats_by_id.insert({{et["id"].get<std::string>(), et}});
+            if (!c_excludes.contains(id))
+            {
+                m_stats_by_text.insert({{text, et}});
+                m_stats_by_id.insert({{id, et}});
+            }
         }
     }
 
