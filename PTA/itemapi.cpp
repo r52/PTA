@@ -90,7 +90,7 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
             c_excludes.insert(e.get<std::string>());
         }
     }
-    else if (synchronizedGetJSON(QNetworkRequest(u_pta_armourlocals), data))
+    else if (synchronizedGetJSON(QNetworkRequest(u_pta_excludes), data))
     {
         for (auto& e : data["excludes"])
         {
