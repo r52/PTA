@@ -63,6 +63,11 @@ PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log
 
     resize(800, 400);
 
+    using namespace std::placeholders;
+
+    // Install hook
+    pta::hook::InstallForegroundHookCb(std::bind(&PTA::foregroundEventCb, this, _1));
+
     // Setup functionality
     setupFunctionality();
 
@@ -327,6 +332,14 @@ void PTA::setupFunctionality()
 
     // Clipboard
     connect(QGuiApplication::clipboard(), &QClipboard::dataChanged, this, &PTA::handleClipboard);
+
+    // Foreground change events
+    connect(this, &PTA::foregroundWindowChanged, &m_macrohandler, &MacroHandler::handleForegroundChange);
+}
+
+void PTA::foregroundEventCb(bool isPoe)
+{
+    emit foregroundWindowChanged(isPoe);
 }
 
 void PTA::handleScrollHotkey(short data)

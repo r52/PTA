@@ -17,11 +17,13 @@ public:
     void setMacros(json macrolist);
     void clearMacros();
 
+public slots:
+    void handleForegroundChange(bool isPoe);
+
 private:
     void insertKeyPress(std::vector<INPUT>& keystrokes, WORD key);
     void insertChatCommand(std::vector<INPUT>& keystrokes, std::string command);
     void sendChatCommand(std::string command);
-    void monitorPoEForeground(bool isPoeFg);
 
 private slots:
     void handleMacro(QString key);

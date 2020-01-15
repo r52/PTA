@@ -45,6 +45,9 @@ public:
     explicit PTA(LogWindow* log, QWidget* parent = Q_NULLPTR);
     ~PTA();
 
+signals:
+    void foregroundWindowChanged(bool isPoe);
+
 public slots:
     void showToolTip(QString message);
     void showPriceResults(std::shared_ptr<PItem> item, QString results);
@@ -57,6 +60,8 @@ private:
     void createActions();
 
     void setupFunctionality();
+
+    void foregroundEventCb(bool isPoe);
 
 private slots:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
