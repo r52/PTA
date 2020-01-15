@@ -34,9 +34,8 @@
 // -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <PropertyGroup>
-    <QtDependsOn>QtVarsPrepare;QtVars;$(QtDependsOn)</QtDependsOn>
-    <QtSkipBuildTargets>QtSkipBuild;$(QtSkipBuildTargets)</QtSkipBuildTargets>
+  <PropertyGroup Condition="'$(QtVsProjectSettings)' == 'true'">
+    <QtOuterBuildDependsOn>QtVarsPrepare;QtVars;$(QtDependsOn)</QtOuterBuildDependsOn>
     <CleanDependsOn>$(CleanDependsOn);QtVarsClean</CleanDependsOn>
   </PropertyGroup>
 
@@ -118,15 +117,9 @@
     <PropertyGroup>
 
       <!--// .pro file configuration -->
-      <QtVarsProFileConfig
-        Condition="'$(Configuration)' == 'Debug'">
+      <QtVarsProFileConfig>
         CONFIG -= debug release debug_and_release
-        CONFIG += debug
-      </QtVarsProFileConfig>
-      <QtVarsProFileConfig
-        Condition="'$(Configuration)' != 'Debug'">
-        CONFIG -= debug release debug_and_release
-        CONFIG += release
+        CONFIG += $(QtBuildConfig) no_fixpath
       </QtVarsProFileConfig>
 
       <!--// .pro file input parameters -->
@@ -244,7 +237,7 @@
 
     <!--// Read variables from Makefile -->
     <GetVarsFromMakefile
-      Makefile="$(QtVarsWorkDir)\Makefile" VarDefs="@(QtVarDef)">
+      Makefile="$(QtVarsWorkDir)\Makefile" VarDefs="@(QtVarDef)" ExcludeValues="$(QtVarsWorkDir)">
       <Output TaskParameter="OutVars" ItemName="QtVar"/>
     </GetVarsFromMakefile>
 
@@ -267,6 +260,7 @@
       <QtLibrarySearchPath Include="$(QtLibrarySearchPath)"/>
       <QtVariables Include="$(QtVars)"/>
       <QMakeCodeLines Include="$(QMakeCodeLines)"/>
+      <QtBuildConfig Include="$(QtBuildConfig)"/>
     </ItemGroup>
 
     <!--// Write end of .props (XML) file
@@ -299,6 +293,8 @@
       >@(QtVariables,'%3B')</QtBkup_QtVars>
     <QtBkup_QMakeCodeLines
       >@(QMakeCodeLines,'%3B')</QtBkup_QMakeCodeLines>
+    <QtBkup_QtBuildConfig
+      >@(QtBuildConfig,'%3B')</QtBkup_QtBuildConfig>
   </PropertyGroup>
 </Project>
         ]]>
@@ -338,35 +334,16 @@
     <!--// In design-time, copy generated .props to randomly named file -->
     <PropertyGroup>
       <QtVarsDesignTimeNew
-        Condition="'$(ErrorLevel)' == '0'"
-        >$([System.IO.Path]::Combine('$(QtVarsOutputDir)',
-          'qtvars_$([System.IO.Path]::GetRandomFileName()).designtime.props'))</QtVarsDesignTimeNew>
+        Condition="'$(ErrorLevel)' == '0' AND '$(QtVSToolsBuild)' == 'true'"
+        >$([System.IO.Path]::Combine('$(TEMP)','$([System.IO.Path]::GetRandomFileName()).designtime.props'))
+      </QtVarsDesignTimeNew>
     </PropertyGroup>
-    <Delete
-      Condition="'$(ErrorLevel)' == '0'"
-      Files="$([System.IO.Directory]::GetFiles('$(QtVarsOutputDir)', '*.designtime.props'))"/>
     <Copy
-      Condition="'$(ErrorLevel)' == '0'"
+      Condition="'$(ErrorLevel)' == '0' AND '$(QtVSToolsBuild)' == 'true'"
       SourceFiles="$(QtVarsFilePath)" DestinationFiles="$(QtVarsDesignTimeNew)"/>
     <WriteLinesToFile
-      Condition="'$(ErrorLevel)' == '0'"
+      Condition="'$(ErrorLevel)' == '0' AND '$(QtVSToolsBuild)' == 'true'"
       File="$(QtVarsIndexPathDesignTime)" Overwrite="true" Lines="$(QtVarsDesignTimeNew)"/>
-
-    <!--// Restart build in second MSBuild instance with updated Qt variables -->
-    <MSBuild
-      Condition="'$(DesignTimeBuild)' != 'true'"
-      Projects="$(MSBuildProjectFullPath)"
-      Targets="Build"
-      Properties="RandomFileName=$([System.IO.Path]::GetRandomFileName())">
-    </MSBuild>
-
-    <!--// Skip remaining build -->
-    <CreateProperty Value="true">
-      <Output TaskParameter="ValueSetByTask" PropertyName="QtSkipWork" />
-    </CreateProperty>
-    <CallTarget
-      Condition="'$(QtSkipBuildTargets)' != ''"
-      Targets="$(QtSkipBuildTargets)"/>
 
     <!--// Clean-up -->
     <ItemGroup>
@@ -383,6 +360,7 @@
       <QtLibrarySearchPath Remove="@(QtLibrarySearchPath)"/>
       <QtVariables Remove="@(QtVariables)"/>
       <QMakeCodeLines Remove="@(QMakeCodeLines)"/>
+      <QtBuildConfig Remove="@(QtBuildConfig)"/>
       <QtVarDef Remove="@(QtVarDef)"/>
       <QtVar Remove="@(QtVar)"/>
     </ItemGroup>
@@ -420,6 +398,8 @@
         AND '$(QtBkup_QtVars)' != '$(QtVars)'" />
     <Delete Files="$(QtVarsFilePath)" Condition="Exists('$(QtVarsFilePath)')
         AND '$(QtBkup_QMakeCodeLines)' != '$(QMakeCodeLines)'" />
+    <Delete Files="$(QtVarsFilePath)" Condition="Exists('$(QtVarsFilePath)')
+        AND '$(QtBkup_QtBuildConfig)' != '$(QtBuildConfig)'" />
   </Target>
 
   <!--
@@ -441,24 +421,6 @@
   <Target Name="QtVarsDesignTime">
     <CallTarget Targets="QtVarsClean"/>
     <CallTarget Targets="QtVars"/>
-  </Target>
-
-  <!--
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  /// TARGET QtSkipBuild
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  // Remove source file items in order to skip remaining build process
-  // -->
-  <Target Name="QtSkipBuild">
-    <ItemGroup>
-      <QtMoc Remove="@(QtMoc)"/>
-      <QtRcc Remove="@(QtRcc)"/>
-      <QtRepc Remove="@(QtRepc)"/>
-      <QtUic Remove="@(QtUic)"/>
-      <ClCompile Remove="@(ClCompile)"/>
-      <Link Remove="@(Link)"/>
-      <ProjectReference Remove="@(ProjectReference)"/>
-    </ItemGroup>
   </Target>
 
 </Project>

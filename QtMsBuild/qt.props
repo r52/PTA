@@ -105,7 +105,7 @@
     <!--// Path to Qt variables property file -->
     <QtVarsWorkDir
         >$([System.IO.Path]::Combine(
-            '$(TEMP)', '$([System.IO.Path]::GetRandomFileName())'))\</QtVarsWorkDir>
+            '$(TEMP)', '$([System.IO.Path]::GetRandomFileName())'))</QtVarsWorkDir>
     <QtVarsOutputDir
         >$([System.IO.Path]::Combine('$(ProjectDir)', '$(IntDir)', 'qmake'))</QtVarsOutputDir>
     <QtVarsFileNameWithoutExt
@@ -113,11 +113,11 @@
     <QtVarsFileName
         >$(QtVarsFileNameWithoutExt).props</QtVarsFileName>
     <QtVarsWorkPath
-        >$(QtVarsWorkDir)$(QtVarsFileName)</QtVarsWorkPath>
+        >$(QtVarsWorkDir)\$(QtVarsFileName)</QtVarsWorkPath>
     <QtVarsFilePath
         >$(QtVarsOutputDir)\$(QtVarsFileName)</QtVarsFilePath>
     <QtVarsIndexPathDesignTime
-        >$(QtVarsOutputDir)\$(QtVarsFileNameWithoutExt).designtime.idx</QtVarsIndexPathDesignTime>
+        >$(TEMP)\$(ProjectGuid.Replace('{','').Replace('}','')).$(ProjectName).designtime.idx</QtVarsIndexPathDesignTime>
     <QtVarsDesignTime Condition="Exists('$(QtVarsIndexPathDesignTime)')"
         >$([System.String]::Copy($([System.IO.File]::ReadAllText('$(QtVarsIndexPathDesignTime)'))).Replace('&#xD;&#xA;',''))</QtVarsDesignTime>
   </PropertyGroup>
@@ -180,6 +180,17 @@
         >QT_QML_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
+
+  <!--
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Outer build
+  // -->
+  <PropertyGroup>
+    <QtOuterBuildPrepare Condition="'$(QtOuterBuildPrepare)' == ''"
+      >ResolveReferences;PrepareForBuild;InitializeBuildStatus</QtOuterBuildPrepare>
+    <QtOuterBuildFinalize Condition="'$(QtOuterBuildFinalize)' == ''"
+      >FinalizeBuildStatus</QtOuterBuildFinalize>
+  </PropertyGroup>
 
   <!--
   /////////////////////////////////////////////////////////////////////////////////////////////////

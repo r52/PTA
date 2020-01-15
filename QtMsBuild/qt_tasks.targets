@@ -533,6 +533,8 @@
         ParameterType="System.String"/>
       <VarDefs Required="false"
         ParameterType="Microsoft.Build.Framework.ITaskItem[]"/>
+      <ExcludeValues Required="true"
+        ParameterType="System.String[]"/>
       <OutVars Output="true"
         ParameterType="Microsoft.Build.Framework.ITaskItem[]"/>
     </ParameterGroup>
@@ -547,8 +549,10 @@
                 File.ReadAllText(Makefile),
                 @"^(\w+)[^\=\r\n\S]*\=[^\r\n\S]*([^\r\n]+)[\r\n]",
                 RegexOptions.Multiline).Cast<Match>()
-                .Where(x => x.Groups.Count > 2 && x.Groups[1].Success && x.Groups[2].Success)
-                .ToDictionary(x => x.Groups[1].Value, x => x.Groups[2].Value);
+                .Where(x => x.Groups.Count > 2 && x.Groups[1].Success && x.Groups[2].Success
+                    && !string.IsNullOrEmpty(x.Groups[1].Value))
+                .GroupBy(x => x.Groups[1].Value)
+                .ToDictionary(g => g.Key, g => g.Last().Groups[2].Value);
             OutVars = VarDefs
                 .Where(x => makefileVars.ContainsKey(x.GetMetadata("Name")))
                 .Select(x => new TaskItem(x.ItemSpec, new Dictionary<string,string>
@@ -559,7 +563,9 @@
                         .Cast<Match>()
                         .Select(y => Regex
                             .Replace(y.Value, x.GetMetadata("Pattern"), x.GetMetadata("Value")))
-                        .Where(y => !string.IsNullOrEmpty(y))
+                        .Where(y => !string.IsNullOrEmpty(y)
+                            && !ExcludeValues.Contains(y,
+                                StringComparer.InvariantCultureIgnoreCase))
                         .ToHashSet())
                 } }))
                 .Where(x => !string.IsNullOrEmpty(x.GetMetadata("Value")))
