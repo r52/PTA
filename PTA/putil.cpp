@@ -86,6 +86,7 @@ namespace pta
 
         void InitializeHooks()
         {
+#ifdef NDEBUG
             g_ForegroundHook = SetWinEventHook(
                 EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, NULL, ForegroundHookCallback, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
 
@@ -107,6 +108,7 @@ namespace pta
             {
                 qWarning() << "Failed to set keyboard event hook. Some functions may not work.";
             }
+#endif
         }
 
         void ShutdownHooks()

@@ -494,7 +494,7 @@ std::string ItemAPI::readType(PItem* item, QString type)
             words << word;
         }
 
-        if (words.length() == 3)
+        if (words.length() >= 3)
         {
             words.removeAt(0);
         }
