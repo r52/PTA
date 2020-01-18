@@ -96,6 +96,7 @@ PTA::~PTA()
 {
     m_simpleKey.reset();
     m_advancedKey.reset();
+    m_wikiKey.reset();
 
     pta::hook::ShutdownHooks();
 }
@@ -199,7 +200,7 @@ void PTA::setupFunctionality()
         m_simpleKey.reset(new QHotkey(QKeySequence(seq), true));
         qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
 
-        connect(m_simpleKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_SIMPLE); });
+        connect(m_simpleKey.get(), &QHotkey::activated, [=]() { handleItemHotkey(PC_SIMPLE); });
     }
 
     bool advEnabled = settings.value(PTA_CONFIG_ADV_CHECK_HOTKEY_ENABLED, true).toBool();
@@ -211,7 +212,19 @@ void PTA::setupFunctionality()
         m_advancedKey.reset(new QHotkey(QKeySequence(seq), true));
         qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
 
-        connect(m_advancedKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_ADVANCED); });
+        connect(m_advancedKey.get(), &QHotkey::activated, [=]() { handleItemHotkey(PC_ADVANCED); });
+    }
+
+    bool wikiEnabled = settings.value(PTA_CONFIG_WIKI_HOTKEY_ENABLED, true).toBool();
+
+    if (wikiEnabled)
+    {
+        QString seq = settings.value(PTA_CONFIG_WIKI_HOTKEY, PTA_CONFIG_DEFAULT_WIKI_HOTKEY).toString();
+
+        m_wikiKey.reset(new QHotkey(QKeySequence(seq), true));
+        qDebug() << "Wiki Search Hotkey Registered:" << m_wikiKey->isRegistered();
+
+        connect(m_wikiKey.get(), &QHotkey::activated, [=]() { handleItemHotkey(WIKI_SEARCH); });
     }
 
     // ctrl + scroll
@@ -287,7 +300,7 @@ void PTA::saveSettings(int result)
                 m_simpleKey.reset(new QHotkey(QKeySequence(seq), true));
                 qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
 
-                connect(m_simpleKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_SIMPLE); });
+                connect(m_simpleKey.get(), &QHotkey::activated, [=]() { handleItemHotkey(PC_SIMPLE); });
             }
         }
 
@@ -306,7 +319,26 @@ void PTA::saveSettings(int result)
                 m_advancedKey.reset(new QHotkey(QKeySequence(seq), true));
                 qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
 
-                connect(m_advancedKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_ADVANCED); });
+                connect(m_advancedKey.get(), &QHotkey::activated, [=]() { handleItemHotkey(PC_ADVANCED); });
+            }
+        }
+
+        if (k == PTA_CONFIG_WIKI_HOTKEY_ENABLED)
+        {
+            bool enabled = v.get<bool>();
+
+            if (!enabled)
+            {
+                m_wikiKey.reset();
+            }
+            else if (!m_wikiKey)
+            {
+                QString seq = settings.value(PTA_CONFIG_WIKI_HOTKEY, PTA_CONFIG_DEFAULT_WIKI_HOTKEY).toString();
+
+                m_wikiKey.reset(new QHotkey(QKeySequence(seq), true));
+                qDebug() << "Wiki Hotkey Registered:" << m_advancedKey->isRegistered();
+
+                connect(m_wikiKey.get(), &QHotkey::activated, [=]() { handleItemHotkey(WIKI_SEARCH); });
             }
         }
 
@@ -342,6 +374,22 @@ void PTA::saveSettings(int result)
             }
         }
 
+        if (k == PTA_CONFIG_WIKI_HOTKEY)
+        {
+            QString nseq = QString::fromStdString(v.get<std::string>());
+
+            if (m_wikiKey)
+            {
+                QString currseq = m_wikiKey->shortcut().toString();
+
+                if (nseq != currseq)
+                {
+                    m_wikiKey->setShortcut(QKeySequence(nseq), true);
+                    qDebug() << "Wiki Hotkey Registered:" << m_wikiKey->isRegistered();
+                }
+            }
+        }
+
         if (k == PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED)
         {
             g_ctrlScrollEnabled = v.get<bool>();
@@ -371,7 +419,7 @@ void PTA::handleScrollHotkey(short data)
     SendInput(keystroke.size(), keystroke.data(), sizeof(keystroke[0]));
 }
 
-void PTA::handlePriceCheckHotkey(uint32_t flag)
+void PTA::handleItemHotkey(uint32_t flag)
 {
     if (m_blockHotkeys)
     {
@@ -500,6 +548,9 @@ void PTA::processClipboard()
             break;
         case PC_ADVANCED:
             m_api->advancedPriceCheck(item);
+            break;
+        case WIKI_SEARCH:
+            m_api->openWiki(item);
             break;
     }
 }

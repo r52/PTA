@@ -18,10 +18,11 @@ struct PItem;
 
 class ConfigDialog;
 
-enum price_check_flag : uint32_t
+enum search_check_flag : uint32_t
 {
     PC_SIMPLE = 0,
     PC_ADVANCED,
+    WIKI_SEARCH,
     PC_MAX
 };
 
@@ -72,7 +73,7 @@ private slots:
     void saveSettings(int result);
 
     void handleScrollHotkey(short data);
-    void handlePriceCheckHotkey(uint32_t flag);
+    void handleItemHotkey(uint32_t flag);
     void handleClipboard();
     void processClipboard();
     void handleForegroundChange(bool isPoe);
@@ -101,6 +102,7 @@ private:
     // Hotkeys
     std::unique_ptr<QHotkey> m_simpleKey;
     std::unique_ptr<QHotkey> m_advancedKey;
+    std::unique_ptr<QHotkey> m_wikiKey;
 
     // Macros
     MacroHandler m_macrohandler;

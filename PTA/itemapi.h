@@ -32,6 +32,7 @@ public:
 
     void simplePriceCheck(std::shared_ptr<PItem> item);
     void advancedPriceCheck(std::shared_ptr<PItem> item);
+    void openWiki(std::shared_ptr<PItem> item);
 
 signals:
     void humour(QString msg);

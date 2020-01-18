@@ -14,6 +14,7 @@
 #include <QNetworkReply>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QUrl>
 
 // PoE trade api only allows 10 items at once
 constexpr size_t papi_query_limit = 10;
@@ -43,6 +44,7 @@ const QString u_trade_fetch("https://www.pathofexile.com/api/trade/fetch/%1?quer
 const QString u_trade_search("https://www.pathofexile.com/api/trade/search/");
 const QString u_trade_exchange("https://www.pathofexile.com/api/trade/exchange/");
 const QString u_trade_site("https://www.pathofexile.com/trade/search/");
+const QString u_poewiki("https://pathofexile.gamepedia.com/");
 
 // poe prices
 const QString u_poeprices("https://www.poeprices.info/api?l=%1&i=%2");
@@ -2354,4 +2356,23 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
     });
 
     dlg->open();
+}
+
+void ItemAPI::openWiki(std::shared_ptr<PItem> item)
+{
+    QString itemName;
+
+    if (item->f_type.category == "gem" || item->f_type.category == "map" || item->f_type.category == "currency" || item->f_type.rarity == "Rare")
+    {
+        itemName = QString::fromStdString(item->type);
+    }
+    else if (!item->name.empty())
+    {
+        itemName = QString::fromStdString(item->name);
+    }
+    itemName = itemName.replace(" ", "_");
+    if (!QDesktopServices::openUrl(u_poewiki + itemName))
+    {
+        emit humour(tr("Opening the URL failed"));
+    }
 }
