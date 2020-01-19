@@ -466,7 +466,7 @@ void PTA::processClipboard()
                 LPTSTR lpszData = (LPTSTR) GlobalLock(hGlobal);
                 if (lpszData != NULL)
                 {
-                    itemText = QString::fromLocal8Bit((const char*) lpszData);
+                    itemText = QString::fromLocal8Bit((char*) lpszData);
                     GlobalUnlock(hGlobal);
                 }
             }

@@ -1958,7 +1958,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             processPriceResults(item, resp);
         });
     }
-    else
+    else if (item->f_type.rarity != "Magic")
     {
         // poeprices.info
 
@@ -2026,6 +2026,11 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             // else process the results
             emit priceCheckFinished(item, QString::fromStdString(resp.dump()));
         });
+    }
+    else
+    {
+        emit humour(tr("Simple price check is not available for this item type."));
+        qInfo() << "PAPI: Simple price check is not available for this item type.";
     }
 }
 
