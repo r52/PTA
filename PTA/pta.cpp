@@ -222,6 +222,7 @@ void PTA::setupFunctionality()
 
     // Foreground change events
     connect(this, &PTA::foregroundWindowChanged, &m_macrohandler, &MacroHandler::handleForegroundChange);
+    connect(this, &PTA::foregroundWindowChanged, this, &PTA::handleForegroundChange);
 }
 
 void PTA::foregroundEventCb(bool isPoe)
@@ -500,6 +501,20 @@ void PTA::processClipboard()
         case PC_ADVANCED:
             m_api->advancedPriceCheck(item);
             break;
+    }
+}
+
+void PTA::handleForegroundChange(bool isPoe)
+{
+    // Unset hotkeys if PoE not focused
+    if (m_simpleKey)
+    {
+        m_simpleKey->setRegistered(isPoe);
+    }
+
+    if (m_advancedKey)
+    {
+        m_advancedKey->setRegistered(isPoe);
     }
 }
 

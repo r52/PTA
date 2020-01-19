@@ -75,6 +75,7 @@ private slots:
     void handlePriceCheckHotkey(uint32_t flag);
     void handleClipboard();
     void processClipboard();
+    void handleForegroundChange(bool isPoe);
 
 private:
     Ui::PTAClass ui;
