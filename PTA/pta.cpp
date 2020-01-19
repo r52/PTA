@@ -150,120 +150,7 @@ void PTA::createTrayIcon()
 void PTA::createActions()
 {
     m_settingsAction = new QAction(tr("&Settings"), this);
-    connect(m_settingsAction, &QAction::triggered, [&] {
-        json results;
-
-        ConfigDialog dlg(results, m_api);
-        int          ret = dlg.exec();
-
-        if (!ret)
-        {
-            // User close
-            return;
-        }
-
-        QSettings settings;
-
-        for (auto& [k, v] : results.items())
-        {
-            if (v.is_boolean())
-            {
-                settings.setValue(QString::fromStdString(k), v.get<bool>());
-            }
-            else if (v.is_number())
-            {
-                settings.setValue(QString::fromStdString(k), v.get<int>());
-            }
-            else if (v.is_string())
-            {
-                settings.setValue(QString::fromStdString(k), QString::fromStdString(v.get<std::string>()));
-            }
-
-            if (k == PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED)
-            {
-                bool enabled = v.get<bool>();
-
-                if (!enabled)
-                {
-                    m_simpleKey.reset();
-                }
-                else if (!m_simpleKey)
-                {
-                    QString seq = settings.value(PTA_CONFIG_SIMPLE_CHECK_HOTKEY, PTA_CONFIG_DEFAULT_SIMPLE_CHECK_HOTKEY).toString();
-
-                    m_simpleKey.reset(new QHotkey(QKeySequence(seq), true));
-                    qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
-
-                    connect(m_simpleKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_SIMPLE); });
-                }
-            }
-
-            if (k == PTA_CONFIG_ADV_CHECK_HOTKEY_ENABLED)
-            {
-                bool enabled = v.get<bool>();
-
-                if (!enabled)
-                {
-                    m_advancedKey.reset();
-                }
-                else if (!m_advancedKey)
-                {
-                    QString seq = settings.value(PTA_CONFIG_ADV_CHECK_HOTKEY, PTA_CONFIG_DEFAULT_ADV_CHECK_HOTKEY).toString();
-
-                    m_advancedKey.reset(new QHotkey(QKeySequence(seq), true));
-                    qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
-
-                    connect(m_advancedKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_ADVANCED); });
-                }
-            }
-
-            if (k == PTA_CONFIG_SIMPLE_CHECK_HOTKEY)
-            {
-                QString nseq = QString::fromStdString(v.get<std::string>());
-
-                if (m_simpleKey)
-                {
-                    QString currseq = m_simpleKey->shortcut().toString();
-
-                    if (nseq != currseq)
-                    {
-                        m_simpleKey->setShortcut(QKeySequence(nseq), true);
-                        qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
-                    }
-                }
-            }
-
-            if (k == PTA_CONFIG_ADV_CHECK_HOTKEY)
-            {
-                QString nseq = QString::fromStdString(v.get<std::string>());
-
-                if (m_advancedKey)
-                {
-                    QString currseq = m_advancedKey->shortcut().toString();
-
-                    if (nseq != currseq)
-                    {
-                        m_advancedKey->setShortcut(QKeySequence(nseq), true);
-                        qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
-                    }
-                }
-            }
-
-            if (k == PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED)
-            {
-                g_ctrlScrollEnabled = v.get<bool>();
-            }
-
-            if (k == PTA_CONFIG_CUSTOM_MACROS)
-            {
-                auto mcs = v.dump();
-
-                settings.setValue(PTA_CONFIG_CUSTOM_MACROS, QString::fromStdString(mcs));
-
-                m_macrohandler.setMacros(v);
-            }
-        }
-    });
+    connect(m_settingsAction, &QAction::triggered, this, &PTA::openSettings);
 
     m_logAction = new QAction(tr("L&og"), this);
     connect(m_logAction, &QAction::triggered, this, &QWidget::showNormal);
@@ -340,6 +227,134 @@ void PTA::setupFunctionality()
 void PTA::foregroundEventCb(bool isPoe)
 {
     emit foregroundWindowChanged(isPoe);
+}
+
+void PTA::openSettings()
+{
+    if (!m_configdialog)
+    {
+        m_configdialog = new ConfigDialog(m_api);
+
+        connect(m_configdialog, &QDialog::finished, this, &PTA::saveSettings);
+
+        m_configdialog->open();
+    }
+}
+
+void PTA::saveSettings(int result)
+{
+    ConfigDialog* dlg = m_configdialog;
+    m_configdialog    = nullptr;
+
+    if (result == QDialog::Rejected)
+    {
+        // cancelled
+        return;
+    }
+
+    json results = dlg->results;
+
+    QSettings settings;
+
+    for (auto& [k, v] : results.items())
+    {
+        if (v.is_boolean())
+        {
+            settings.setValue(QString::fromStdString(k), v.get<bool>());
+        }
+        else if (v.is_number())
+        {
+            settings.setValue(QString::fromStdString(k), v.get<int>());
+        }
+        else if (v.is_string())
+        {
+            settings.setValue(QString::fromStdString(k), QString::fromStdString(v.get<std::string>()));
+        }
+
+        if (k == PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED)
+        {
+            bool enabled = v.get<bool>();
+
+            if (!enabled)
+            {
+                m_simpleKey.reset();
+            }
+            else if (!m_simpleKey)
+            {
+                QString seq = settings.value(PTA_CONFIG_SIMPLE_CHECK_HOTKEY, PTA_CONFIG_DEFAULT_SIMPLE_CHECK_HOTKEY).toString();
+
+                m_simpleKey.reset(new QHotkey(QKeySequence(seq), true));
+                qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
+
+                connect(m_simpleKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_SIMPLE); });
+            }
+        }
+
+        if (k == PTA_CONFIG_ADV_CHECK_HOTKEY_ENABLED)
+        {
+            bool enabled = v.get<bool>();
+
+            if (!enabled)
+            {
+                m_advancedKey.reset();
+            }
+            else if (!m_advancedKey)
+            {
+                QString seq = settings.value(PTA_CONFIG_ADV_CHECK_HOTKEY, PTA_CONFIG_DEFAULT_ADV_CHECK_HOTKEY).toString();
+
+                m_advancedKey.reset(new QHotkey(QKeySequence(seq), true));
+                qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
+
+                connect(m_advancedKey.get(), &QHotkey::activated, [=]() { handlePriceCheckHotkey(PC_ADVANCED); });
+            }
+        }
+
+        if (k == PTA_CONFIG_SIMPLE_CHECK_HOTKEY)
+        {
+            QString nseq = QString::fromStdString(v.get<std::string>());
+
+            if (m_simpleKey)
+            {
+                QString currseq = m_simpleKey->shortcut().toString();
+
+                if (nseq != currseq)
+                {
+                    m_simpleKey->setShortcut(QKeySequence(nseq), true);
+                    qDebug() << "Price Check Hotkey Registered:" << m_simpleKey->isRegistered();
+                }
+            }
+        }
+
+        if (k == PTA_CONFIG_ADV_CHECK_HOTKEY)
+        {
+            QString nseq = QString::fromStdString(v.get<std::string>());
+
+            if (m_advancedKey)
+            {
+                QString currseq = m_advancedKey->shortcut().toString();
+
+                if (nseq != currseq)
+                {
+                    m_advancedKey->setShortcut(QKeySequence(nseq), true);
+                    qDebug() << "Advanced Price Check Hotkey Registered:" << m_advancedKey->isRegistered();
+                }
+            }
+        }
+
+        if (k == PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED)
+        {
+            g_ctrlScrollEnabled = v.get<bool>();
+        }
+
+        if (k == PTA_CONFIG_CUSTOM_MACROS)
+        {
+            auto mcs = v.dump();
+
+            settings.setValue(PTA_CONFIG_CUSTOM_MACROS, QString::fromStdString(mcs));
+
+            m_macrohandler.setMacros(v);
+        }
+    }
 }
 
 void PTA::handleScrollHotkey(short data)

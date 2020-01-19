@@ -17,10 +17,13 @@ class ConfigDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit ConfigDialog(json& set, ItemAPI* api);
+    explicit ConfigDialog(ItemAPI* api);
 
 public slots:
     void changePage(QListWidgetItem* current, QListWidgetItem* previous);
+
+public:
+    json results;
 
 private:
     void createIcons();

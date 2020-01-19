@@ -4,8 +4,10 @@
 
 #include <QtWidgets>
 
-ConfigDialog::ConfigDialog(json& set, ItemAPI* api)
+ConfigDialog::ConfigDialog(ItemAPI* api)
 {
+    setAttribute(Qt::WA_DeleteOnClose);
+
     contentsWidget = new QListWidget;
     contentsWidget->setViewMode(QListView::IconMode);
     contentsWidget->setIconSize(QSize(32, 32));
@@ -18,11 +20,11 @@ ConfigDialog::ConfigDialog(json& set, ItemAPI* api)
     contentsWidget->setWrapping(false);
 
     pagesWidget = new QStackedWidget;
-    pagesWidget->addWidget(new GeneralPage(set));
-    pagesWidget->addWidget(new UIPage(set));
-    pagesWidget->addWidget(new HotkeyPage(set));
-    pagesWidget->addWidget(new PriceCheckPage(set, api));
-    pagesWidget->addWidget(new MacrosPage(set));
+    pagesWidget->addWidget(new GeneralPage(results));
+    pagesWidget->addWidget(new UIPage(results));
+    pagesWidget->addWidget(new HotkeyPage(results));
+    pagesWidget->addWidget(new PriceCheckPage(results, api));
+    pagesWidget->addWidget(new MacrosPage(results));
 
     QPushButton* saveButton  = new QPushButton(tr("Save"));
     QPushButton* closeButton = new QPushButton(tr("Close"));

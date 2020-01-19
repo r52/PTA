@@ -16,6 +16,8 @@ QT_FORWARD_DECLARE_CLASS(ItemAPI)
 
 struct PItem;
 
+class ConfigDialog;
+
 enum price_check_flag : uint32_t
 {
     PC_SIMPLE = 0,
@@ -66,6 +68,9 @@ private:
 private slots:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 
+    void openSettings();
+    void saveSettings(int result);
+
     void handleScrollHotkey(short data);
     void handlePriceCheckHotkey(uint32_t flag);
     void handleClipboard();
@@ -105,6 +110,8 @@ private:
     bool     m_blockHotkeys = false;
     bool     m_pcTriggered  = false;
     uint32_t m_pctype;
+
+    ConfigDialog* m_configdialog = nullptr;
 
     Q_DISABLE_COPY(PTA);
 };
