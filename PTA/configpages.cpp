@@ -167,6 +167,21 @@ HotkeyPage::HotkeyPage(json& set, QWidget* parent) : QWidget(parent)
 
     formLayout->addRow(ampLabel, akeyedit);
 
+    // ------------------Wiki Search
+    QCheckBox* wikiLabel = new QCheckBox(tr("Open in Wiki:"));
+    wikiLabel->setChecked(settings.value(PTA_CONFIG_WIKI_HOTKEY_ENABLED, true).toBool());
+
+    connect(wikiLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_WIKI_HOTKEY_ENABLED] = (checked == Qt::Checked); });
+
+    QString           wkeyseq  = settings.value(PTA_CONFIG_WIKI_HOTKEY, PTA_CONFIG_DEFAULT_WIKI_HOTKEY).toString();
+    QKeySequenceEdit* wkeyedit = new QKeySequenceEdit(QKeySequence(wkeyseq));
+
+    connect(wkeyedit, &QKeySequenceEdit::keySequenceChanged, [=, &set](const QKeySequence& keySequence) {
+        set[PTA_CONFIG_WIKI_HOTKEY] = keySequence.toString().toStdString();
+    });
+
+    formLayout->addRow(wikiLabel, wkeyedit);
+
     // ------------------Ctrl Scroll Wheel
 
     QCheckBox* sclLabel = new QCheckBox(tr("Ctrl+Mouse Wheel scrolls through stash tabs"));

@@ -20,6 +20,8 @@ constexpr auto PTA_CONFIG_SIMPLE_CHECK_HOTKEY         = "hotkey/simplecheck";
 constexpr auto PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED = "hotkey/simplecheck/enabled";
 constexpr auto PTA_CONFIG_ADV_CHECK_HOTKEY            = "hotkey/advcheck";
 constexpr auto PTA_CONFIG_ADV_CHECK_HOTKEY_ENABLED    = "hotkey/advcheck/enabled";
+constexpr auto PTA_CONFIG_WIKI_HOTKEY                 = "hotkey/wiki";
+constexpr auto PTA_CONFIG_WIKI_HOTKEY_ENABLED         = "hotkey/wiki/enabled";
 constexpr auto PTA_CONFIG_CTRL_SCROLL_HOTKEY_ENABLED  = "hotkey/cscroll/enabled";
 
 constexpr auto PTA_CONFIG_LEAGUE             = "pricecheck/league";
@@ -49,6 +51,7 @@ constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT = 450;
 
 constexpr auto PTA_CONFIG_DEFAULT_SIMPLE_CHECK_HOTKEY = "Ctrl+D";
 constexpr auto PTA_CONFIG_DEFAULT_ADV_CHECK_HOTKEY    = "Ctrl+Alt+D";
+constexpr auto PTA_CONFIG_DEFAULT_WIKI_HOTKEY         = "Ctrl+Alt+G";
 
 constexpr auto PTA_CONFIG_DEFAULT_LEAGUE             = 0;
 constexpr auto PTA_CONFIG_DEFAULT_DISPLAYLIMIT       = 12;
