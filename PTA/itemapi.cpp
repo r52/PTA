@@ -1879,8 +1879,8 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         // Default corrupt options
         bool corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
 
-        // No such thing as corrupted cards
-        if (item->f_type.category != "card")
+        // No such thing as corrupted cards or prophecies
+        if (item->f_type.category != "card" && item->f_type.category != "prophecy")
         {
             if (corrupt_override)
             {
@@ -2292,30 +2292,12 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
             item->m_options += ", Synthesis Base";
         }
 
-        // Default corrupt options
-        bool corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
-
-        if (corrupt_override)
+        // Corrupt
+        if (misc.contains("corrupted"))
         {
-            QString corrupt_search = settings.value(PTA_CONFIG_CORRUPTSEARCH, PTA_CONFIG_DEFAULT_CORRUPTSEARCH).toString();
-
-            if (corrupt_search != "Any")
-            {
-                qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = (corrupt_search == "Yes");
-
-                item->m_options += ", Corrupted=" + corrupt_search.toStdString();
-            }
-            else
-            {
-                item->m_options += ", Corrupted=Any";
-            }
-        }
-        else
-        {
-            qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item->f_misc.corrupted;
-
+            qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = misc["corrupted"];
             item->m_options += ", Corrupted=";
-            item->m_options += item->f_misc.corrupted ? "Yes" : "No";
+            item->m_options += misc["corrupted"].get<bool>() ? "Yes" : "No";
         }
 
         auto qba = query.dump();

@@ -212,6 +212,9 @@ StatDialog::StatDialog(PItem* item)
     // Misc options
     QHBoxLayout* miscLayout = new QHBoxLayout();
 
+    QCheckBox* crptCB = createMiscCheckBox(tr("Corrupted"), "corrupted", item->f_misc.corrupted);
+    miscLayout->addWidget(crptCB);
+
     if (item->f_socket.sockets.total() > 0)
     {
         QCheckBox* socketCB = createMiscCheckBox(tr("Use Sockets") + QString(" (%1)").arg(item->f_socket.sockets.total()), "use_sockets", false);
