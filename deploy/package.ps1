@@ -32,6 +32,9 @@ Copy-Item ("x64\" + $rel + "\QHotkey.dll") -Destination $dllpath -Force
 # Copy templates
 Copy-Item .\PTA\templates\ -Destination ($pkpath + "\templates\") -Recurse -Force
 
+# Copy stylesheets
+Copy-Item .\PTA\stylesheets\ -Destination ($pkpath + "\stylesheets\") -Recurse -Force
+
 # Copy SSL lib
 if (($env:OPENSSL) -and (Test-Path $env:OPENSSL -pathType container)) {
     Copy-Item $env:OPENSSL\libcrypto-1_1-x64.dll -Destination $pkpath -Force

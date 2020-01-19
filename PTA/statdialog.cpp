@@ -4,7 +4,13 @@
 
 #include <QtWidgets>
 
-const QMap<std::string, QString> g_labelStyles = {{"Unique", "color: #af6025;"}, {"Rare", "color: #ff7;"}, {"Magic", "color: #88f;"}};
+namespace
+{
+    const QString g_defaultStyle = "* { background-color : #1c1b19; color: #a38d6d; }"
+                                   "QLabel[rarity = \"Unique\"] { color: #af6025; }"
+                                   "QLabel[rarity = \"Rare\"] { color: #ff7; }"
+                                   "QLabel[rarity = \"Magic\"] { color: #88f; }";
+}
 
 StatDialog::StatDialog(PItem* item)
 {
@@ -25,7 +31,19 @@ StatDialog::StatDialog(PItem* item)
 
     setWindowFlags(flags);
 
-    setStyleSheet("background-color: #1c1b19; color: #a38d6d;");
+    // Load stylesheet
+    QFile qssfile("stylesheets/statdialog.qss");
+
+    if (qssfile.open(QIODevice::ReadOnly))
+    {
+        QString css = QLatin1String(qssfile.readAll());
+
+        setStyleSheet(css);
+    }
+    else
+    {
+        setStyleSheet(g_defaultStyle);
+    }
 
     QGridLayout* layout = new QGridLayout();
 
@@ -44,13 +62,10 @@ StatDialog::StatDialog(PItem* item)
     }
 
     // title
+    QString rarity = QString::fromStdString(item->f_type.rarity);
 
     QLabel* itemLabel = new QLabel(s_itemLabel);
-
-    if (g_labelStyles.contains(item->f_type.rarity))
-    {
-        itemLabel->setStyleSheet(g_labelStyles[item->f_type.rarity]);
-    }
+    itemLabel->setProperty("rarity", rarity);
 
     layout->addWidget(itemLabel, current_row++, 0, 1, 4);
 
