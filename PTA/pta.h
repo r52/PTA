@@ -8,6 +8,8 @@
 
 #include <QAbstractNativeEventFilter>
 #include <QHotkey>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
 #include <QSystemTrayIcon>
 #include <QtWidgets/QMainWindow>
 
@@ -63,6 +65,7 @@ private:
     void createActions();
 
     void setupFunctionality();
+    void checkForUpdates();
 
     void foregroundEventCb(bool isPoe);
 
@@ -109,6 +112,10 @@ private:
 
     // Input Handler
     InputHandler m_inputhandler;
+
+    // Networking
+    QNetworkAccessManager* m_netmanager;
+    QNetworkRequest        m_updrequest;
 
     bool     m_blockHotkeys = false;
     bool     m_pcTriggered  = false;

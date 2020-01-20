@@ -12,6 +12,7 @@
 #include <QClipboard>
 #include <QMenu>
 #include <QMessageBox>
+#include <QNetworkReply>
 #include <QPlainTextEdit>
 #include <QToolTip>
 #include <QVBoxLayout>
@@ -23,7 +24,8 @@ namespace
     bool g_ctrlScrollEnabled = false;
 }
 
-PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log), m_inputhandler(this), m_macrohandler(this)
+PTA::PTA(LogWindow* log, QWidget* parent) :
+    QMainWindow(parent), m_logWindow(log), m_inputhandler(this), m_macrohandler(this), m_netmanager(new QNetworkAccessManager(this))
 {
     if (nullptr == m_logWindow)
     {
@@ -73,6 +75,8 @@ PTA::PTA(LogWindow* log, QWidget* parent) : QMainWindow(parent), m_logWindow(log
 
     // Initialize hooks
     pta::hook::InitializeHooks();
+
+    checkForUpdates();
 }
 
 void PTA::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
@@ -236,6 +240,54 @@ void PTA::setupFunctionality()
     // Foreground change events
     connect(this, &PTA::foregroundWindowChanged, &m_macrohandler, &MacroHandler::handleForegroundChange);
     connect(this, &PTA::foregroundWindowChanged, this, &PTA::handleForegroundChange);
+}
+
+void PTA::checkForUpdates()
+{
+    connect(m_netmanager, &QNetworkAccessManager::finished, [](QNetworkReply* reply) {
+        if (reply->error())
+        {
+            qInfo() << reply->errorString();
+            return;
+        }
+
+        QString       answer = reply->readAll();
+        QJsonDocument doc    = QJsonDocument::fromJson(answer.toUtf8());
+
+        if (doc.isNull())
+        {
+            qWarning() << "Error parsing Github API response";
+            return;
+        }
+
+        auto info = doc.array();
+
+        auto latest = info.at(0);
+        auto latver = latest["name"].toString();
+
+        // simple case compare should suffice
+        if (latver > VER_STRING)
+        {
+            auto resp = QMessageBox::question(nullptr,
+                                              tr("PTA Update"),
+                                              tr("PTA version ") + latver + tr(" is available.\n\nWould you like to download it?"),
+                                              QMessageBox::Yes | QMessageBox::No);
+
+            if (resp == QMessageBox::Ok)
+            {
+                QDesktopServices::openUrl(QUrl(latest["html_url"].toString()));
+            }
+        }
+        else
+        {
+            qInfo() << "No updates available. Already on the latest version.";
+        }
+    });
+
+    QTimer::singleShot(5000, [&] {
+        m_updrequest.setUrl(QUrl("https://api.github.com/repos/r52/PTA/releases"));
+        m_netmanager->get(m_updrequest);
+    });
 }
 
 void PTA::foregroundEventCb(bool isPoe)
