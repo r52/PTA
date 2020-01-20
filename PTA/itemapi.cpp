@@ -519,7 +519,7 @@ std::string ItemAPI::readType(PItem* item, QString type)
     if (item->f_type.rarity == "Magic")
     {
         // Parse out magic affixes
-        QRegularExpression              re("([\\w']+)(?(?= of)( of [\\w\\s]+))");
+        QRegularExpression              re("([\\w'-]+)(?(?= of)( of [\\w\\s]+))");
         QRegularExpressionMatchIterator i = re.globalMatch(type);
 
         QStringList words;
