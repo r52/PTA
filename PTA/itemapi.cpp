@@ -2362,13 +2362,17 @@ void ItemAPI::openWiki(std::shared_ptr<PItem> item)
 {
     QString itemName;
 
-    if (item->f_type.category == "gem" || item->f_type.category == "map" || item->f_type.category == "currency" || item->f_type.rarity == "Rare")
+    if (item->f_type.rarity == "Rare" )
     {
         itemName = QString::fromStdString(item->type);
     }
     else if (!item->name.empty())
     {
         itemName = QString::fromStdString(item->name);
+    }
+    else
+    {
+        itemName = QString::fromStdString(item->type);
     }
     itemName = itemName.replace(" ", "_");
     if (!QDesktopServices::openUrl(u_poewiki + itemName))
