@@ -1484,6 +1484,14 @@ PItem* ItemAPI::parse(QString itemText)
     stream.readLineInto(&nametype);
     stream.readLineInto(&type);
 
+    if (nametype.startsWith("You cannot"))
+    {
+        // Item requirements not met msg (why is this needed GGG?!)
+        // Ignore it and read the subsequent lines
+        stream.readLineInto(&nametype);
+        stream.readLineInto(&type);
+    }
+
     if (type.startsWith("---"))
     {
         // nametype has to be item type and not name
