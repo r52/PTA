@@ -2362,7 +2362,7 @@ void ItemAPI::openWiki(std::shared_ptr<PItem> item)
 {
     QString itemName;
 
-    if (item->f_type.rarity == "Rare" )
+    if (item->f_type.rarity == "Rare")
     {
         itemName = QString::fromStdString(item->type);
     }
@@ -2374,6 +2374,7 @@ void ItemAPI::openWiki(std::shared_ptr<PItem> item)
     {
         itemName = QString::fromStdString(item->type);
     }
+
     itemName = itemName.replace(" ", "_");
     if (!QDesktopServices::openUrl(u_poewiki + itemName))
     {

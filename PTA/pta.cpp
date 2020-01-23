@@ -619,6 +619,11 @@ void PTA::handleForegroundChange(bool isPoe)
     {
         m_advancedKey->setRegistered(isPoe);
     }
+
+    if (m_wikiKey)
+    {
+        m_wikiKey->setRegistered(isPoe);
+    }
 }
 
 PTA::InputHandler::InputHandler(PTA* parent) : m_parent(parent)
