@@ -11,6 +11,7 @@
 #include <QDesktopServices>
 #include <QEventLoop>
 #include <QFileInfo>
+#include <QNetworkDiskCache>
 #include <QNetworkReply>
 #include <QRegularExpression>
 #include <QSettings>
@@ -58,6 +59,14 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     {
         throw std::runtime_error("Failed to create network manager");
     }
+
+    // Enable data caching for faster loads
+    QNetworkDiskCache* diskCache = new QNetworkDiskCache(this);
+
+    auto cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+
+    diskCache->setCacheDirectory(cachePath);
+    m_manager->setCache(diskCache);
 
     json data;
 
