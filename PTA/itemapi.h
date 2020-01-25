@@ -122,6 +122,13 @@ private:
         influences_max
     };
 
+    enum class mod_generation_type : uint8_t
+    {
+        mod_prefix = 0,
+        mod_suffix,
+        mod_unknown
+    };
+
     const std::array<std::string, influences_max> c_influenceMap = {"shaper", "elder", "crusader", "redeemer", "hunter", "warlord"};
 
     const QMap<QString, QVector<uint8_t>> c_propMap = {{"Quality", {misc_filter, misc_filter_quality}},
@@ -161,6 +168,7 @@ private:
     json                                                             c_currencyMap;
     std::unordered_set<std::string>                                  c_currencyCodes;
     std::unordered_set<std::string>                                  c_excludes;
+    std::unordered_map<std::string, mod_generation_type>             c_mods;
 
     std::map<std::string, json> c_baseMap;
 

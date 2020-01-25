@@ -23,11 +23,12 @@ constexpr size_t papi_query_limit = 10;
 
 // official
 const QUrl u_api_league("https://www.pathofexile.com/api/trade/data/leagues");
-const QUrl u_api_mods("https://www.pathofexile.com/api/trade/data/stats");
+const QUrl u_api_stats("https://www.pathofexile.com/api/trade/data/stats");
 const QUrl u_api_items("https://www.pathofexile.com/api/trade/data/items");
 
 // repoe
 const QUrl u_repoe_base("https://raw.githubusercontent.com/brather1ng/RePoE/master/RePoE/data/base_items.min.json");
+const QUrl u_repoe_mods("https://raw.githubusercontent.com/brather1ng/RePoE/master/RePoE/data/mods.min.json");
 
 // pta
 const QUrl u_pta_armourlocals("https://raw.githubusercontent.com/r52/PTA/master/PTA/data/armour_locals.json");
@@ -60,7 +61,8 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     json data;
 
-    // Download leagues
+    ///////////////////////////////////////////// Download leagues
+
     if (!synchronizedGetJSON(QNetworkRequest(u_api_league), data))
     {
         throw std::runtime_error("Failed to download league data");
@@ -78,7 +80,8 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "League data loaded. Setting league to" << setlg;
 
-    // Load excludes (needs to be loaded BEFORE stats)
+    ///////////////////////////////////////////// Load excludes (needs to be loaded BEFORE stats)
+
     QFile excl("data/excludes.json");
 
     if (excl.open(QIODevice::ReadOnly))
@@ -106,10 +109,11 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "Exclude rules loaded";
 
-    // Download stats
-    if (!synchronizedGetJSON(QNetworkRequest(u_api_mods), data))
+    ///////////////////////////////////////////// Download stats
+
+    if (!synchronizedGetJSON(QNetworkRequest(u_api_stats), data))
     {
-        throw std::runtime_error("Failed to download mod data");
+        throw std::runtime_error("Failed to download stats data");
     }
 
     auto& stt = data["result"];
@@ -138,9 +142,10 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
         }
     }
 
-    qInfo() << "Mod data loaded";
+    qInfo() << "Mod stats loaded";
 
-    // Download unique items
+    ///////////////////////////////////////////// Download unique items
+
     if (!synchronizedGetJSON(QNetworkRequest(u_api_items), data))
     {
         throw std::runtime_error("Failed to download unique item data");
@@ -171,7 +176,8 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "Unique item data loaded";
 
-    // Load base categories
+    ///////////////////////////////////////////// Load base categories
+
     QFile bc("data/base_categories.json");
 
     if (bc.open(QIODevice::ReadOnly))
@@ -191,7 +197,8 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "Base categories loaded";
 
-    // Load RePoE base data (needs to be loaded AFTER c_baseCat)
+    ///////////////////////////////////////////// Load RePoE base data (needs to be loaded AFTER c_baseCat)
+
     if (!synchronizedGetJSON(QNetworkRequest(u_repoe_base), data))
     {
         throw std::runtime_error("Failed to download base item data");
@@ -219,7 +226,50 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "Item base data loaded";
 
-    // Load pseudo rules
+    ///////////////////////////////////////////// Load RePoE mod data
+
+    if (!synchronizedGetJSON(QNetworkRequest(u_repoe_mods), data))
+    {
+        throw std::runtime_error("Failed to download mod type data");
+    }
+
+    for (auto& [k, o] : data.items())
+    {
+        std::string modname = o["name"].get<std::string>();
+        std::string modtype = o["generation_type"].get<std::string>();
+
+        if (modname.empty())
+        {
+            // Skip the mods with no name
+            continue;
+        }
+
+        mod_generation_type type = mod_generation_type::mod_unknown;
+
+        if (modtype == "prefix")
+        {
+            type = mod_generation_type::mod_prefix;
+        }
+        else if (modtype == "suffix")
+        {
+            type = mod_generation_type::mod_suffix;
+        }
+
+        if (type == mod_generation_type::mod_unknown)
+        {
+            // We only care about magic mods for now here so
+            // skip all other mod types like corrupted/unique mods
+            // qDebug() << "Skipped mod type" << QString::fromStdString(modtype) << "in mod" << QString::fromStdString(modname);
+            continue;
+        }
+
+        c_mods.insert({{modname, type}});
+    }
+
+    qInfo() << "Mod types loaded";
+
+    ///////////////////////////////////////////// Load pseudo rules
+
     QFile pr("data/pseudo_rules.json");
 
     if (pr.open(QIODevice::ReadOnly))
@@ -239,7 +289,8 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "Pseudo rules loaded";
 
-    // Load enchant rules
+    ///////////////////////////////////////////// Load enchant rules
+
     QFile er("data/enchant_rules.json");
 
     if (er.open(QIODevice::ReadOnly))
@@ -259,7 +310,8 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "Enchant rules loaded";
 
-    // Load local rules
+    ///////////////////////////////////////////// Load local rules
+
     QFile wl("data/weapon_locals.json");
 
     if (wl.open(QIODevice::ReadOnly))
@@ -287,7 +339,7 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "Weapon Local rules loaded";
 
-    //  armour
+    /////////////////////////////////////////////  Armour locals
     QFile al("data/armour_locals.json");
 
     if (al.open(QIODevice::ReadOnly))
@@ -315,7 +367,8 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "Armour Local rules loaded";
 
-    // Discriminators
+    ///////////////////////////////////////////// Mod Discriminators
+
     QFile disc("data/discriminators.json");
 
     if (disc.open(QIODevice::ReadOnly))
@@ -350,7 +403,8 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     qInfo() << "Discriminator rules loaded";
 
-    // Currency
+    ///////////////////////////////////////////// Currency
+
     QFile curr("data/currency.json");
 
     if (curr.open(QIODevice::ReadOnly))
@@ -519,6 +573,7 @@ std::string ItemAPI::readType(PItem* item, QString type)
     if (item->f_type.rarity == "Magic")
     {
         // Parse out magic affixes
+        // Try to get rid of all suffixes by forward catching " of"
         QRegularExpression              re("([\\w'-]+)(?(?= of)( of [\\w\\s]+))");
         QRegularExpressionMatchIterator i = re.globalMatch(type);
 
@@ -530,7 +585,10 @@ std::string ItemAPI::readType(PItem* item, QString type)
             words << word;
         }
 
-        if (words.length() >= 3)
+        std::string prefix = words.at(0).toStdString();
+
+        // Remove prefixes
+        if (c_mods.contains(prefix) && c_mods[prefix] == mod_generation_type::mod_prefix)
         {
             words.removeAt(0);
         }
