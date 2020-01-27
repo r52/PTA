@@ -23,8 +23,8 @@ class ItemAPI : public QObject
 public:
     ItemAPI(QObject* parent = nullptr);
 
-    json    getLeagues() { return m_leagues; }
-    QString getLeague();
+    const json getLeagues() { return m_leagues; }
+    QString    getLeague();
 
     PItem* parse(QString itemText);
 
@@ -35,8 +35,8 @@ public:
     void openWiki(std::shared_ptr<PItem> item);
 
 signals:
-    void humour(QString msg);
-    void priceCheckFinished(std::shared_ptr<PItem> item, QString results);
+    void humour(const QString& msg);
+    void priceCheckFinished(std::shared_ptr<PItem> item, const QString& results);
 
 private:
     int              readPropInt(QString prop);

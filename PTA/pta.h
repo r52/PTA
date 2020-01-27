@@ -2,6 +2,7 @@
 
 #include "ui_pta.h"
 
+#include "clientmonitor.h"
 #include "macrohandler.h"
 
 #include <memory>
@@ -55,7 +56,7 @@ signals:
 
 public slots:
     void showToolTip(QString message);
-    void showPriceResults(std::shared_ptr<PItem> item, QString results);
+    void showPriceResults(std::shared_ptr<PItem> item, const QString& results);
 
 protected:
     virtual void closeEvent(QCloseEvent* event) override;
@@ -106,6 +107,9 @@ private:
     std::unique_ptr<QHotkey> m_simpleKey;
     std::unique_ptr<QHotkey> m_advancedKey;
     std::unique_ptr<QHotkey> m_wikiKey;
+
+    // Client Monitor
+    ClientMonitor m_clientmonitor;
 
     // Macros
     MacroHandler m_macrohandler;

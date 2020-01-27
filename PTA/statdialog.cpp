@@ -255,7 +255,7 @@ StatDialog::StatDialog(PItem* item)
 
     if (!item->f_misc.influences.empty())
     {
-        for (auto i : item->f_misc.influences)
+        for (const auto i : item->f_misc.influences)
         {
             QString influence = QString::fromStdString(i);
             QString influcap  = influence;
