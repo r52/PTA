@@ -107,6 +107,14 @@ bool MacroHandler::processChatCommand(std::string& command)
 
     if (match.hasMatch())
     {
+        if (!m_client->enabled())
+        {
+            qWarning() << "Client features unavailable. Please set Client.txt path in settings to enable.";
+            emit humour(tr("Client features unavailable. Please set Client.txt path in settings to enable."));
+
+            return false;
+        }
+
         QString var = match.captured(1);
 
         if (!m_variables.contains(var))
