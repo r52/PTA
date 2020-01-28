@@ -25,7 +25,12 @@ namespace
 }
 
 PTA::PTA(LogWindow* log, QWidget* parent) :
-    QMainWindow(parent), m_logWindow(log), m_inputhandler(this), m_macrohandler(this), m_netmanager(new QNetworkAccessManager(this))
+    QMainWindow(parent),
+    m_logWindow(log),
+    m_inputhandler(this),
+    m_clientmonitor(this),
+    m_macrohandler(&m_clientmonitor, this),
+    m_netmanager(new QNetworkAccessManager(this))
 {
     if (nullptr == m_logWindow)
     {
@@ -110,7 +115,7 @@ void PTA::showToolTip(QString message)
     QToolTip::showText(QCursor::pos() + QPoint(5, 20), message);
 }
 
-void PTA::showPriceResults(std::shared_ptr<PItem> item, QString results)
+void PTA::showPriceResults(std::shared_ptr<PItem> item, const QString& results)
 {
 #ifndef NDEBUG
     qDebug() << "Prices copied to clipboard";
@@ -189,8 +194,11 @@ void PTA::createActions()
 
 void PTA::setupFunctionality()
 {
+    // UI
     connect(m_api, &ItemAPI::humour, this, &PTA::showToolTip);
     connect(m_api, &ItemAPI::priceCheckFinished, this, &PTA::showPriceResults);
+
+    connect(&m_macrohandler, &MacroHandler::humour, this, &PTA::showToolTip);
 
     // Hotkeys
     QSettings settings;
@@ -322,7 +330,7 @@ void PTA::saveSettings(int result)
 
     QSettings settings;
 
-    for (auto& [k, v] : results.items())
+    for (const auto& [k, v] : results.items())
     {
         if (v.is_boolean())
         {
@@ -454,6 +462,13 @@ void PTA::saveSettings(int result)
             settings.setValue(PTA_CONFIG_CUSTOM_MACROS, QString::fromStdString(mcs));
 
             m_macrohandler.setMacros(v);
+        }
+
+        if (k == PTA_CONFIG_CLIENTLOG_PATH)
+        {
+            QString logpath = QString::fromStdString(v.get<std::string>());
+
+            m_clientmonitor.setPath(logpath);
         }
     }
 }

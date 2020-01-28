@@ -213,7 +213,7 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
 
     QStringList leagues;
 
-    for (auto& league : api->getLeagues())
+    for (const auto& league : api->getLeagues())
     {
         leagues << QString::fromStdString(league.get<std::string>());
     }
@@ -611,7 +611,7 @@ MacrosPage::MacrosPage(json& set, QWidget* parent) : QWidget(parent)
 
         set[PTA_CONFIG_CUSTOM_MACROS] = macrolist;
 
-        for (auto& [k, v] : macrolist.items())
+        for (const auto& [k, v] : macrolist.items())
         {
             auto key  = QString::fromStdString(k);
             auto seq  = QString::fromStdString(v["sequence"].get<std::string>());
@@ -747,4 +747,56 @@ MacrosPage::MacrosPage(json& set, QWidget* parent) : QWidget(parent)
     layout->addLayout(buttonLayout);
     layout->addStretch(1);
     setLayout(layout);
+}
+
+ClientPage::ClientPage(json& set, QWidget* parent) : QWidget(parent)
+{
+    QSettings settings;
+
+    QGroupBox* configGroup = new QGroupBox(tr("Game Client"));
+
+    // ------------------Client Log
+    QLabel* cliLabel = new QLabel(tr("Client Log location:"));
+
+    QLineEdit* fedit = new QLineEdit;
+    fedit->setText(settings.value(PTA_CONFIG_CLIENTLOG_PATH, QString()).toString());
+
+    connect(fedit, &QLineEdit::textChanged, [=, &set](const QString& text) {
+        if (!text.isEmpty())
+        {
+            set[PTA_CONFIG_CLIENTLOG_PATH] = text.toStdString();
+        }
+    });
+
+    QPushButton* browseButton = new QPushButton(tr("Browse"));
+    connect(browseButton, &QAbstractButton::clicked, [=]() {
+        QString defpath = QDir::currentPath();
+
+        QString fname = QFileDialog::getOpenFileName(this, tr("Load Client.txt"), defpath, tr("Client.txt (Client.txt)"));
+
+        if (!fname.isNull())
+        {
+            QFileInfo info(fname);
+
+            if (info.exists())
+            {
+                fedit->setText(info.absoluteFilePath());
+            }
+        }
+    });
+
+    QHBoxLayout* cliLayout = new QHBoxLayout;
+    cliLayout->addWidget(cliLabel);
+    cliLayout->addWidget(fedit);
+    cliLayout->addWidget(browseButton);
+
+    QVBoxLayout* configLayout = new QVBoxLayout;
+    configLayout->addLayout(cliLayout);
+
+    configGroup->setLayout(configLayout);
+
+    QVBoxLayout* mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(configGroup);
+    mainLayout->addStretch(1);
+    setLayout(mainLayout);
 }

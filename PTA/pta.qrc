@@ -9,5 +9,6 @@
         <file>Resources/splash.png</file>
         <file>Resources/logo.ico</file>
         <file>Resources/macros.png</file>
+        <file>Resources/client.png</file>
     </qresource>
 </RCC>

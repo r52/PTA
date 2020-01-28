@@ -48,3 +48,11 @@ class MacrosPage : public QWidget
 public:
     MacrosPage(json& set, QWidget* parent = 0);
 };
+
+class ClientPage : public QWidget
+{
+    Q_OBJECT
+
+public:
+    ClientPage(json& set, QWidget* parent = 0);
+};

@@ -44,6 +44,8 @@ constexpr auto PTA_CONFIG_PREFILL_BASE       = "pricecheck/prefillbase";
 
 constexpr auto PTA_CONFIG_CUSTOM_MACROS = "macro/list";
 
+constexpr auto PTA_CONFIG_CLIENTLOG_PATH = "client/path";
+
 // defaults
 constexpr auto PTA_CONFIG_DEFAULT_PRICE_TEMPLATE  = "templates/price/index.html";
 constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH  = 600;

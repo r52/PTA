@@ -61,6 +61,9 @@
     <ClCompile Include="putil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="clientmonitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="pta.h">
@@ -85,6 +88,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="macrohandler.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="clientmonitor.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

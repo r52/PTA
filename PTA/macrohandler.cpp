@@ -1,16 +1,23 @@
 #include "macrohandler.h"
 
+#include "clientmonitor.h"
 #include "pta_types.h"
 #include "putil.h"
 
 #include <QApplication>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QUrl>
 
-MacroHandler::MacroHandler(QObject* parent) : QObject(parent)
+using namespace std::placeholders;
+
+MacroHandler::MacroHandler(ClientMonitor* client, QObject* parent) : QObject(parent), m_client(client)
 {
+    // Setup variables
+    m_variables.insert("last_whisper", std::bind(&ClientMonitor::getLastWhisperer, m_client));
+
     QSettings settings;
 
     auto macstr = settings.value(PTA_CONFIG_CUSTOM_MACROS).toString().toStdString();
@@ -29,7 +36,7 @@ void MacroHandler::setMacros(json macrolist)
 
     m_macrolist = macrolist;
 
-    for (auto& [k, v] : macrolist.items())
+    for (const auto& [k, v] : macrolist.items())
     {
         auto key = QString::fromStdString(k);
         auto seq = QString::fromStdString(v["sequence"].get<std::string>());
@@ -91,6 +98,50 @@ void MacroHandler::insertChatCommand(std::vector<INPUT>& keystrokes, std::string
     insertKeyPress(keystrokes, VK_RETURN);
 }
 
+bool MacroHandler::processChatCommand(std::string& command)
+{
+    QString qcmd = QString::fromStdString(command);
+
+    QRegularExpression      re("!(\\w+)!");
+    QRegularExpressionMatch match = re.match(qcmd);
+
+    if (match.hasMatch())
+    {
+        if (!m_client->enabled())
+        {
+            qWarning() << "Client features unavailable. Please set Client.txt path in settings to enable.";
+            emit humour(tr("Client features unavailable. Please set Client.txt path in settings to enable."));
+
+            return false;
+        }
+
+        QString var = match.captured(1);
+
+        if (!m_variables.contains(var))
+        {
+            qWarning() << "Command variable" << var << "not found.";
+            emit humour(tr("Command variable not found. See log for more details."));
+
+            return false;
+        }
+
+        QString getvar = m_variables[var]();
+
+        if (getvar.isEmpty())
+        {
+            qWarning() << "Failed to retrieve variable" << var << ". Variable returned empty string.";
+            emit humour(tr("Failed to retrieve variable. See log for more details."));
+            return false;
+        }
+
+        qcmd.replace(re, getvar);
+    }
+
+    command = qcmd.toStdString();
+
+    return true;
+}
+
 void MacroHandler::sendChatCommand(std::string command)
 {
     std::vector<INPUT> keystroke;
@@ -132,7 +183,10 @@ void MacroHandler::handleMacro(QString key)
     {
         case MACRO_TYPE_CHAT:
         {
-            sendChatCommand(command);
+            if (processChatCommand(command))
+            {
+                sendChatCommand(command);
+            }
             break;
         }
 

@@ -99,14 +99,14 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
         json excj = json::parse(edat.toStdString());
 
-        for (auto& e : excj["excludes"])
+        for (const auto& e : excj["excludes"])
         {
             c_excludes.insert(e.get<std::string>());
         }
     }
     else if (synchronizedGetJSON(QNetworkRequest(u_pta_excludes), data))
     {
-        for (auto& e : data["excludes"])
+        for (const auto& e : data["excludes"])
         {
             c_excludes.insert(e.get<std::string>());
         }
@@ -127,11 +127,11 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     auto& stt = data["result"];
 
-    for (auto& type : stt)
+    for (const auto& type : stt)
     {
         auto& el = type["entries"];
 
-        for (auto& et : el)
+        for (const auto& et : el)
         {
             // Cut the key for multiline mods
             std::string::size_type nl;
@@ -162,11 +162,11 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
     auto& itm = data["result"];
 
-    for (auto& type : itm)
+    for (const auto& type : itm)
     {
-        auto& el = type["entries"];
+        const auto& el = type["entries"];
 
-        for (auto& et : el)
+        for (const auto& et : el)
         {
             if (et.contains("name"))
             {
@@ -213,7 +213,7 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
         throw std::runtime_error("Failed to download base item data");
     }
 
-    for (auto& [k, o] : data.items())
+    for (const auto& [k, o] : data.items())
     {
         std::string typeName  = o["name"].get<std::string>();
         std::string itemClass = o["item_class"].get<std::string>();
@@ -242,7 +242,7 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
         throw std::runtime_error("Failed to download mod type data");
     }
 
-    for (auto& [k, o] : data.items())
+    for (const auto& [k, o] : data.items())
     {
         std::string modname = o["name"].get<std::string>();
         std::string modtype = o["generation_type"].get<std::string>();
@@ -329,14 +329,14 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
         json wlr = json::parse(wdat.toStdString());
 
-        for (auto& e : wlr["data"])
+        for (const auto& e : wlr["data"])
         {
             c_weaponLocals.insert(e.get<std::string>());
         }
     }
     else if (synchronizedGetJSON(QNetworkRequest(u_pta_weaponlocals), data))
     {
-        for (auto& e : data["data"])
+        for (const auto& e : data["data"])
         {
             c_weaponLocals.insert(e.get<std::string>());
         }
@@ -357,14 +357,14 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
         json alr = json::parse(adat.toStdString());
 
-        for (auto& e : alr["data"])
+        for (const auto& e : alr["data"])
         {
             c_armourLocals.insert(e.get<std::string>());
         }
     }
     else if (synchronizedGetJSON(QNetworkRequest(u_pta_armourlocals), data))
     {
-        for (auto& e : data["data"])
+        for (const auto& e : data["data"])
         {
             c_armourLocals.insert(e.get<std::string>());
         }
@@ -386,9 +386,9 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
 
         json dcr = json::parse(ddat.toStdString());
 
-        for (auto [entry, list] : dcr.items())
+        for (const auto [entry, list] : dcr.items())
         {
-            for (auto value : list["unused"])
+            for (const auto value : list["unused"])
             {
                 c_discriminators[entry].insert(value.get<std::string>());
             }
@@ -396,9 +396,9 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
     }
     else if (synchronizedGetJSON(QNetworkRequest(u_pta_disc), data))
     {
-        for (auto [entry, list] : data.items())
+        for (const auto [entry, list] : data.items())
         {
-            for (auto value : list["unused"])
+            for (const auto value : list["unused"])
             {
                 c_discriminators[entry].insert(value.get<std::string>());
             }
@@ -431,7 +431,7 @@ ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
         throw std::runtime_error("Cannot open currency.json");
     }
 
-    for (auto& [k, v] : c_currencyMap.items())
+    for (const auto& [k, v] : c_currencyMap.items())
     {
         c_currencyCodes.insert(v.get<std::string>());
     }
@@ -527,7 +527,7 @@ socket_filters_t ItemAPI::readSockets(QString prop)
             ss.links = socks.length();
         }
 
-        for (auto& s : socks)
+        for (const auto& s : socks)
         {
             if ("R" == s)
             {
@@ -1643,13 +1643,13 @@ PItem* ItemAPI::parse(QString itemText)
     // Process special/pseudo rules
     if (item->filters.size())
     {
-        for (auto [key, fil] : item->filters.items())
+        for (const auto [key, fil] : item->filters.items())
         {
             if (c_pseudoRules.contains(key))
             {
-                auto& rules = c_pseudoRules[key];
+                const auto& rules = c_pseudoRules[key];
 
-                for (auto& r : rules)
+                for (const auto& r : rules)
                 {
                     std::string pid = r["id"].get<std::string>();
 
@@ -1661,7 +1661,7 @@ PItem* ItemAPI::parse(QString itemText)
 
                         ps_entry["value"] = json::array();
 
-                        for (auto v : fil["value"])
+                        for (const auto v : fil["value"])
                         {
                             if (v.is_number_float())
                             {
@@ -1749,7 +1749,7 @@ QString ItemAPI::toJson(PItem* item)
         {
             j["influences"] = json::array();
 
-            for (auto i : item->f_misc.influences)
+            for (const auto i : item->f_misc.influences)
             {
                 std::string inf = i;
                 inf[0]          = toupper(inf[0]);
@@ -2347,7 +2347,7 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
 
         if (misc.contains("influences"))
         {
-            for (auto [key, value] : misc["influences"].items())
+            for (const auto [key, value] : misc["influences"].items())
             {
                 if (!key.empty() && value.get<bool>())
                 {

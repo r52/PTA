@@ -106,6 +106,7 @@
     </QtRcc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="clientmonitor.cpp" />
     <ClCompile Include="configdialog.cpp" />
     <ClCompile Include="configpages.cpp" />
     <ClCompile Include="itemapi.cpp" />
@@ -137,6 +138,7 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="macrohandler.h" />
+    <QtMoc Include="clientmonitor.h" />
     <ClInclude Include="putil.h" />
     <ClInclude Include="version.h" />
     <QtMoc Include="statdialog.h">
