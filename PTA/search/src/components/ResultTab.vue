@@ -200,5 +200,6 @@ export default {
 <style scoped>
 .price {
   color: #a38d6d;
+  font-weight: bold;
 }
 </style>

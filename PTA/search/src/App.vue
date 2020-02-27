@@ -2,7 +2,7 @@
   <v-app>
     <v-content v-if="state.item">
       <v-card-title class="text-center justify-center py-2 d-block">
-        <h1 class="title" :class="[state.item.rarity]">
+        <h1 class="title" :class="[itemClass]">
           {{ state.item.name }}
           {{ state.item.type }}
         </h1>
@@ -73,6 +73,23 @@ export default {
   data() {
     const state = Object.assign(init, dtm);
     return { state: state };
+  },
+
+  computed: {
+    itemClass() {
+      let cls = this.state.item.rarity;
+
+      if (
+        this.state.item.category == "gem" ||
+        this.state.item.category == "prophecy" ||
+        this.state.item.category == "card" ||
+        this.state.item.category == "currency"
+      ) {
+        cls = this.state.item.category;
+      }
+
+      return cls;
+    }
   },
 
   methods: {

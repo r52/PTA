@@ -1557,6 +1557,9 @@ bool ItemAPI::parse(Item& item, QString itemText)
     if ("Gem" == item[p_rarity].get<std::string>())
     {
         item[p_category] = "gem";
+
+        // Initialize quality
+        item[p_quality] = 0;
     }
     else if ("Divination Card" == item[p_rarity].get<std::string>())
     {
