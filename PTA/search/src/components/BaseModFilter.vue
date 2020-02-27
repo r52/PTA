@@ -37,12 +37,23 @@ export default {
     settings: Object,
     type: String,
     current: Number
+  },
+
+  created() {
+    // TODO: mod range
+    if (this.settings.prefillmin) {
+      this.searchopts[this.type]["min"] = this.current;
+    }
+
+    if (this.settings.prefillmax) {
+      this.searchopts[this.type]["max"] = this.current;
+    }
   }
 };
 </script>
 
 <style scoped>
 .magic--text /deep/ label {
-    color: #88f;
+  color: #88f;
 }
 </style>

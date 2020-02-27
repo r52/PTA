@@ -42,12 +42,32 @@ export default {
     ModNumInput
   },
 
-  props: ["filter", "settings"]
+  props: ["filter", "settings", "type"],
+
+  created() {
+    // TODO: mod range
+    if (this.filter.value.length) {
+      if (this.settings.prefillmin) {
+        this.filter["min"] = this.filter.value[0];
+      }
+
+      if (this.settings.prefillmax) {
+        this.filter["max"] = this.filter.value[0];
+      }
+    }
+
+    if (
+      (this.type == "normal" && this.settings.prefillnormals) ||
+      (this.type == "pseudo" && this.settings.prefillpseudos)
+    ) {
+      this.filter.enabled = true;
+    }
+  }
 };
 </script>
 
 <style scoped>
 .magic--text /deep/ label {
-    color: #88f;
+  color: #88f;
 }
 </style>

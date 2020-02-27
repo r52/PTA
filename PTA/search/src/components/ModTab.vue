@@ -15,7 +15,6 @@
           <p class="mb-1">Max</p>
         </v-col>
       </v-row>
-      <!-- TODO prefill -->
       <v-divider />
       <!-- weapon/armour -->
       <base-mod-filter
@@ -65,6 +64,7 @@
         :key="filter.id"
         :filter="filter"
         :settings="state.settings"
+        type="normal"
       />
       <v-divider />
       <mod-filter
@@ -72,6 +72,7 @@
         :key="filter.id"
         :filter="filter"
         :settings="state.settings"
+        type="pseudo"
       />
       <v-divider v-if="state.item.pseudos" />
       <!-- misc option checkboxes -->
@@ -125,7 +126,6 @@
         <v-btn class="mx-1 mt-1" color="purple" @click="search(true)">Open on pathofexile.com</v-btn>
         <v-btn class="mx-1 mt-1" color="primary" @click="search(false)">Search</v-btn>
       </v-row>
-      <!-- TODO simple results -->
     </v-container>
   </v-form>
 </template>
