@@ -405,18 +405,6 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
 
     connect(maxLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_PREFILL_MAX] = (checked == Qt::Checked); });
 
-    // ------------------pre-fill weapon
-    QCheckBox* wepLabel = new QCheckBox(tr("Weapon filters"));
-    wepLabel->setChecked(settings.value(PTA_CONFIG_PREFILL_WEAPON, PTA_CONFIG_DEFAULT_PREFILL_WEAPON).toBool());
-
-    connect(wepLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_PREFILL_WEAPON] = (checked == Qt::Checked); });
-
-    // ------------------pre-fill armour
-    QCheckBox* arLabel = new QCheckBox(tr("Armour filters"));
-    arLabel->setChecked(settings.value(PTA_CONFIG_PREFILL_ARMOUR, PTA_CONFIG_DEFAULT_PREFILL_ARMOUR).toBool());
-
-    connect(arLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_PREFILL_ARMOUR] = (checked == Qt::Checked); });
-
     // ------------------pre-fill normals
     QCheckBox* nmLabel = new QCheckBox(tr("Normal mods"));
     nmLabel->setChecked(settings.value(PTA_CONFIG_PREFILL_NORMALS, PTA_CONFIG_DEFAULT_PREFILL_NORMALS).toBool());
@@ -446,8 +434,6 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
     QVBoxLayout* selLayout = new QVBoxLayout;
     selLayout->addWidget(minLabel);
     selLayout->addWidget(maxLabel);
-    selLayout->addWidget(wepLabel);
-    selLayout->addWidget(arLabel);
     selLayout->addWidget(nmLabel);
     selLayout->addWidget(psLabel);
     selLayout->addWidget(ilLabel);

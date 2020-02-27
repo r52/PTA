@@ -1,12 +1,12 @@
 #include "webwidget.h"
-#include "pitem.h"
+#include "itemapi.h"
 #include "pta_types.h"
 
+#include <QVBoxLayout>
+#include <QWebChannel>
 #include <QtWebEngineWidgets/QWebEngineCertificateError>
 #include <QtWebEngineWidgets/QWebEngineScriptCollection>
 #include <QtWebEngineWidgets/QWebEngineSettings>
-
-QString WebWidget::DataScript;
 
 void PWebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString& message, int lineNumber, const QString& sourceID)
 {
@@ -26,16 +26,18 @@ void PWebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, con
     }
 }
 
-WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(parent)
+WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : QWidget(parent)
 {
     setAttribute(Qt::WA_DeleteOnClose);
 
     QSettings settings;
 
     // No frame/border, no taskbar button
-    Qt::WindowFlags flags = Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint;
+    Qt::WindowFlags flags = Qt::Window | Qt::WindowStaysOnTopHint;
 
     webview = new PWebView(this);
+    webview->settings()->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
+    webview->settings()->setAttribute(QWebEngineSettings::JavascriptCanAccessClipboard, false);
 
     QUrl startFile;
 
@@ -52,18 +54,19 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
     startFile             = QUrl::fromLocalFile(startFilePath);
 
     PWebPage* page = new PWebPage(this);
+
+    QWebChannel* channel = new QWebChannel(this);
+    channel->registerObject(QStringLiteral("api"), api);
+    page->setWebChannel(channel);
+
     page->load(startFile);
+
     webview->setPage(page);
 
-    webview->settings()->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
-
-    // Overlay for catching drag and drop events
-    overlay = new OverlayWidget(this);
-
-    // Restore settings
-    restoreGeometry(settings.value(getSettingKey("geometry")).toByteArray());
+    connect(page, &QWebEnginePage::windowCloseRequested, this, &QWidget::close);
 
     // resize
+    /*
     int default_width  = settings.value(PTA_CONFIG_TEMPLATE_WIDTH, PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH).toInt();
     int default_height = settings.value(PTA_CONFIG_TEMPLATE_HEIGHT, PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT).toInt();
 
@@ -71,8 +74,7 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
 
     webview->resize(defaultsize);
     resize(defaultsize);
-
-    overlay->setVisible(true);
+    */
 
     // No context menu
     setContextMenuPolicy(Qt::PreventContextMenu);
@@ -81,16 +83,21 @@ WebWidget::WebWidget(QString item, QString results, QWidget* parent) : QWidget(p
     setWindowFlags(flags);
 
     // Inject global script
-    QString dataScript = generateDataScript(item, results);
-
+    QString dataScript = generateDataScript(data);
     script.setName("Data");
     script.setInjectionPoint(QWebEngineScript::DocumentCreation);
     script.setWorldId(0);
     script.setSourceCode(dataScript);
-
     webview->page()->scripts().insert(script);
 
-    setWindowTitle("Price Check");
+    setWindowTitle("PTA Price Check");
+
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addWidget(webview);
+    setLayout(layout);
+
+    // Restore settings
+    restoreGeometry(settings.value(getSettingKey("geometry")).toByteArray());
 }
 
 WebWidget::~WebWidget()
@@ -98,22 +105,9 @@ WebWidget::~WebWidget()
     saveSettings();
 }
 
-QString WebWidget::generateDataScript(QString item, QString results)
+QString WebWidget::generateDataScript(const QString& data)
 {
-    if (DataScript.isEmpty())
-    {
-        QFile file(":/Resources/data.js");
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        {
-            throw std::runtime_error("data script load failure");
-        }
-
-        QTextStream in(&file);
-        DataScript = in.readAll();
-    }
-
-    QString pscript = DataScript.arg(item).arg(results);
-
+    QString pscript = QString("var item = %1;").arg(data);
     return pscript;
 }
 
@@ -121,30 +115,6 @@ void WebWidget::saveSettings()
 {
     QSettings settings;
     settings.setValue(getSettingKey("geometry"), saveGeometry());
-}
-
-void WebWidget::mousePressEvent(QMouseEvent* evt)
-{
-    if (evt->button() == Qt::LeftButton)
-    {
-        dragPosition = evt->globalPos() - frameGeometry().topLeft();
-        evt->accept();
-    }
-
-    if (evt->button() == Qt::RightButton)
-    {
-        evt->accept();
-        close();
-    }
-}
-
-void WebWidget::mouseMoveEvent(QMouseEvent* evt)
-{
-    if (evt->buttons() & Qt::LeftButton)
-    {
-        move(evt->globalPos() - dragPosition);
-        evt->accept();
-    }
 }
 
 QString WebWidget::getSettingKey(QString key)

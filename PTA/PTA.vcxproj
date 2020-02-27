@@ -46,11 +46,11 @@
     <Import Project="$(QtMsBuild)\qt_defaults.props" />
   </ImportGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <QtInstall>C:\Qt\5.12.6\msvc2017_64</QtInstall>
+    <QtInstall>C:\Qt\5.12.7\msvc2017_64</QtInstall>
     <QtModules>core;gui;network;webengine;webenginewidgets;widgets</QtModules>
   </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <QtInstall>C:\Qt\5.12.6\msvc2017_64</QtInstall>
+    <QtInstall>C:\Qt\5.12.7\msvc2017_64</QtInstall>
     <QtModules>core;gui;network;webengine;webenginewidgets;widgets</QtModules>
   </PropertyGroup>
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.props')">
@@ -117,7 +117,6 @@
     <ClCompile Include="putil.cpp" />
     <ClCompile Include="runguard.cpp" />
     <ClCompile Include="pitem.cpp" />
-    <ClCompile Include="statdialog.cpp" />
     <ClCompile Include="webwidget.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -141,8 +140,6 @@
     <QtMoc Include="clientmonitor.h" />
     <ClInclude Include="putil.h" />
     <ClInclude Include="version.h" />
-    <QtMoc Include="statdialog.h">
-    </QtMoc>
     <QtMoc Include="webwidget.h">
     </QtMoc>
     <QtMoc Include="itemapi.h">

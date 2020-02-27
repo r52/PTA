@@ -1,7 +1,6 @@
 #include "itemapi.h"
 #include "pitem.h"
 #include "pta_types.h"
-#include "statdialog.h"
 
 #include <regex>
 #include <sstream>
@@ -11,7 +10,6 @@
 #include <QDesktopServices>
 #include <QEventLoop>
 #include <QFileInfo>
-#include <QNetworkDiskCache>
 #include <QNetworkReply>
 #include <QRegularExpression>
 #include <QSettings>
@@ -51,23 +49,8 @@ const QString u_poewiki("https://pathofexile.gamepedia.com/");
 // poe prices
 const QString u_poeprices("https://www.poeprices.info/api?l=%1&i=%2");
 
-ItemAPI::ItemAPI(QObject* parent) : QObject(parent)
+ItemAPI::ItemAPI(QNetworkAccessManager* netmanager, QObject* parent) : QObject(parent), m_manager(netmanager)
 {
-    m_manager = new QNetworkAccessManager(this);
-
-    if (nullptr == m_manager)
-    {
-        throw std::runtime_error("Failed to create network manager");
-    }
-
-    // Enable data caching for faster loads
-    QNetworkDiskCache* diskCache = new QNetworkDiskCache(this);
-
-    auto cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-
-    diskCache->setCacheDirectory(cachePath);
-    m_manager->setCache(diskCache);
-
     json data;
 
     ///////////////////////////////////////////// Download leagues
@@ -456,9 +439,9 @@ int ItemAPI::readPropInt(QString prop)
     return 0;
 }
 
-mmv_t ItemAPI::readPropIntRange(QString prop)
+json ItemAPI::readPropIntRange(QString prop)
 {
-    mmv_t val = {0, 0};
+    json val = {{"min", 0}, {"max", 0}};
 
     // If it is a list, process list
     if (prop.contains(", "))
@@ -468,7 +451,9 @@ mmv_t ItemAPI::readPropIntRange(QString prop)
 
         for (auto& item : list)
         {
-            val += readPropIntRange(item);
+            json nxt   = readPropIntRange(item);
+            val[p_min] = val[p_min].get<int>() + nxt[p_min].get<int>();
+            val[p_max] = val[p_max].get<int>() + nxt[p_max].get<int>();
         }
 
         return val;
@@ -487,8 +472,8 @@ mmv_t ItemAPI::readPropIntRange(QString prop)
         QString v1 = match.captured(1);
         QString v2 = match.captured(2);
 
-        val.min = v1.toInt();
-        val.max = v2.toInt();
+        val[p_min] = v1.toInt();
+        val[p_max] = v2.toInt();
     }
 
     return val;
@@ -511,9 +496,17 @@ double ItemAPI::readPropFloat(QString prop)
     return 0.0;
 }
 
-socket_filters_t ItemAPI::readSockets(QString prop)
+json ItemAPI::readSockets(QString prop)
 {
-    socket_filters_t ss = {0, {0, 0, 0, 0, 0}};
+    json sockets;
+
+    sockets["links"] = 0;
+    sockets["total"] = 0;
+    sockets["R"]     = 0;
+    sockets["G"]     = 0;
+    sockets["B"]     = 0;
+    sockets["W"]     = 0;
+    sockets["A"]     = 0;
 
     auto llist = prop.split(" ", QString::SkipEmptyParts);
 
@@ -521,44 +514,21 @@ socket_filters_t ItemAPI::readSockets(QString prop)
     {
         auto socks = lpart.split("-", QString::SkipEmptyParts);
 
-        if (socks.length() > 1 && socks.length() > ss.links)
+        if (socks.length() > 1 && socks.length() > sockets["links"].get<int>())
         {
             // New max links
-            ss.links = socks.length();
+            sockets["links"] = socks.length();
         }
 
         for (const auto& s : socks)
         {
-            if ("R" == s)
-            {
-                ss.sockets.r++;
-            }
-            else if ("G" == s)
-            {
-                ss.sockets.g++;
-            }
-            else if ("B" == s)
-            {
-                ss.sockets.b++;
-            }
-            else if ("W" == s)
-            {
-                ss.sockets.w++;
-            }
-            else if ("A" == s)
-            {
-                ss.sockets.a++;
-            }
+            auto clr         = s.toStdString();
+            sockets[clr]     = sockets[clr].get<int>() + 1;
+            sockets["total"] = sockets["total"].get<int>() + 1;
         }
     }
 
-    return ss;
-}
-
-int ItemAPI::readPropExp(QString prop)
-{
-    // TODO: read exp
-    return 0;
+    return sockets;
 }
 
 std::string ItemAPI::readName(QString name)
@@ -568,7 +538,7 @@ std::string ItemAPI::readName(QString name)
     return name.toStdString();
 }
 
-std::string ItemAPI::readType(PItem* item, QString type)
+std::string ItemAPI::readType(Item& item, QString type)
 {
     type.remove(QRegularExpression("<<.*?>>|<.*?>"));
     type.remove("Superior ");
@@ -576,10 +546,10 @@ std::string ItemAPI::readType(PItem* item, QString type)
     if (type.startsWith("Synthesised "))
     {
         type.remove("Synthesised ");
-        item->f_misc.synthesised_item = true;
+        item[p_msynth] = true;
     }
 
-    if (item->f_type.rarity == "Magic")
+    if (item[p_rarity].get<std::string>() == "Magic")
     {
         // Parse out magic affixes
         // Try to get rid of all suffixes by forward catching " of"
@@ -633,7 +603,7 @@ void ItemAPI::captureNumerics(QString line, QRegularExpression& re, json& val, s
     }
 }
 
-void ItemAPI::parseProp(PItem* item, QString prop)
+void ItemAPI::parseProp(Item& item, QString prop)
 {
     QString p = prop.section(":", 0, 0);
     QString v = prop.section(": ", 1, 1);
@@ -654,30 +624,30 @@ void ItemAPI::parseProp(PItem* item, QString prop)
             {
                 case weapon_filter_pdps:
                 {
-                    item->f_weapon.pdps = readPropIntRange(v);
+                    item[p_wpdps] = readPropIntRange(v);
                     break;
                 }
 
                 case weapon_filter_crit:
                 {
-                    item->f_weapon.crit = readPropFloat(v);
+                    item[p_wcrit] = readPropFloat(v);
                     break;
                 }
 
                 case weapon_filter_aps:
                 {
-                    item->f_weapon.aps = readPropFloat(v);
+                    item[p_waps] = readPropFloat(v);
                     break;
                 }
 
                 case weapon_filter_edps:
                 {
-                    item->f_weapon.edps = readPropIntRange(v);
+                    item[p_wedps] = readPropIntRange(v);
                     break;
                 }
             }
 
-            item->is_weapon = true;
+            item[p_weapon][p_enabled] = false;
 
             break;
         }
@@ -688,37 +658,37 @@ void ItemAPI::parseProp(PItem* item, QString prop)
             {
                 case armour_filter_ar:
                 {
-                    item->f_armour.ar = readPropInt(v);
+                    item[p_aar] = readPropInt(v);
                     break;
                 }
 
                 case armour_filter_ev:
                 {
-                    item->f_armour.ev = readPropInt(v);
+                    item[p_aev] = readPropInt(v);
                     break;
                 }
 
                 case armour_filter_es:
                 {
-                    item->f_armour.es = readPropInt(v);
+                    item[p_aes] = readPropInt(v);
                     break;
                 }
 
                 case armour_filter_block:
                 {
-                    item->f_armour.block = readPropInt(v);
+                    item[p_ablock] = readPropInt(v);
                     break;
                 }
             }
 
-            item->is_armour = true;
+            item[p_armour][p_enabled] = false;
 
             break;
         }
 
         case socket_filter:
         {
-            item->f_socket = readSockets(v);
+            item[p_sockets] = readSockets(v);
             break;
         }
 
@@ -728,25 +698,25 @@ void ItemAPI::parseProp(PItem* item, QString prop)
             {
                 case req_filter_lvl:
                 {
-                    item->f_req.lvl = readPropInt(v);
+                    item[p_reqlvl] = readPropInt(v);
                     break;
                 }
 
                 case req_filter_str:
                 {
-                    item->f_req.str = readPropInt(v);
+                    item[p_reqstr] = readPropInt(v);
                     break;
                 }
 
                 case req_filter_dex:
                 {
-                    item->f_req.dex = readPropInt(v);
+                    item[p_reqdex] = readPropInt(v);
                     break;
                 }
 
                 case req_filter_int:
                 {
-                    item->f_req.intl = readPropInt(v);
+                    item[p_reqint] = readPropInt(v);
                     break;
                 }
             }
@@ -760,31 +730,31 @@ void ItemAPI::parseProp(PItem* item, QString prop)
             {
                 case misc_filter_quality:
                 {
-                    item->f_misc.quality = readPropInt(v);
+                    item[p_quality] = readPropInt(v);
                     break;
                 }
 
                 case misc_filter_gem_level:
                 {
-                    item->f_misc.gem_level = readPropInt(v);
+                    item[p_mglvl] = readPropInt(v);
                     break;
                 }
 
                 case misc_filter_ilvl:
                 {
-                    item->f_misc.ilvl = readPropInt(v);
+                    item[p_ilvl] = readPropInt(v);
                     break;
                 }
 
                 case misc_filter_gem_level_progress:
                 {
-                    item->f_misc.gem_level_progress = readPropExp(v);
+                    item[p_mgexp] = v.toStdString();
                     break;
                 }
 
                 case misc_filter_map_tier:
                 {
-                    item->f_misc.map_tier = readPropInt(v);
+                    item[p_mmtier] = readPropInt(v);
                     break;
                 }
             }
@@ -821,12 +791,12 @@ void ItemAPI::parseProp(PItem* item, QString prop)
     }
 }
 
-bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
+bool ItemAPI::parseStat(Item& item, QString stat, QTextStream& stream)
 {
     QString orig_stat = stat;
 
     // Special rule for A Master Seeks Help
-    if (item->f_type.category == "prophecy" && item->name == "A Master Seeks Help")
+    if (item.contains(p_category) && item[p_category].get<std::string>() == "prophecy" && item[p_name].get<std::string>() == "A Master Seeks Help")
     {
         QRegularExpression      re("^You will find (\\w+) and complete her mission.$");
         QRegularExpressionMatch match = re.match(stat);
@@ -834,7 +804,7 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
         {
             QString master = match.captured(1);
 
-            item->f_misc.disc = master.toLower().toStdString();
+            item[p_mdisc] = master.toLower().toStdString();
         }
 
         return true;
@@ -842,67 +812,66 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
 
     if (stat == "Unidentified")
     {
-        item->f_misc.identified = false;
+        item[p_unidentified] = true;
         return true;
     }
 
     if (stat == "Shaper Item")
     {
-        item->f_misc.influences.push_back(c_influenceMap[shaper]);
+        item[p_influences].push_back(c_influenceMap[shaper]);
         return true;
     }
 
     if (stat == "Elder Item")
     {
-        item->f_misc.influences.push_back(c_influenceMap[elder]);
+        item[p_influences].push_back(c_influenceMap[elder]);
         return true;
     }
 
-    // XXX (subject to change): 3.9 Influences
     if (stat == "Crusader Item")
     {
-        item->f_misc.influences.push_back(c_influenceMap[crusader]);
+        item[p_influences].push_back(c_influenceMap[crusader]);
         return true;
     }
 
     if (stat == "Redeemer Item")
     {
-        item->f_misc.influences.push_back(c_influenceMap[redeemer]);
+        item[p_influences].push_back(c_influenceMap[redeemer]);
 
         return true;
     }
 
     if (stat == "Hunter Item")
     {
-        item->f_misc.influences.push_back(c_influenceMap[hunter]);
+        item[p_influences].push_back(c_influenceMap[hunter]);
 
         return true;
     }
 
     if (stat == "Warlord Item")
     {
-        item->f_misc.influences.push_back(c_influenceMap[warlord]);
+        item[p_influences].push_back(c_influenceMap[warlord]);
 
         return true;
     }
 
     if (stat == "Corrupted")
     {
-        item->f_misc.corrupted = true;
+        item[p_corrupted] = true;
         return true;
     }
 
     if (stat == "Synthesised Item")
     {
         // Should already have been processed
-        item->f_misc.synthesised_item = true;
+        item[p_msynth] = true;
         return true;
     }
 
     // Vaal gems
-    if (item->f_type.category == "gem" && stat.startsWith("Vaal "))
+    if (item.contains(p_category) && item[p_category].get<std::string>() == "gem" && stat.startsWith("Vaal "))
     {
-        item->type = stat.toStdString();
+        item[p_type] = stat.toStdString();
         return true;
     }
 
@@ -945,9 +914,9 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
     }
 
     // Process local rules
-    if (item->is_weapon || item->is_armour)
+    if (item.contains(p_weapon) || item.contains(p_armour))
     {
-        bool is_local_stat = ((item->is_weapon && c_weaponLocals.contains(stoken)) || (item->is_armour && c_armourLocals.contains(stoken)));
+        bool is_local_stat = ((item.contains(p_weapon) && c_weaponLocals.contains(stoken)) || (item.contains(p_armour) && c_armourLocals.contains(stoken)));
 
         if (is_local_stat)
         {
@@ -1169,10 +1138,11 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
             }
 
             // use crafted stat
-            filter["id"]    = entry["id"];
-            filter["type"]  = entry["type"];
-            filter["text"]  = entry["text"];
-            filter["value"] = val;
+            filter["id"]      = entry["id"];
+            filter["type"]    = entry["type"];
+            filter["text"]    = entry["text"];
+            filter["value"]   = val;
+            filter[p_enabled] = false;
             break;
         }
         else
@@ -1185,7 +1155,7 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
 
             std::string id = entry["id"].get<std::string>();
 
-            if (c_discriminators.contains(id) && c_discriminators[id].contains(item->f_type.category))
+            if (c_discriminators.contains(id) && c_discriminators[id].contains(item[p_category].get<std::string>()))
             {
                 // Discriminator skip
                 continue;
@@ -1193,10 +1163,11 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
 
             if (entry["type"] == "explicit")
             {
-                filter["id"]    = entry["id"];
-                filter["type"]  = entry["type"];
-                filter["text"]  = entry["text"];
-                filter["value"] = val;
+                filter["id"]      = entry["id"];
+                filter["type"]    = entry["type"];
+                filter["text"]    = entry["text"];
+                filter["value"]   = val;
+                filter[p_enabled] = false;
             }
 
             // Peek next line
@@ -1210,15 +1181,16 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
                 stream.seek(pos);
             }
 
-            if (item->filters.size() < 2 && peek == "---")
+            if (item[p_filters].size() < 2 && peek == "---")
             {
                 // First stat with a section break, try to look for an enchant
                 if (entry["type"] == "enchant")
                 {
-                    filter["id"]    = entry["id"];
-                    filter["type"]  = entry["type"];
-                    filter["text"]  = entry["text"];
-                    filter["value"] = val;
+                    filter["id"]      = entry["id"];
+                    filter["type"]    = entry["type"];
+                    filter["text"]    = entry["text"];
+                    filter["value"]   = val;
+                    filter[p_enabled] = false;
                 }
             }
         }
@@ -1233,9 +1205,9 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
     std::string fid = filter["id"].get<std::string>();
 
     // If the item already has this filter, merge them
-    if (item->filters.contains(fid))
+    if (item[p_filters].contains(fid))
     {
-        auto& efil = item->filters[fid];
+        auto& efil = item[p_filters][fid];
 
         auto count = efil["value"].size();
 
@@ -1253,17 +1225,17 @@ bool ItemAPI::parseStat(PItem* item, QString stat, QTextStream& stream)
     }
     else
     {
-        item->filters.emplace(fid, filter);
+        item[p_filters].emplace(fid, filter);
     }
 
     return true;
 }
 
-void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results, bool isCurrency)
+void ItemAPI::processPriceResults(json data, json response, const QString& optstr, const QString& format)
 {
     bool   done  = false;
     size_t start = 0, end = 0;
-    auto   flist = results["result"];
+    auto   flist = response["result"];
     auto   total = flist.size();
     json   endRes;
 
@@ -1293,9 +1265,9 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results, boo
 
         QString fcode = fetchcodes.join(',');
 
-        QString fetchurl = u_trade_fetch.arg(fcode).arg(QString::fromStdString(results["id"]));
+        QString fetchurl = u_trade_fetch.arg(fcode).arg(QString::fromStdString(response["id"]));
 
-        if (isCurrency)
+        if (format == "exchange")
         {
             fetchurl += "&exchange";
         }
@@ -1351,11 +1323,25 @@ void ItemAPI::processPriceResults(std::shared_ptr<PItem> item, json results, boo
         done = (endRes["result"].size() == display_limit || total == end);
     }
 
-    emit priceCheckFinished(item, QString::fromStdString(endRes.dump()));
+    endRes["options"] = optstr.toStdString();
+    endRes["format"]  = format.toStdString();
+
+    if (format == "simple" || format == "exchange")
+    {
+        data[p_results] = endRes;
+
+        emit simpleResultsFinished(QString::fromStdString(data.dump()));
+    }
+    else
+    {
+        emit priceCheckFinished(QString::fromStdString(endRes.dump()));
+    }
 }
 
-void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
+void ItemAPI::doCurrencySearch(json& data)
 {
+    Item& item = data[p_item];
+
     QSettings settings;
 
     auto query = R"(
@@ -1387,18 +1373,15 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
     }
 
     // Check for existing currencies
-    if (!c_currencyMap.contains(item->type))
+    if (!c_currencyMap.contains(item[p_type]))
     {
         emit humour(tr("Could not find this currency in the database. See log for details."));
-        qWarning() << "Currency not found:" << QString::fromStdString(item->type);
+        qWarning() << "Currency not found:" << QString::fromStdString(item[p_type]);
         qWarning() << "If you believe that this is a mistake, please file a bug report on GitHub.";
         return;
     }
 
-    // currency exchange format
-    item->f_misc.exchange = true;
-
-    std::string want = c_currencyMap[item->type].get<std::string>();
+    std::string want = c_currencyMap[item[p_type].get<std::string>()].get<std::string>();
     std::string have = p_curr;
 
     if (want == p_curr)
@@ -1410,7 +1393,7 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
 
     while (true)
     {
-        item->m_options = "To " + have;
+        QString options = "To " + QString::fromStdString(have);
 
         query["exchange"]["have"].clear();
         query["exchange"]["have"].push_back(have);
@@ -1469,7 +1452,7 @@ void ItemAPI::doCurrencySearch(std::shared_ptr<PItem> item)
         }
 
         // else process the results
-        processPriceResults(item, resp, true);
+        processPriceResults(data, resp, options, "exchange");
         return;
     }
 }
@@ -1524,10 +1507,11 @@ QString ItemAPI::getLeague()
     return QString::fromStdString(m_leagues[league].get<std::string>());
 }
 
-PItem* ItemAPI::parse(QString itemText)
+bool ItemAPI::parse(Item& item, QString itemText)
 {
     QTextStream stream(&itemText, QIODevice::ReadOnly);
     QString     line;
+    int         sections = 0;
 
     // Check first line for PoE item
     stream.readLineInto(&line);
@@ -1535,16 +1519,14 @@ PItem* ItemAPI::parse(QString itemText)
     if (!line.startsWith("Rarity:"))
     {
         qWarning() << "Parse called on non PoE item text";
-        return nullptr;
+        return false;
     }
 
-    PItem* item = new PItem();
-
     // Full original text
-    item->m_itemtext = itemText.toStdString();
+    item[p_origtext] = itemText.toStdString();
 
     // Rarity
-    item->f_type.rarity = line.section(": ", 1, 1).toStdString();
+    item[p_rarity] = line.section(": ", 1, 1).toStdString();
 
     // Read name/type
     QString nametype, type;
@@ -1562,57 +1544,57 @@ PItem* ItemAPI::parse(QString itemText)
     if (type.startsWith("---"))
     {
         // nametype has to be item type and not name
-        item->type = readType(item, nametype);
-        item->m_sections++;
+        item[p_type] = readType(item, nametype);
+        sections++;
     }
     else
     {
-        item->name = readName(nametype);
-        item->type = readType(item, type);
+        item[p_name] = readName(nametype);
+        item[p_type] = readType(item, type);
     }
 
     // Process category
-    if ("Gem" == item->f_type.rarity)
+    if ("Gem" == item[p_rarity].get<std::string>())
     {
-        item->f_type.category = "gem";
+        item[p_category] = "gem";
     }
-    else if ("Divination Card" == item->f_type.rarity)
+    else if ("Divination Card" == item[p_rarity].get<std::string>())
     {
-        item->f_type.category = item->f_type.rarity = "card";
-    }
-
-    if (item->type.ends_with("Map"))
-    {
-        item->f_type.category = "map";
-        item->f_misc.disc     = m_mapdisc; // Default map discriminator
-
-        item->type = std::regex_replace(item->type, std::regex("Elder "), "");
-        item->type = std::regex_replace(item->type, std::regex("Shaped "), "");
+        item[p_category] = item[p_rarity] = "card";
     }
 
-    if (item->f_type.category.empty() && m_uniques.contains(item->type))
+    if (item[p_type].get<std::string>().ends_with("Map"))
     {
-        auto search = m_uniques.find(item->type);
+        item[p_category] = "map";
+        item[p_mdisc]    = m_mapdisc; // Default map discriminator
+
+        item[p_type] = std::regex_replace(item[p_type].get<std::string>(), std::regex("Elder "), "");
+        item[p_type] = std::regex_replace(item[p_type].get<std::string>(), std::regex("Shaped "), "");
+    }
+
+    if (!item.contains(p_category) && m_uniques.contains(item[p_type].get<std::string>()))
+    {
+        auto search = m_uniques.find(item[p_type]);
         if (search != m_uniques.end())
         {
             auto& je = search->second;
             if (je["type"] == "Prophecy")
             {
                 // this is a prophecy
-                item->name            = item->type;
-                item->type            = "Prophecy";
-                item->f_type.category = "prophecy";
+                item[p_name]     = item[p_type];
+                item[p_type]     = "Prophecy";
+                item[p_category] = "prophecy";
             }
         }
     }
 
-    if (item->f_type.category.empty())
+    if (!item.contains(p_category))
     {
-        auto base = c_baseMap.find(item->type);
+        auto base = c_baseMap.find(item[p_type].get<std::string>());
         if (base != c_baseMap.end())
         {
-            json cat              = base->second;
-            item->f_type.category = cat["category"];
+            json cat         = base->second;
+            item[p_category] = cat["category"];
         }
     }
 
@@ -1624,7 +1606,7 @@ PItem* ItemAPI::parse(QString itemText)
         if (line.startsWith("---"))
         {
             m_section.clear();
-            item->m_sections++;
+            sections++;
             continue;
         }
 
@@ -1633,7 +1615,7 @@ PItem* ItemAPI::parse(QString itemText)
             // parse item prop
             parseProp(item, line);
         }
-        else if (item->m_sections > 1)
+        else if (sections > 1)
         {
             // parse item stat
             parseStat(item, line, stream);
@@ -1641,9 +1623,9 @@ PItem* ItemAPI::parse(QString itemText)
     }
 
     // Process special/pseudo rules
-    if (item->filters.size())
+    if (item[p_filters].size())
     {
-        for (const auto [key, fil] : item->filters.items())
+        for (const auto [key, fil] : item[p_filters].items())
         {
             if (c_pseudoRules.contains(key))
             {
@@ -1655,11 +1637,12 @@ PItem* ItemAPI::parse(QString itemText)
 
                     auto pentry = m_stats_by_id[pid];
 
-                    if (!item->pseudos.contains(pid))
+                    if (!item[p_pseudos].contains(pid))
                     {
                         json ps_entry = pentry;
 
-                        ps_entry["value"] = json::array();
+                        ps_entry[p_enabled] = false;
+                        ps_entry["value"]   = json::array();
 
                         for (const auto v : fil["value"])
                         {
@@ -1673,11 +1656,11 @@ PItem* ItemAPI::parse(QString itemText)
                             }
                         }
 
-                        item->pseudos.emplace(pid, ps_entry);
+                        item[p_pseudos].emplace(pid, ps_entry);
                     }
                     else
                     {
-                        auto& ps_entry = item->pseudos[pid];
+                        auto& ps_entry = item[p_pseudos][pid];
 
                         for (size_t i = 0; i < fil["value"].size(); i++)
                         {
@@ -1703,80 +1686,82 @@ PItem* ItemAPI::parse(QString itemText)
         }
     }
 
-    return item;
+    return true;
 }
 
-QString ItemAPI::toJson(PItem* item)
+void ItemAPI::fillItemOptions(json& data)
 {
-    json j;
+    QSettings settings;
 
-    j["prediction"] = item->is_prediction;
+    std::string league           = getLeague().toStdString();
+    size_t      display_limit    = settings.value(PTA_CONFIG_DISPLAYLIMIT, PTA_CONFIG_DEFAULT_DISPLAYLIMIT).toInt();
+    bool        corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
+    std::string corrupt_search   = settings.value(PTA_CONFIG_CORRUPTSEARCH, PTA_CONFIG_DEFAULT_CORRUPTSEARCH).toString().toStdString();
+    std::string p_curr           = settings.value(PTA_CONFIG_PRIMARY_CURRENCY, PTA_CONFIG_DEFAULT_PRIMARY_CURRENCY).toString().toStdString();
+    std::string s_curr           = settings.value(PTA_CONFIG_SECONDARY_CURRENCY, PTA_CONFIG_DEFAULT_SECONDARY_CURRENCY).toString().toStdString();
+    bool        onlineonly       = settings.value(PTA_CONFIG_ONLINE_ONLY, PTA_CONFIG_DEFAULT_ONLINE_ONLY).toBool();
+    bool        buyoutonly       = settings.value(PTA_CONFIG_BUYOUT_ONLY, PTA_CONFIG_DEFAULT_BUYOUT_ONLY).toBool();
+    bool        removedupes      = settings.value(PTA_CONFIG_REMOVE_DUPES, PTA_CONFIG_DEFAULT_REMOVE_DUPES).toBool();
+    bool        prefillmin       = settings.value(PTA_CONFIG_PREFILL_MIN, PTA_CONFIG_DEFAULT_PREFILL_MIN).toBool();
+    bool        prefillmax       = settings.value(PTA_CONFIG_PREFILL_MAX, PTA_CONFIG_DEFAULT_PREFILL_MAX).toBool();
+    bool        prefillnormals   = settings.value(PTA_CONFIG_PREFILL_NORMALS, PTA_CONFIG_DEFAULT_PREFILL_NORMALS).toBool();
+    bool        prefillpseudos   = settings.value(PTA_CONFIG_PREFILL_PSEUDOS, PTA_CONFIG_DEFAULT_PREFILL_PSEUDOS).toBool();
+    bool        prefillilvl      = settings.value(PTA_CONFIG_PREFILL_ILVL, PTA_CONFIG_DEFAULT_PREFILL_ILVL).toBool();
+    bool        prefillbase      = settings.value(PTA_CONFIG_PREFILL_BASE, PTA_CONFIG_DEFAULT_PREFILL_BASE).toBool();
 
-    j["exchange"] = item->f_misc.exchange;
+    // app settings
+    data[p_settings]["league"]             = league;
+    data[p_settings]["display_limit"]      = display_limit;
+    data[p_settings]["corrupt_override"]   = corrupt_override;
+    data[p_settings]["corrupt_search"]     = corrupt_search;
+    data[p_settings]["primary_currency"]   = p_curr;
+    data[p_settings]["secondary_currency"] = s_curr;
+    data[p_settings]["onlineonly"]         = onlineonly;
+    data[p_settings]["buyoutonly"]         = buyoutonly;
+    data[p_settings]["removedupes"]        = removedupes;
+    data[p_settings]["prefillmin"]         = prefillmin;
+    data[p_settings]["prefillmax"]         = prefillmax;
+    data[p_settings]["prefillnormals"]     = prefillnormals;
+    data[p_settings]["prefillpseudos"]     = prefillpseudos;
+    data[p_settings]["prefillilvl"]        = prefillilvl;
+    data[p_settings]["prefillbase"]        = prefillbase;
 
-    j["name"] = item->name;
+    // search defaults
+    data[p_opts]["use_pdps"][p_enabled] = false;
+    data[p_opts]["use_edps"][p_enabled] = false;
+    data[p_opts]["use_ar"][p_enabled]   = false;
+    data[p_opts]["use_ev"][p_enabled]   = false;
+    data[p_opts]["use_es"][p_enabled]   = false;
 
-    j["rarity"] = item->f_type.rarity;
+    data[p_opts]["use_sockets"]   = false;
+    data[p_opts]["use_links"]     = false;
+    data[p_opts]["use_ilvl"]      = prefillilvl;
+    data[p_opts]["use_item_base"] = prefillbase;
 
-    // process category
-    if (!item->f_type.category.empty())
+    if (prefillbase)
     {
-        j["category"] = item->f_type.category;
-    }
-
-    if (item->name != item->type)
-    {
-        j["type"] = item->type;
-    }
-
-    j["sockets"] = item->f_socket.sockets.total();
-    j["links"]   = item->f_socket.links;
-
-    if (item->f_type.category == "gem")
-    {
-        j["gem_level"] = item->f_misc.gem_level;
-    }
-
-    j["identified"] = item->f_misc.identified;
-
-    // This stuff not relevant to cards
-    if (item->f_type.category != "card")
-    {
-        j["ilvl"]    = item->f_misc.ilvl;
-        j["quality"] = item->f_misc.quality;
-
-        if (!item->f_misc.influences.empty())
+        if (data[p_item].contains(p_influences))
         {
-            j["influences"] = json::array();
-
-            for (const auto i : item->f_misc.influences)
-            {
-                std::string inf = i;
-                inf[0]          = toupper(inf[0]);
-
-                j["influences"].push_back(inf);
-            }
+            data[p_opts][p_influences] = data[p_item][p_influences];
         }
 
-        j["corrupted"] = item->f_misc.corrupted;
+        if (data[p_item].contains(p_msynth) && data[p_item][p_msynth].get<bool>())
+        {
+            data[p_opts]["use_synthesis_base"] = prefillbase;
+        }
     }
-
-    if (!item->m_options.empty())
-    {
-        j["options"] = item->m_options;
-    }
-
-    return QString::fromStdString(j.dump());
 }
 
-void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
+bool ItemAPI::trySimplePriceCheck(json& data)
 {
+    Item& item = data[p_item];
+
     // If its a currency and the currency is listed in the bulk exchange, try that first
     // Otherwise, try a regular search
-    if (item->f_type.category == "currency" && c_currencyMap.contains(item->type))
+    if (item[p_category] == "currency" && c_currencyMap.contains(item[p_type]))
     {
-        doCurrencySearch(item);
-        return;
+        doCurrencySearch(data);
+        return true;
     }
 
     QSettings settings;
@@ -1815,30 +1800,30 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
     }
 
     // Search by type if rare map, or if it has no name
-    if ((item->f_type.category == "map" && item->f_type.rarity == "Rare") || item->name.empty())
+    if ((item[p_category] == "map" && item[p_rarity] == "Rare") || !item.contains(p_name))
     {
-        is_unique_base = m_uniques.contains(item->type);
-        searchToken    = item->type;
+        is_unique_base = m_uniques.contains(item[p_type]);
+        searchToken    = item[p_type];
     }
     else
     {
-        is_unique_base = m_uniques.contains(item->name);
-        searchToken    = item->name;
+        is_unique_base = m_uniques.contains(item[p_name]);
+        searchToken    = item[p_name];
     }
 
     // Force rarity if unique
-    if (item->f_type.rarity == "Unique")
+    if (item[p_rarity] == "Unique")
     {
-        std::string rarity = item->f_type.rarity;
+        std::string rarity = item[p_rarity];
         std::transform(rarity.begin(), rarity.end(), rarity.begin(), ::tolower);
 
         query["query"]["filters"]["type_filters"]["filters"]["rarity"]["option"] = rarity;
     }
 
     // Force category
-    if (!item->f_type.category.empty())
+    if (item.contains(p_category))
     {
-        std::string category = item->f_type.category;
+        std::string category = item[p_category];
         std::transform(category.begin(), category.end(), category.begin(), ::tolower);
 
         query["query"]["filters"]["type_filters"]["filters"]["category"]["option"] = category;
@@ -1855,9 +1840,9 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             auto& entry = it->second;
 
             // If has discriminator, match discriminator and type
-            if (!item->f_misc.disc.empty())
+            if (item.contains(p_misc) && item.contains(p_mdisc))
             {
-                if (entry["disc"] == item->f_misc.disc && entry["type"] == item->type)
+                if (entry["disc"] == item[p_mdisc] && entry["type"] == item[p_type])
                 {
                     if (entry.contains("name"))
                     {
@@ -1869,7 +1854,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
                     break;
                 }
             }
-            else if (entry["type"] == item->type)
+            else if (entry["type"] == item[p_type])
             {
                 // For everything else, just match type
                 qe["type"] = entry["type"];
@@ -1883,81 +1868,82 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             }
         }
 
-        item->m_options = getLeague().toStdString();
+        QString options = getLeague();
 
         // Default Gem options
-        if (item->f_type.category == "gem")
+        if (item[p_category] == "gem")
         {
-            qe["filters"]["misc_filters"]["filters"]["gem_level"]["min"] = item->f_misc.gem_level;
-            qe["filters"]["misc_filters"]["filters"]["quality"]["min"]   = item->f_misc.quality;
+            qe["filters"]["misc_filters"]["filters"]["gem_level"]["min"] = item[p_mglvl];
+            qe["filters"]["misc_filters"]["filters"]["quality"]["min"]   = item[p_quality];
 
-            item->m_options += ", Lv" + std::to_string(item->f_misc.gem_level) + "/" + std::to_string(item->f_misc.quality) + "%";
+            options += ", Lv" + QString::number(item[p_mglvl].get<int>()) + "/" + QString::number(item[p_quality].get<int>()) + "%";
         }
 
         // Default socket options
-        if (item->f_socket.sockets.total() == 6)
+        if (item.contains(p_sockets) && item[p_sockets]["total"] == 6)
         {
-            qe["filters"]["socket_filters"]["filters"]["sockets"]["min"] = item->f_socket.sockets.total();
+            qe["filters"]["socket_filters"]["filters"]["sockets"]["min"] = item[p_sockets]["total"];
 
-            item->m_options += ", " + std::to_string(item->f_socket.sockets.total()) + "S";
+            options += ", " + QString::number(item[p_sockets]["total"].get<int>()) + "S";
         }
 
         // Default link options
-        if (item->f_socket.links > 4)
+        if (item.contains(p_sockets) && item[p_sockets]["links"] > 4)
         {
-            qe["filters"]["socket_filters"]["filters"]["links"]["min"] = item->f_socket.links;
+            qe["filters"]["socket_filters"]["filters"]["links"]["min"] = item[p_sockets]["links"];
 
-            item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
+            options += ", " + QString::number(item[p_sockets]["links"].get<int>()) + "L";
         }
 
         // Force iLvl
-        if (item->f_type.rarity != "Unique" && item->f_type.category != "card" && item->f_misc.ilvl)
+        if (item[p_rarity] != "Unique" && item[p_category] != "card" && item.contains(p_ilvl))
         {
-            qe["filters"]["misc_filters"]["filters"]["ilvl"]["min"] = item->f_misc.ilvl;
+            qe["filters"]["misc_filters"]["filters"]["ilvl"]["min"] = item[p_ilvl];
 
-            item->m_options += ", iLvl=" + std::to_string(item->f_misc.ilvl);
+            options += ", iLvl=" + QString::number(item[p_ilvl].get<int>());
         }
 
         // Force map tier
-        if (item->f_type.category == "map" && item->f_misc.map_tier)
+        if (item[p_category] == "map" && item.contains(p_mmtier))
         {
-            qe["filters"]["map_filters"]["filters"]["map_tier"]["min"] = item->f_misc.map_tier;
+            qe["filters"]["map_filters"]["filters"]["map_tier"]["min"] = item[p_mmtier];
 
-            item->m_options += ", Map Tier=" + std::to_string(item->f_misc.map_tier);
+            options += ", Map Tier=" + QString::number(item[p_mmtier].get<int>());
         }
 
         // Note discriminator
-        if (!item->f_misc.disc.empty())
+        if (item.contains(p_mdisc))
         {
-            item->m_options += ", Disc=" + item->f_misc.disc;
+            options += ", Disc=" + QString::fromStdString(item[p_mdisc].get<std::string>());
         }
 
         // Force Influences
-        if (item->f_type.category != "card" && !item->f_misc.influences.empty())
+        if (item[p_category] != "card" && item.contains(p_influences))
         {
-            for (auto i : item->f_misc.influences)
+            for (auto i : item[p_influences])
             {
-                std::string inftype = i + "_item";
+                std::string inf     = i.get<std::string>();
+                std::string inftype = inf + "_item";
 
                 qe["filters"]["misc_filters"]["filters"][inftype]["option"] = true;
 
-                i[0] = toupper(i[0]);
-                item->m_options += ", " + i + " Influence";
+                inf[0] = toupper(inf[0]);
+                options += ", " + QString::fromStdString(inf) + " Influence";
             }
         }
 
         // Force Synthesis
-        if (item->f_misc.synthesised_item)
+        if (item.contains(p_msynth))
         {
             qe["filters"]["misc_filters"]["filters"]["synthesised_item"]["option"] = true;
-            item->m_options += ", Synthesis Base";
+            options += ", Synthesis Base";
         }
 
         // Default corrupt options
         bool corrupt_override = settings.value(PTA_CONFIG_CORRUPTOVERRIDE, PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE).toBool();
 
         // No such thing as corrupted cards or prophecies
-        if (item->f_type.category != "card" && item->f_type.category != "prophecy")
+        if (item[p_category] != "card" && item[p_category] != "prophecy")
         {
             if (corrupt_override)
             {
@@ -1967,25 +1953,25 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
                 {
                     qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = (corrupt_search == "Yes");
 
-                    item->m_options += ", Corrupted=" + corrupt_search.toStdString();
+                    options += ", Corrupted=" + corrupt_search;
                 }
                 else
                 {
-                    item->m_options += ", Corrupted=Any";
+                    options += ", Corrupted=Any";
                 }
 
-                item->m_options += " (override)";
+                options += " (override)";
             }
             else
             {
-                qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item->f_misc.corrupted;
+                qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item.contains(p_corrupted) && item[p_corrupted].get<bool>();
 
-                item->m_options += ", Corrupted=";
-                item->m_options += item->f_misc.corrupted ? "Yes" : "No";
+                options += ", Corrupted=";
+                options += (item.contains(p_corrupted) && item[p_corrupted].get<bool>()) ? "Yes" : "No";
             }
         }
 
-        item->m_options += ", Mods ignored";
+        options += ", Mods ignored";
 
         auto qba = query.dump();
 
@@ -2032,16 +2018,16 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
             }
 
             // else process the results
-            processPriceResults(item, resp);
+            processPriceResults(data, resp, options, "simple");
         });
+
+        return true;
     }
-    else if (item->f_type.rarity != "Magic")
+    else if (item[p_rarity] != "Magic")
     {
         // poeprices.info
 
-        item->is_prediction = true;
-
-        QString itemText = QString::fromStdString(item->m_itemtext);
+        QString itemText = QString::fromStdString(item[p_origtext]);
 
         itemText.remove(QRegularExpression("<<.*?>>|<.*?>"));
 
@@ -2065,7 +2051,7 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
         request.setUrl(QUrl(qurl));
 
         auto req = m_manager->get(request);
-        connect(req, &QNetworkReply::finished, [=]() {
+        connect(req, &QNetworkReply::finished, [=]() mutable {
             req->deleteLater();
 
             if (req->error() != QNetworkReply::NoError)
@@ -2075,16 +2061,17 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
                 return;
             }
 
-            auto respdata = req->readAll();
+            QByteArray respdata = req->readAll();
+            QString    tstr     = QString::fromUtf8(respdata.data(), respdata.size());
 
-            if (!respdata.size())
+            if (!tstr.size())
             {
                 emit humour(tr("Error querying poeprices.info. See log for details"));
                 qWarning() << "PAPI: Error querying poeprices.info - returned no data";
                 return;
             }
 
-            auto resp = json::parse(respdata.toStdString());
+            auto resp = json::parse(tstr.toStdString());
             if (resp["error"].get<int>() != 0)
             {
                 emit humour(tr("Error querying poeprices.info. See log for details"));
@@ -2100,47 +2087,38 @@ void ItemAPI::simplePriceCheck(std::shared_ptr<PItem> item)
                 return;
             }
 
+            // set format
+            data["prediction"] = resp;
+
             // else process the results
-            emit priceCheckFinished(item, QString::fromStdString(resp.dump()));
+            emit simpleResultsFinished(QString::fromStdString(data.dump()));
         });
+
+        return true;
     }
-    else
-    {
-        emit humour(tr("Simple price check is not available for this item type."));
-        qInfo() << "PAPI: Simple price check is not available for this item type.";
-    }
+
+    return false;
 }
 
-void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
+void ItemAPI::advancedPriceCheck(const QString& str, bool openonsite)
 {
-    if (item->filters.empty() || item->f_type.category == "map")
+    json  data = json::parse(str.toStdString());
+    Item& item = data[p_item];
+
+    if (!item.contains(p_filters) || item[p_category] == "map")
     {
         // Cannot advanced search items with no filters
         emit humour(tr("Advanced search is unavailable for this item type"));
         return;
     }
 
-    if (!item->f_misc.identified)
+    if (item.contains(p_unidentified))
     {
         emit humour(tr("Advanced search is unavailable for unidentified items"));
         return;
     }
 
-    StatDialog* dlg = new StatDialog(item.get());
-
-    connect(dlg, &QDialog::finished, [=](int result) {
-        if (result == QDialog::Rejected)
-        {
-            // cancelled
-            return;
-        }
-
-        bool searchonsite = (result == SEARCH_ON_SITE);
-
-        json filters = dlg->filters;
-        json misc    = dlg->misc;
-
-        auto query = R"(
+    auto query = R"(
     {
         "query": {
             "status": {
@@ -2157,297 +2135,293 @@ void ItemAPI::advancedPriceCheck(std::shared_ptr<PItem> item)
     }
     )"_json;
 
-        QSettings settings;
-        auto&     qe = query["query"];
+    QSettings settings;
+    auto&     qe = query["query"];
 
-        // Take care of settings
-        bool onlineonly = settings.value(PTA_CONFIG_ONLINE_ONLY, PTA_CONFIG_DEFAULT_ONLINE_ONLY).toBool();
-        if (!onlineonly)
-        {
-            query["query"]["status"]["option"] = "any";
-        }
-
-        bool buyoutonly = settings.value(PTA_CONFIG_BUYOUT_ONLY, PTA_CONFIG_DEFAULT_BUYOUT_ONLY).toBool();
-        if (buyoutonly)
-        {
-            query["query"]["filters"]["trade_filters"]["filters"]["sale_type"]["option"] = "priced";
-        }
-
-        bool        is_unique_base = false;
-        std::string searchToken;
-
-        if (!item->name.empty())
-        {
-            is_unique_base = m_uniques.contains(item->name);
-            searchToken    = item->name;
-        }
-        else
-        {
-            is_unique_base = m_uniques.contains(item->type);
-            searchToken    = item->type;
-        }
-
-        // Force rarity
-        std::string rarity = "nonunique";
-
-        if (item->f_type.rarity == "Unique")
-        {
-            rarity = item->f_type.rarity;
-            std::transform(rarity.begin(), rarity.end(), rarity.begin(), ::tolower);
-        }
-
-        query["query"]["filters"]["type_filters"]["filters"]["rarity"]["option"] = rarity;
-
-        // Force category
-        if (!item->f_type.category.empty())
-        {
-            std::string category = item->f_type.category;
-            std::transform(category.begin(), category.end(), category.begin(), ::tolower);
-
-            query["query"]["filters"]["type_filters"]["filters"]["category"]["option"] = category;
-        }
-
-        // weapon/armour base mods
-
-        if (item->f_weapon.search_pdps)
-        {
-            if (item->f_weapon.pdps_filter.min > 0)
-            {
-                query["query"]["filters"]["weapon_filters"]["filters"]["pdps"]["min"] = item->f_weapon.pdps_filter.min;
-            }
-
-            if (item->f_weapon.pdps_filter.max > 0)
-            {
-                query["query"]["filters"]["weapon_filters"]["filters"]["pdps"]["max"] = item->f_weapon.pdps_filter.max;
-            }
-        }
-
-        if (item->f_weapon.search_edps)
-        {
-            if (item->f_weapon.edps_filter.min > 0)
-            {
-                query["query"]["filters"]["weapon_filters"]["filters"]["edps"]["min"] = item->f_weapon.edps_filter.min;
-            }
-
-            if (item->f_weapon.edps_filter.max > 0)
-            {
-                query["query"]["filters"]["weapon_filters"]["filters"]["edps"]["max"] = item->f_weapon.edps_filter.max;
-            }
-        }
-
-        if (item->f_armour.search_ar)
-        {
-            if (item->f_armour.ar_filter.min > 0)
-            {
-                query["query"]["filters"]["armour_filters"]["filters"]["ar"]["min"] = item->f_armour.ar_filter.min;
-            }
-
-            if (item->f_armour.ar_filter.max > 0)
-            {
-                query["query"]["filters"]["armour_filters"]["filters"]["ar"]["max"] = item->f_armour.ar_filter.max;
-            }
-        }
-
-        if (item->f_armour.search_ev)
-        {
-            if (item->f_armour.ev_filter.min > 0)
-            {
-                query["query"]["filters"]["armour_filters"]["filters"]["ev"]["min"] = item->f_armour.ev_filter.min;
-            }
-
-            if (item->f_armour.ev_filter.max > 0)
-            {
-                query["query"]["filters"]["armour_filters"]["filters"]["ev"]["max"] = item->f_armour.ev_filter.max;
-            }
-        }
-
-        if (item->f_armour.search_es)
-        {
-            if (item->f_armour.es_filter.min > 0)
-            {
-                query["query"]["filters"]["armour_filters"]["filters"]["es"]["min"] = item->f_armour.es_filter.min;
-            }
-
-            if (item->f_armour.es_filter.max > 0)
-            {
-                query["query"]["filters"]["armour_filters"]["filters"]["es"]["max"] = item->f_armour.es_filter.max;
-            }
-        }
-
-        // Checked mods
-        for (auto& [k, e] : filters.items())
-        {
-            // set id
-            e["id"] = k;
-
-            if (e["disabled"] == false)
-            {
-                qe["stats"][0]["filters"].push_back(e);
-            }
-        }
-
-        // Check for unique items
-        if (is_unique_base)
-        {
-            auto range = m_uniques.equal_range(searchToken);
-            for (auto it = range.first; it != range.second; ++it)
-            {
-                auto& entry = it->second;
-
-                // For everything else, match type
-                if (entry["type"] == item->type)
-                {
-                    qe["type"] = entry["type"];
-
-                    if (entry.contains("name"))
-                    {
-                        qe["name"] = entry["name"];
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        item->m_options = getLeague().toStdString();
-
-        // Use sockets
-        if (misc.contains("use_sockets") && misc["use_sockets"])
-        {
-            qe["filters"]["socket_filters"]["filters"]["sockets"]["min"] = item->f_socket.sockets.total();
-
-            item->m_options += ", " + std::to_string(item->f_socket.sockets.total()) + "S";
-        }
-
-        // Use links
-        if (misc.contains("use_links") && misc["use_links"])
-        {
-            qe["filters"]["socket_filters"]["filters"]["links"]["min"] = item->f_socket.links;
-
-            item->m_options += ", " + std::to_string(item->f_socket.links) + "L";
-        }
-
-        // Use iLvl
-        if (misc.contains("use_ilvl") && misc["use_ilvl"])
-        {
-            qe["filters"]["misc_filters"]["filters"]["ilvl"]["min"] = misc["ilvl"];
-
-            item->m_options += ", iLvl=" + std::to_string(misc["ilvl"].get<int>());
-        }
-
-        // Use item base
-        if (misc.contains("use_item_base") && misc["use_item_base"])
-        {
-            qe["type"] = item->type;
-
-            item->m_options += ", Use Base Type";
-        }
-
-        // Influences
-
-        if (misc.contains("influences"))
-        {
-            for (const auto [key, value] : misc["influences"].items())
-            {
-                if (!key.empty() && value.get<bool>())
-                {
-                    std::string inf    = key;
-                    std::string infkey = inf + "_item";
-
-                    qe["filters"]["misc_filters"]["filters"][infkey]["option"] = true;
-
-                    inf[0] = toupper(inf[0]);
-                    item->m_options += ", " + inf + " Influence";
-                }
-            }
-        }
-
-        // Synthesis
-        if (misc.contains("use_synthesis_base") && misc["use_synthesis_base"])
-        {
-            qe["filters"]["misc_filters"]["filters"]["synthesised_item"]["option"] = true;
-            item->m_options += ", Synthesis Base";
-        }
-
-        // Corrupt
-        if (misc.contains("corrupted"))
-        {
-            qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = misc["corrupted"];
-            item->m_options += ", Corrupted=";
-            item->m_options += misc["corrupted"].get<bool>() ? "Yes" : "No";
-        }
-
-        auto qba = query.dump();
-
-        QNetworkRequest request;
-        request.setUrl(QUrl(u_trade_search + getLeague()));
-        request.setRawHeader("Content-Type", "application/json");
-
-        auto req = m_manager->post(request, QByteArray::fromStdString(qba));
-        connect(req, &QNetworkReply::finished, [=]() {
-            req->deleteLater();
-
-            if (req->error() != QNetworkReply::NoError)
-            {
-                emit humour(tr("Error querying trade API. See log for details"));
-                qWarning() << "PAPI: Error querying trade API" << req->error() << req->errorString();
-                return;
-            }
-
-            auto respdata = req->readAll();
-
-            if (!respdata.size())
-            {
-                emit humour(tr("Error querying trade API. See log for details"));
-                qWarning() << "PAPI: Error querying trade API - returned no data";
-                return;
-            }
-
-            auto resp = json::parse(respdata.toStdString());
-            if (!resp.contains("result") || !resp.contains("id"))
-            {
-                emit humour(tr("Error querying trade API. See log for details"));
-                qWarning() << "PAPI: Error querying trade API";
-                qWarning() << "PAPI: Site responded with" << respdata;
-                return;
-            }
-
-            if (searchonsite)
-            {
-                QDesktopServices::openUrl(QUrl(u_trade_site + getLeague() + "/" + QString::fromStdString(resp["id"].get<std::string>())));
-                return;
-            }
-
-            if (resp["result"].size() == 0)
-            {
-                emit humour(tr("No results found."));
-                qDebug() << "No results";
-                return;
-            }
-
-            // else process the results
-            processPriceResults(item, resp);
-        });
-    });
-
-    dlg->open();
-}
-
-void ItemAPI::openWiki(std::shared_ptr<PItem> item)
-{
-    QString itemName;
-
-    if (item->f_type.rarity == "Rare")
+    // Take care of settings
+    bool onlineonly = settings.value(PTA_CONFIG_ONLINE_ONLY, PTA_CONFIG_DEFAULT_ONLINE_ONLY).toBool();
+    if (!onlineonly)
     {
-        itemName = QString::fromStdString(item->type);
+        query["query"]["status"]["option"] = "any";
     }
-    else if (!item->name.empty())
+
+    bool buyoutonly = settings.value(PTA_CONFIG_BUYOUT_ONLY, PTA_CONFIG_DEFAULT_BUYOUT_ONLY).toBool();
+    if (buyoutonly)
     {
-        itemName = QString::fromStdString(item->name);
+        query["query"]["filters"]["trade_filters"]["filters"]["sale_type"]["option"] = "priced";
+    }
+
+    bool        is_unique_base = false;
+    std::string searchToken;
+
+    if (item.contains(p_name))
+    {
+        is_unique_base = m_uniques.contains(item[p_name]);
+        searchToken    = item[p_name];
     }
     else
     {
-        itemName = QString::fromStdString(item->type);
+        is_unique_base = m_uniques.contains(item[p_type]);
+        searchToken    = item[p_type];
+    }
+
+    // Force rarity
+    std::string rarity = "nonunique";
+
+    if (item[p_rarity] == "Unique")
+    {
+        rarity = item[p_rarity];
+        std::transform(rarity.begin(), rarity.end(), rarity.begin(), ::tolower);
+    }
+
+    query["query"]["filters"]["type_filters"]["filters"]["rarity"]["option"] = rarity;
+
+    // Force category
+    if (item.contains(p_category))
+    {
+        std::string category = item[p_category];
+        std::transform(category.begin(), category.end(), category.begin(), ::tolower);
+
+        query["query"]["filters"]["type_filters"]["filters"]["category"]["option"] = category;
+    }
+
+    // weapon/armour base mods
+
+    if (data[p_usepdps][p_enabled].get<bool>())
+    {
+        if (data[p_usepdps][p_min] > 0)
+        {
+            query["query"]["filters"]["weapon_filters"]["filters"]["pdps"]["min"] = data[p_usepdps][p_min];
+        }
+
+        if (data[p_usepdps][p_max] > 0)
+        {
+            query["query"]["filters"]["weapon_filters"]["filters"]["pdps"]["max"] = data[p_usepdps][p_max];
+        }
+    }
+
+    if (data[p_useedps][p_enabled].get<bool>())
+    {
+        if (data[p_useedps][p_min] > 0)
+        {
+            query["query"]["filters"]["weapon_filters"]["filters"]["edps"]["min"] = data[p_useedps][p_min];
+        }
+
+        if (data[p_useedps][p_max] > 0)
+        {
+            query["query"]["filters"]["weapon_filters"]["filters"]["edps"]["max"] = data[p_useedps][p_max];
+        }
+    }
+
+    if (data[p_usear][p_enabled].get<bool>())
+    {
+        if (data[p_usear][p_min] > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["ar"]["min"] = data[p_usear][p_min];
+        }
+
+        if (data[p_usear][p_max] > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["ar"]["max"] = data[p_usear][p_max];
+        }
+    }
+
+    if (data[p_useev][p_enabled].get<bool>())
+    {
+        if (data[p_useev][p_min] > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["ev"]["min"] = data[p_useev][p_min];
+        }
+
+        if (data[p_useev][p_max] > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["ev"]["max"] = data[p_useev][p_max];
+        }
+    }
+
+    if (data[p_usees][p_enabled].get<bool>())
+    {
+        if (data[p_usees][p_min] > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["es"]["min"] = data[p_usees][p_min];
+        }
+
+        if (data[p_usees][p_max] > 0)
+        {
+            query["query"]["filters"]["armour_filters"]["filters"]["es"]["max"] = data[p_usees][p_max];
+        }
+    }
+
+    // Checked mods
+    for (auto& [k, e] : item[p_filters].items())
+    {
+        // set id
+        e["id"] = k;
+
+        if (e[p_enabled] == true)
+        {
+            e["disabled"] = false;
+            e.erase(p_enabled);
+            qe["stats"][0]["filters"].push_back(e);
+        }
+    }
+
+    // Check for unique items
+    if (is_unique_base)
+    {
+        auto range = m_uniques.equal_range(searchToken);
+        for (auto it = range.first; it != range.second; ++it)
+        {
+            auto& entry = it->second;
+
+            // For everything else, match type
+            if (entry["type"] == item[p_type])
+            {
+                qe["type"] = entry["type"];
+
+                if (entry.contains("name"))
+                {
+                    qe["name"] = entry["name"];
+                }
+
+                break;
+            }
+        }
+    }
+
+    QString options = getLeague();
+
+    // Use sockets
+    if (data[p_usesockets].get<bool>())
+    {
+        qe["filters"]["socket_filters"]["filters"]["sockets"]["min"] = item[p_sockets]["total"];
+
+        options += ", " + QString::number(item[p_sockets]["total"].get<int>()) + "S";
+    }
+
+    // Use links
+    if (data[p_uselinks].get<bool>())
+    {
+        qe["filters"]["socket_filters"]["filters"]["links"]["min"] = item[p_sockets]["links"];
+
+        options += ", " + QString::number(item[p_sockets]["links"].get<int>()) + "L";
+    }
+
+    // Use iLvl
+    if (data[p_useilvl].get<bool>())
+    {
+        qe["filters"]["misc_filters"]["filters"]["ilvl"]["min"] = item[p_ilvl];
+
+        options += ", iLvl=" + QString::number(item[p_ilvl].get<int>());
+    }
+
+    // Use item base
+    if (data[p_usebase].get<bool>())
+    {
+        qe["type"] = item[p_type];
+
+        options += ", Use Base Type";
+    }
+
+    // Influences
+
+    if (data.contains(p_useinfluences) && data[p_useinfluences].size())
+    {
+        for (const auto i : data[p_useinfluences])
+        {
+            std::string inf    = i.get<std::string>();
+            std::string infkey = inf + "_item";
+
+            qe["filters"]["misc_filters"]["filters"][infkey]["option"] = true;
+
+            inf[0] = toupper(inf[0]);
+            options += ", " + QString::fromStdString(inf) + " Influence";
+        }
+    }
+
+    // Synthesis
+    if (data.contains(p_usesynth) && data[p_usesynth].get<bool>())
+    {
+        qe["filters"]["misc_filters"]["filters"]["synthesised_item"]["option"] = true;
+        options += ", Synthesis Base";
+    }
+
+    // Corrupt
+    if (item.contains(p_corrupted))
+    {
+        qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item[p_corrupted];
+        options += ", Corrupted=";
+        options += item[p_corrupted].get<bool>() ? "Yes" : "No";
+    }
+
+    auto qba = query.dump();
+
+    QNetworkRequest request;
+    request.setUrl(QUrl(u_trade_search + getLeague()));
+    request.setRawHeader("Content-Type", "application/json");
+
+    auto req = m_manager->post(request, QByteArray::fromStdString(qba));
+    connect(req, &QNetworkReply::finished, [=]() {
+        req->deleteLater();
+
+        if (req->error() != QNetworkReply::NoError)
+        {
+            emit humour(tr("Error querying trade API. See log for details"));
+            qWarning() << "PAPI: Error querying trade API" << req->error() << req->errorString();
+            return;
+        }
+
+        auto respdata = req->readAll();
+
+        if (!respdata.size())
+        {
+            emit humour(tr("Error querying trade API. See log for details"));
+            qWarning() << "PAPI: Error querying trade API - returned no data";
+            return;
+        }
+
+        auto resp = json::parse(respdata.toStdString());
+        if (!resp.contains("result") || !resp.contains("id"))
+        {
+            emit humour(tr("Error querying trade API. See log for details"));
+            qWarning() << "PAPI: Error querying trade API";
+            qWarning() << "PAPI: Site responded with" << respdata;
+            return;
+        }
+
+        if (openonsite)
+        {
+            QDesktopServices::openUrl(QUrl(u_trade_site + getLeague() + "/" + QString::fromStdString(resp["id"].get<std::string>())));
+            return;
+        }
+
+        if (resp["result"].size() == 0)
+        {
+            emit humour(tr("No results found."));
+            qDebug() << "No results";
+            return;
+        }
+
+        // else process the results
+        processPriceResults(data, resp, options, "advanced");
+    });
+}
+
+void ItemAPI::openWiki(const Item& item)
+{
+    QString itemName;
+
+    if (item[p_rarity].get<std::string>() == "Rare")
+    {
+        itemName = QString::fromStdString(item[p_type].get<std::string>());
+    }
+    else if (item.contains(p_name))
+    {
+        itemName = QString::fromStdString(item[p_name].get<std::string>());
+    }
+    else
+    {
+        itemName = QString::fromStdString(item[p_type].get<std::string>());
     }
 
     itemName = itemName.replace(" ", "_");

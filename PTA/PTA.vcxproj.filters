@@ -46,9 +46,6 @@
     <ClCompile Include="itemapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="statdialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="configdialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -76,9 +73,6 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="itemapi.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="statdialog.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="configdialog.h">

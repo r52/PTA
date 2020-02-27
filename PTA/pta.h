@@ -4,6 +4,7 @@
 
 #include "clientmonitor.h"
 #include "macrohandler.h"
+#include "pitem.h"
 
 #include <memory>
 
@@ -17,10 +18,6 @@
 QT_FORWARD_DECLARE_CLASS(LogWindow)
 QT_FORWARD_DECLARE_CLASS(ItemAPI)
 
-struct PItem;
-
-class ConfigDialog;
-
 enum search_check_flag : uint32_t
 {
     PC_SIMPLE = 0,
@@ -28,6 +25,8 @@ enum search_check_flag : uint32_t
     WIKI_SEARCH,
     PC_MAX
 };
+
+class ConfigDialog;
 
 class PTA : public QMainWindow
 {
@@ -55,8 +54,8 @@ signals:
     void foregroundWindowChanged(bool isPoe);
 
 public slots:
+    void showPriceWidget(const QString& data);
     void showToolTip(QString message);
-    void showPriceResults(std::shared_ptr<PItem> item, const QString& results);
 
 protected:
     virtual void closeEvent(QCloseEvent* event) override;
@@ -81,6 +80,8 @@ private slots:
     void handleClipboard();
     void processClipboard();
     void handleForegroundChange(bool isPoe);
+
+    void processUpdates(QNetworkReply* reply);
 
 private:
     Ui::PTAClass ui;

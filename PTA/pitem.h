@@ -3,125 +3,166 @@
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
+using jptr = json::json_pointer;
+using Item = json;
 
-struct mmv_t
+/*
+
+JSON Item Schema
+
 {
-    int min;
-    int max;
+    origtext: string,
+    rarity: string,
+    type: string,
+    name: string,
+    category: string,
+    quality: integer,
+    ilvl: integer,
+    unidentified: bool,
+    corrupted: bool,
 
-    int avg() { return ((min + max) / 2); }
+    influences: ["shaper", "crusader", ...],
 
-    mmv_t& operator+=(const mmv_t& b)
-    {
-        min += b.min;
-        max += b.max;
-        return *this;
+    requirements: {
+        lvl: integer,
+        str: integer,
+        dex: integer,
+        int: integer
+    },
+
+    weapon: {
+        aps: float,
+        crit: float,
+        pdps: {
+            min: integer,
+            max: integer
+        },
+        edps: {
+            min: integer,
+            max: integer
+        }
+    },
+
+    armour: {
+        ar: integer,
+        ev: integer,
+        es: integer,
+        block: integer
+    },
+
+    sockets: {
+        links: int,
+        total: int,
+        R: int,
+        G: int,
+        B: int,
+        W: int,
+        A: int
+    },
+
+    misc: {
+        disc: string,
+        synthesis: bool,
+        gem_level: int,
+        gem_progress: string,
+        map_tier: integer
+    },
+
+    filters: {
+        ...PoE mod filters...
+    },
+
+    pseudos: {
+        ...PoE mod filters...
     }
 
-    mmv_t operator+(const mmv_t& b) const { return mmv_t{min + b.min, max + b.max}; }
-};
 
-struct type_filters_t
+}
+
+*********************************
+
+JSON Data Schema
+
 {
-    std::string category;
-    std::string rarity;
-};
+    item: Item,
 
-struct weapon_filters_t
-{
-    double aps;
-    double crit;
-    mmv_t  pdps;
-    mmv_t  edps;
+    settings: {
+        ...PTA settings...
+    }
 
-    bool  search_pdps;
-    mmv_t pdps_filter;
-    bool  search_edps;
-    mmv_t edps_filter;
-};
+    searchopts: {
+        use_pdps: bool,
+        use_edps: bool,
+        use_ar: bool,
+        use_ev: bool,
+        use_es: bool,
+        use_sockets: bool,
+        use_links: bool,
+        use_ilvl: bool,
+        use_item_base: bool,
+        influences: Array
+    }
+}
 
-struct armour_filters_t
-{
-    int ar;
-    int ev;
-    int es;
-    int block;
+*/
 
-    bool  search_ar;
-    mmv_t ar_filter;
-    bool  search_ev;
-    mmv_t ev_filter;
-    bool  search_es;
-    mmv_t es_filter;
-};
+constexpr auto p_enabled = "enabled";
+constexpr auto p_item    = "item";
+constexpr auto p_results = "results";
 
-struct socket_type_t
-{
-    int r;
-    int g;
-    int b;
-    int w;
-    int a;
+constexpr auto p_min = "min";
+constexpr auto p_max = "max";
 
-    int total() { return r + g + b + w + a; }
-};
+constexpr auto p_origtext     = "origtext";
+constexpr auto p_rarity       = "rarity";
+constexpr auto p_type         = "type";
+constexpr auto p_name         = "name";
+constexpr auto p_category     = "category";
+constexpr auto p_sockets      = "sockets";
+constexpr auto p_quality      = "quality";
+constexpr auto p_ilvl         = "ilvl";
+constexpr auto p_unidentified = "unidentified";
+constexpr auto p_corrupted    = "corrupted";
+constexpr auto p_influences   = "influences";
+constexpr auto p_filters      = "filters";
+constexpr auto p_pseudos      = "pseudos";
 
-struct socket_filters_t
-{
-    int           links; // max linked
-    socket_type_t sockets;
-};
+constexpr auto    p_requirements = "requirements";
+inline const auto p_reqlvl       = "/requirements/lvl"_json_pointer;
+inline const auto p_reqstr       = "/requirements/str"_json_pointer;
+inline const auto p_reqdex       = "/requirements/dex"_json_pointer;
+inline const auto p_reqint       = "/requirements/int"_json_pointer;
 
-struct req_filters_t
-{
-    int lvl;
-    int str;
-    int dex;
-    int intl;
-};
+constexpr auto    p_misc   = "misc";
+inline const auto p_mdisc  = "/misc/disc"_json_pointer;
+inline const auto p_msynth = "/misc/synthesis"_json_pointer;
+inline const auto p_mglvl  = "/misc/gem_level"_json_pointer;
+inline const auto p_mgexp  = "/misc/gem_progress"_json_pointer;
+inline const auto p_mmtier = "/misc/map_tier"_json_pointer;
 
-struct misc_filters_t
-{
-    int                      quality;
-    int                      ilvl;
-    int                      gem_level;
-    int                      gem_level_progress;
-    bool                     fractured_item;
-    bool                     synthesised_item;
-    bool                     identified = true;
-    bool                     corrupted;
-    bool                     mirrored;
-    bool                     crafted;
-    bool                     veiled;
-    bool                     enchanted;
-    int                      talisman_tier;
-    int                      map_tier;
-    std::string              disc;
-    std::vector<std::string> influences;
-    bool                     exchange = false; // currency exchange format
-};
+constexpr auto    p_weapon = "weapon";
+inline const auto p_waps   = "/weapon/aps"_json_pointer;
+inline const auto p_wcrit  = "/weapon/crit"_json_pointer;
+inline const auto p_wpdps  = "/weapon/pdps"_json_pointer;
+inline const auto p_wedps  = "/weapon/edps"_json_pointer;
 
-struct PItem
-{
-    std::string m_itemtext; // original item text;
+constexpr auto    p_armour = "armour";
+inline const auto p_aar    = "/armour/ar"_json_pointer;
+inline const auto p_aev    = "/armour/ev"_json_pointer;
+inline const auto p_aes    = "/armour/es"_json_pointer;
+inline const auto p_ablock = "/armour/block"_json_pointer;
 
-    std::string name;
-    std::string type;
+constexpr auto p_settings = "settings";
 
-    type_filters_t   f_type;
-    weapon_filters_t f_weapon;
-    armour_filters_t f_armour;
-    socket_filters_t f_socket;
-    req_filters_t    f_req;
-    misc_filters_t   f_misc;
-
-    bool is_weapon;
-    bool is_armour;
-    bool is_prediction = false;
-
-    json filters;
-    json pseudos;
-
-    std::string m_options; // search options
-    int         m_sections = 0;
-};
+constexpr auto    p_opts          = "searchopts";
+inline const auto p_usepdps       = "/searchopts/use_pdps"_json_pointer;
+inline const auto p_useedps       = "/searchopts/use_edps"_json_pointer;
+inline const auto p_usear         = "/searchopts/use_ar"_json_pointer;
+inline const auto p_useev         = "/searchopts/use_ev"_json_pointer;
+inline const auto p_usees         = "/searchopts/use_es"_json_pointer;
+inline const auto p_usesockets    = "/searchopts/use_sockets"_json_pointer;
+inline const auto p_uselinks      = "/searchopts/use_links"_json_pointer;
+inline const auto p_useilvl       = "/searchopts/use_ilvl"_json_pointer;
+inline const auto p_usebase       = "/searchopts/use_item_base"_json_pointer;
+inline const auto p_useinfluences = "/searchopts/influences"_json_pointer;
+inline const auto p_usesynth      = "/searchopts/use_synthesis_base"_json_pointer;

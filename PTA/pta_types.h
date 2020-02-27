@@ -35,8 +35,6 @@ constexpr auto PTA_CONFIG_BUYOUT_ONLY        = "pricecheck/buyout";
 constexpr auto PTA_CONFIG_REMOVE_DUPES       = "pricecheck/duplicates";
 constexpr auto PTA_CONFIG_PREFILL_MIN        = "pricecheck/prefillmin";
 constexpr auto PTA_CONFIG_PREFILL_MAX        = "pricecheck/prefillmax";
-constexpr auto PTA_CONFIG_PREFILL_WEAPON     = "pricecheck/prefillweapon";
-constexpr auto PTA_CONFIG_PREFILL_ARMOUR     = "pricecheck/prefillarmour";
 constexpr auto PTA_CONFIG_PREFILL_NORMALS    = "pricecheck/prefillnormals";
 constexpr auto PTA_CONFIG_PREFILL_PSEUDOS    = "pricecheck/prefillpseudos";
 constexpr auto PTA_CONFIG_PREFILL_ILVL       = "pricecheck/prefillilvl";
@@ -66,8 +64,6 @@ constexpr auto PTA_CONFIG_DEFAULT_BUYOUT_ONLY        = true;
 constexpr auto PTA_CONFIG_DEFAULT_REMOVE_DUPES       = true;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_MIN        = false;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_MAX        = false;
-constexpr auto PTA_CONFIG_DEFAULT_PREFILL_WEAPON     = false;
-constexpr auto PTA_CONFIG_DEFAULT_PREFILL_ARMOUR     = false;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_NORMALS    = false;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_PSEUDOS    = true;
 constexpr auto PTA_CONFIG_DEFAULT_PREFILL_ILVL       = false;
@@ -80,7 +76,7 @@ enum MacroType : uint8_t
     MACRO_TYPE_MAX
 };
 
-#ifndef NDEBUG
+#ifdef _DEBUG
 #    define PTA_CONFIG_DEFAULT_LOGLEVEL PTA_LOG_DEBUG
 #else
 #    define PTA_CONFIG_DEFAULT_LOGLEVEL PTA_LOG_INFO

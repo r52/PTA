@@ -15,9 +15,9 @@ init:
 environment:
   QTDIR: C:\Qt\5.12.6\msvc2017_64
   OPENSSL: C:\OpenSSL-v111-Win64\bin
-build:
-  project: PTA.sln
-  parallel: true
-  verbosity: normal
+build_script:
+  - cmd: msbuild "C:\projects\pta\PTA.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=%QTDIR%
+  - cmd: cd "C:\projects\pta\PTA\search\"
+  - cmd: npm install && npm run build
 after_build:
 - ps: .\deploy\package.ps1

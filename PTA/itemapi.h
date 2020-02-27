@@ -21,40 +21,42 @@ class ItemAPI : public QObject
     Q_OBJECT
 
 public:
-    ItemAPI(QObject* parent = nullptr);
+    ItemAPI(QNetworkAccessManager* netmanager, QObject* parent = nullptr);
 
     const json getLeagues() { return m_leagues; }
     QString    getLeague();
 
-    PItem* parse(QString itemText);
+    bool parse(Item& item, QString itemText);
+    void fillItemOptions(json& data);
 
-    QString toJson(PItem* item);
+    void openWiki(const Item& item);
 
-    void simplePriceCheck(std::shared_ptr<PItem> item);
-    void advancedPriceCheck(std::shared_ptr<PItem> item);
-    void openWiki(std::shared_ptr<PItem> item);
+    bool trySimplePriceCheck(json& data);
+
+public slots:
+    void advancedPriceCheck(const QString& str, bool openonsite);
 
 signals:
     void humour(const QString& msg);
-    void priceCheckFinished(std::shared_ptr<PItem> item, const QString& results);
+    void simpleResultsFinished(const QString& results);
+    void priceCheckFinished(const QString& results);
 
 private:
-    int              readPropInt(QString prop);
-    mmv_t            readPropIntRange(QString prop);
-    double           readPropFloat(QString prop);
-    socket_filters_t readSockets(QString prop);
-    int              readPropExp(QString prop);
-    std::string      readName(QString name);
-    std::string      readType(PItem* item, QString type);
+    int         readPropInt(QString prop);
+    json        readPropIntRange(QString prop);
+    double      readPropFloat(QString prop);
+    json        readSockets(QString prop);
+    std::string readName(QString name);
+    std::string readType(Item& item, QString type);
 
     void captureNumerics(QString line, QRegularExpression& re, json& val, std::vector<QString>& captured);
 
-    void parseProp(PItem* item, QString prop);
-    bool parseStat(PItem* item, QString stat, QTextStream& stream);
+    void parseProp(Item& item, QString prop);
+    bool parseStat(Item& item, QString stat, QTextStream& stream);
 
-    void processPriceResults(std::shared_ptr<PItem> item, json results, bool isCurrency = false);
+    void processPriceResults(json data, json response, const QString& optstr, const QString& format);
 
-    void doCurrencySearch(std::shared_ptr<PItem> item);
+    void doCurrencySearch(json& data);
 
     bool synchronizedGetJSON(const QNetworkRequest& req, json& result);
 
@@ -174,12 +176,12 @@ private:
 
     QString m_section;
 
-    QNetworkAccessManager* m_manager;
-
     json                                       m_leagues;
     std::unordered_multimap<std::string, json> m_stats_by_text;
     std::unordered_map<std::string, json>      m_stats_by_id;
     std::unordered_multimap<std::string, json> m_uniques;
 
     const std::string m_mapdisc = "warfortheatlas"; // default map discriminator
+
+    QNetworkAccessManager* m_manager;
 };

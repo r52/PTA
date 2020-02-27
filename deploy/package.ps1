@@ -30,7 +30,7 @@ Copy-Item ("x64\" + $rel + "\PTA.exe") -Destination $binpath -Force
 Copy-Item ("x64\" + $rel + "\QHotkey.dll") -Destination $dllpath -Force
 
 # Copy templates
-Copy-Item .\PTA\templates\ -Destination ($pkpath + "\templates\") -Recurse -Force
+Copy-Item .\PTA\search\dist\ -Destination ($pkpath + "\templates\price\") -Recurse -Force
 
 # Copy SSL lib
 if (($env:OPENSSL) -and (Test-Path $env:OPENSSL -pathType container)) {
@@ -40,18 +40,6 @@ if (($env:OPENSSL) -and (Test-Path $env:OPENSSL -pathType container)) {
 
 # Deploy Qt
 & $windeploy $rels $binpath
-
-$pkgname = "$($pkpath)_no_stylesheets.7z"
-Write-Host "Packaging $($pkgname)..."
-
-& 7z a -t7z $pkgname .\$pkpath
-
-if ($env:APPVEYOR -eq $true) {
-    Get-ChildItem $pkgname | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
-}
-
-# Copy stylesheets
-Copy-Item .\PTA\stylesheets\ -Destination ($pkpath + "\stylesheets\") -Recurse -Force
 
 $pkgname = "$($pkpath).7z"
 Write-Host "Packaging $($pkgname)..."
