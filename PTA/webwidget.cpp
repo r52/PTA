@@ -66,10 +66,7 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : Frame
     connect(page, &QWebEnginePage::windowCloseRequested, this, &QWidget::close);
 
     // resize
-    int default_width  = settings.value(PTA_CONFIG_TEMPLATE_WIDTH, PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH).toInt();
-    int default_height = settings.value(PTA_CONFIG_TEMPLATE_HEIGHT, PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT).toInt();
-
-    QSize defaultsize = {default_width, default_height};
+    QSize defaultsize = {PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH, PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT};
 
     webview->resize(defaultsize);
     resize(defaultsize);

@@ -12,9 +12,7 @@ enum pta_log_level_t
 constexpr auto PTA_CONFIG_LOGLEVEL = "global/loglevel";
 constexpr auto PTA_CONFIG_LOGFILE  = "global/logfile";
 
-constexpr auto PTA_CONFIG_PRICE_TEMPLATE  = "ui/pricetemplate";
-constexpr auto PTA_CONFIG_TEMPLATE_WIDTH  = "ui/tempwidth";
-constexpr auto PTA_CONFIG_TEMPLATE_HEIGHT = "ui/tempheight";
+constexpr auto PTA_CONFIG_PRICE_TEMPLATE = "ui/pricetemplate";
 
 constexpr auto PTA_CONFIG_SIMPLE_CHECK_HOTKEY         = "hotkey/simplecheck";
 constexpr auto PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED = "hotkey/simplecheck/enabled";
