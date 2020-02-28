@@ -2,6 +2,7 @@
 #include "itemapi.h"
 #include "pta_types.h"
 
+#include <QShortcut>
 #include <QVBoxLayout>
 #include <QWebChannel>
 #include <QtWebEngineWidgets/QWebEngineCertificateError>
@@ -88,6 +89,13 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : Frame
 
     // Restore settings
     restoreGeometry(settings.value(getSettingKey("geometry")).toByteArray());
+
+    // quick close shortcuts
+    auto escshc = new QShortcut(QKeySequence(QKeySequence::Cancel), this);
+    connect(escshc, &QShortcut::activated, [=] { close(); });
+
+    auto qshc = new QShortcut(QKeySequence(Qt::Key_Q), this);
+    connect(qshc, &QShortcut::activated, [=] { close(); });
 }
 
 WebWidget::~WebWidget()
