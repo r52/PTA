@@ -1,6 +1,8 @@
 #pragma once
 #include "pitem.h"
 
+#include <framelesswindow.h>
+
 #include <QWidget>
 #include <QtGui>
 #include <QtWebEngineWidgets/QWebEngineProfile>
@@ -25,7 +27,7 @@ protected:
     virtual void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString& message, int lineNumber, const QString& sourceID) override;
 };
 
-class WebWidget : public QWidget
+class WebWidget : public FramelessWindow
 {
     Q_OBJECT
 
@@ -42,9 +44,6 @@ private:
 
     // Web engine widget
     PWebView* webview;
-
-    // Drag and drop pos
-    QPoint dragPosition;
 
     // Page script
     QWebEngineScript script;

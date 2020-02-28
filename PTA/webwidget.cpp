@@ -26,14 +26,14 @@ void PWebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, con
     }
 }
 
-WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : QWidget(parent)
+WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : FramelessWindow(parent)
 {
+    QIcon icon(":/Resources/logo.svg");
+    setWindowIcon(icon);
+
     setAttribute(Qt::WA_DeleteOnClose);
 
     QSettings settings;
-
-    // No frame/border, no taskbar button
-    Qt::WindowFlags flags = Qt::Window | Qt::WindowStaysOnTopHint;
 
     webview = new PWebView(this);
     webview->settings()->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
@@ -66,7 +66,6 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : QWidg
     connect(page, &QWebEnginePage::windowCloseRequested, this, &QWidget::close);
 
     // resize
-    /*
     int default_width  = settings.value(PTA_CONFIG_TEMPLATE_WIDTH, PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH).toInt();
     int default_height = settings.value(PTA_CONFIG_TEMPLATE_HEIGHT, PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT).toInt();
 
@@ -74,13 +73,9 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : QWidg
 
     webview->resize(defaultsize);
     resize(defaultsize);
-    */
 
     // No context menu
     setContextMenuPolicy(Qt::PreventContextMenu);
-
-    // Set flags
-    setWindowFlags(flags);
 
     // Inject global script
     QString dataScript = generateDataScript(data);
@@ -92,9 +87,7 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : QWidg
 
     setWindowTitle("PTA Price Check");
 
-    QVBoxLayout* layout = new QVBoxLayout;
-    layout->addWidget(webview);
-    setLayout(layout);
+    setContent(webview);
 
     // Restore settings
     restoreGeometry(settings.value(getSettingKey("geometry")).toByteArray());

@@ -97,6 +97,12 @@
     <QtRcc Include="pta.qrc">
       <Filter>Resource Files</Filter>
     </QtRcc>
+    <QtRcc Include="..\framelesswindow\darkstyle.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
+    <QtRcc Include="..\framelesswindow\framelesswindow.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PTA.rc" />

@@ -60,7 +60,7 @@
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>QHOTKEY_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;.;$(SolutionDir)QHotkey\QHotkey\;$(SolutionDir)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;$(SolutionDir)QHotkey\QHotkey\;$(SolutionDir)include\;$(SolutionDir)framelesswindow\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -85,7 +85,7 @@
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>QHOTKEY_LIB;NDEBUG;QT_MESSAGELOGCONTEXT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;.;$(SolutionDir)QHotkey\QHotkey\;$(SolutionDir)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;$(SolutionDir)QHotkey\QHotkey\;$(SolutionDir)include\;$(SolutionDir)framelesswindow\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
@@ -126,6 +126,8 @@
     <QtUic Include="pta.ui" />
   </ItemGroup>
   <ItemGroup>
+    <QtRcc Include="..\framelesswindow\darkstyle.qrc" />
+    <QtRcc Include="..\framelesswindow\framelesswindow.qrc" />
     <QtRcc Include="pta.qrc" />
   </ItemGroup>
   <ItemGroup>
@@ -156,6 +158,9 @@
     <ClInclude Include="runguard.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\framelesswindow\framelesswindow.vcxproj">
+      <Project>{2209748b-f881-499b-a1f5-c916d3cd7352}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\QHotkey\QHotkey\QHotkey.vcxproj">
       <Project>{08d030c4-e638-3bc8-bcc8-1d156146ff5a}</Project>
     </ProjectReference>

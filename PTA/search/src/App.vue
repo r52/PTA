@@ -127,6 +127,10 @@ export default {
   src: url(./assets/Fontin-SmallCaps.ttf) format("truetype");
 }
 
+html {
+  overflow-y: auto !important;
+}
+
 .corruptedItem,
 .unidentifiedItem {
   color: #d20000;

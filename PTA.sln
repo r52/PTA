@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTA", "PTA\PTA.vcxproj", "{
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QHotkey", "QHotkey\QHotkey\QHotkey.vcxproj", "{08D030C4-E638-3BC8-BCC8-1D156146FF5A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "framelesswindow", "framelesswindow\framelesswindow.vcxproj", "{2209748B-F881-499B-A1F5-C916D3CD7352}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,10 @@ Global
 		{08D030C4-E638-3BC8-BCC8-1D156146FF5A}.Debug|x64.Build.0 = Debug|x64
 		{08D030C4-E638-3BC8-BCC8-1D156146FF5A}.Release|x64.ActiveCfg = Release|x64
 		{08D030C4-E638-3BC8-BCC8-1D156146FF5A}.Release|x64.Build.0 = Release|x64
+		{2209748B-F881-499B-A1F5-C916D3CD7352}.Debug|x64.ActiveCfg = Debug|x64
+		{2209748B-F881-499B-A1F5-C916D3CD7352}.Debug|x64.Build.0 = Debug|x64
+		{2209748B-F881-499B-A1F5-C916D3CD7352}.Release|x64.ActiveCfg = Release|x64
+		{2209748B-F881-499B-A1F5-C916D3CD7352}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
