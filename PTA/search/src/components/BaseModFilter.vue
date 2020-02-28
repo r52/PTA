@@ -40,13 +40,16 @@ export default {
   },
 
   created() {
-    // TODO: mod range
+    let range = this.settings.prefillrange / 100.0;
+    let value = this.current;
+    let diff = range * value;
+
     if (this.settings.prefillmin) {
-      this.searchopts[this.type]["min"] = this.current;
+      this.searchopts[this.type]["min"] = value - diff;
     }
 
     if (this.settings.prefillmax) {
-      this.searchopts[this.type]["max"] = this.current;
+      this.searchopts[this.type]["max"] = value + diff;
     }
   }
 };

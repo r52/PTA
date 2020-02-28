@@ -45,14 +45,17 @@ export default {
   props: ["filter", "settings", "type"],
 
   created() {
-    // TODO: mod range
     if (this.filter.value.length) {
+      let range = this.settings.prefillrange / 100.0;
+      let value = this.filter.value[0];
+      let diff = range * value;
+
       if (this.settings.prefillmin) {
-        this.filter["min"] = this.filter.value[0];
+        this.filter["min"] = value - diff;
       }
 
       if (this.settings.prefillmax) {
-        this.filter["max"] = this.filter.value[0];
+        this.filter["max"] = value + diff;
       }
     }
 

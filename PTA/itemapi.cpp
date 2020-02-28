@@ -1707,6 +1707,7 @@ void ItemAPI::fillItemOptions(json& data)
     bool        removedupes      = settings.value(PTA_CONFIG_REMOVE_DUPES, PTA_CONFIG_DEFAULT_REMOVE_DUPES).toBool();
     bool        prefillmin       = settings.value(PTA_CONFIG_PREFILL_MIN, PTA_CONFIG_DEFAULT_PREFILL_MIN).toBool();
     bool        prefillmax       = settings.value(PTA_CONFIG_PREFILL_MAX, PTA_CONFIG_DEFAULT_PREFILL_MAX).toBool();
+    size_t      prefillrange     = settings.value(PTA_CONFIG_PREFILL_RANGE, PTA_CONFIG_DEFAULT_PREFILL_RANGE).toInt();
     bool        prefillnormals   = settings.value(PTA_CONFIG_PREFILL_NORMALS, PTA_CONFIG_DEFAULT_PREFILL_NORMALS).toBool();
     bool        prefillpseudos   = settings.value(PTA_CONFIG_PREFILL_PSEUDOS, PTA_CONFIG_DEFAULT_PREFILL_PSEUDOS).toBool();
     bool        prefillilvl      = settings.value(PTA_CONFIG_PREFILL_ILVL, PTA_CONFIG_DEFAULT_PREFILL_ILVL).toBool();
@@ -1724,6 +1725,7 @@ void ItemAPI::fillItemOptions(json& data)
     data[p_settings]["removedupes"]        = removedupes;
     data[p_settings]["prefillmin"]         = prefillmin;
     data[p_settings]["prefillmax"]         = prefillmax;
+    data[p_settings]["prefillrange"]       = prefillrange;
     data[p_settings]["prefillnormals"]     = prefillnormals;
     data[p_settings]["prefillpseudos"]     = prefillpseudos;
     data[p_settings]["prefillilvl"]        = prefillilvl;

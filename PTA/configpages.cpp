@@ -405,6 +405,20 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
 
     connect(maxLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_PREFILL_MAX] = (checked == Qt::Checked); });
 
+    // ------------------pre-fill range
+
+    QSpinBox* rEdit = new QSpinBox;
+    rEdit->setRange(0, 100);
+    rEdit->setSuffix("%");
+    rEdit->setValue(settings.value(PTA_CONFIG_PREFILL_RANGE, PTA_CONFIG_DEFAULT_PREFILL_RANGE).toInt());
+    connect(rEdit, QOverload<int>::of(&QSpinBox::valueChanged), [=, &set](int i) { set[PTA_CONFIG_PREFILL_RANGE] = i; });
+
+    QLabel* rLabel = new QLabel(tr("Prefill Range (+/- %)"));
+
+    QHBoxLayout* rLayout = new QHBoxLayout;
+    rLayout->addWidget(rLabel);
+    rLayout->addWidget(rEdit);
+
     // ------------------pre-fill normals
     QCheckBox* nmLabel = new QCheckBox(tr("Normal mods"));
     nmLabel->setChecked(settings.value(PTA_CONFIG_PREFILL_NORMALS, PTA_CONFIG_DEFAULT_PREFILL_NORMALS).toBool());
@@ -434,6 +448,7 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
     QVBoxLayout* selLayout = new QVBoxLayout;
     selLayout->addWidget(minLabel);
     selLayout->addWidget(maxLabel);
+    selLayout->addLayout(rLayout);
     selLayout->addWidget(nmLabel);
     selLayout->addWidget(psLabel);
     selLayout->addWidget(ilLabel);
