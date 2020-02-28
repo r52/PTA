@@ -78,7 +78,11 @@
       <!-- misc option checkboxes -->
       <v-row align="center" align-content="center" justify="space-between" no-gutters>
         <div class="d-inline-flex">
-          <!-- TODO corrupted -->
+          <v-combobox
+            v-model="state.searchopts.use_corrupted"
+            :items="corrupts"
+            label="Corrupted"
+          />
           <mod-checkbox
             v-if="state.item.sockets"
             v-model="state.searchopts.use_sockets"
@@ -145,6 +149,12 @@ export default {
   },
 
   props: ["state"],
+
+  data() {
+    return {
+      corrupts: ["Any", "Yes", "No"]
+    };
+  },
 
   methods: {
     capitalize: s => {

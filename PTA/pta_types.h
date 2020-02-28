@@ -47,15 +47,15 @@ constexpr auto PTA_CONFIG_CLIENTLOG_PATH = "client/path";
 
 // defaults
 constexpr auto PTA_CONFIG_DEFAULT_PRICE_TEMPLATE  = "templates/price/index.html";
-constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH  = 600;
-constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT = 450;
+constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH  = 820;
+constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT = 870;
 
 constexpr auto PTA_CONFIG_DEFAULT_SIMPLE_CHECK_HOTKEY = "Ctrl+D";
 constexpr auto PTA_CONFIG_DEFAULT_ADV_CHECK_HOTKEY    = "Ctrl+Alt+D";
 constexpr auto PTA_CONFIG_DEFAULT_WIKI_HOTKEY         = "Ctrl+Alt+G";
 
 constexpr auto PTA_CONFIG_DEFAULT_LEAGUE             = 0;
-constexpr auto PTA_CONFIG_DEFAULT_DISPLAYLIMIT       = 12;
+constexpr auto PTA_CONFIG_DEFAULT_DISPLAYLIMIT       = 20;
 constexpr auto PTA_CONFIG_DEFAULT_CORRUPTOVERRIDE    = false;
 constexpr auto PTA_CONFIG_DEFAULT_CORRUPTSEARCH      = "Any";
 constexpr auto PTA_CONFIG_DEFAULT_PRIMARY_CURRENCY   = "chaos";

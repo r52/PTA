@@ -48,7 +48,7 @@ import ResultTab from "./components/ResultTab.vue";
 let dtm = {};
 
 if (process.env.NODE_ENV === "development") {
-  let sample = require("./assets/sampledata.js");
+  let sample = require("./test/sampledata.js");
   dtm = sample.item;
 } else {
   // eslint-disable-next-line

@@ -166,3 +166,4 @@ inline const auto p_useilvl       = "/searchopts/use_ilvl"_json_pointer;
 inline const auto p_usebase       = "/searchopts/use_item_base"_json_pointer;
 inline const auto p_useinfluences = "/searchopts/influences"_json_pointer;
 inline const auto p_usesynth      = "/searchopts/use_synthesis_base"_json_pointer;
+inline const auto p_usecorrupted  = "/searchopts/use_corrupted"_json_pointer;

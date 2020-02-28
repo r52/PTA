@@ -1742,6 +1742,7 @@ void ItemAPI::fillItemOptions(json& data)
     data[p_opts]["use_links"]     = false;
     data[p_opts]["use_ilvl"]      = prefillilvl;
     data[p_opts]["use_item_base"] = prefillbase;
+    data[p_opts]["use_corrupted"] = ((data[p_item].contains(p_corrupted) && data[p_item][p_corrupted].get<bool>()) ? "Yes" : "Any");
 
     if (prefillbase)
     {
@@ -2352,11 +2353,21 @@ void ItemAPI::advancedPriceCheck(const QString& str, bool openonsite)
     }
 
     // Corrupt
-    if (item.contains(p_corrupted))
+    if (data.contains(p_usecorrupted))
     {
-        qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = item[p_corrupted];
+        auto corrupt = data[p_usecorrupted].get<std::string>();
+
         options += ", Corrupted=";
-        options += item[p_corrupted].get<bool>() ? "Yes" : "No";
+
+        if (corrupt == "Any")
+        {
+            options += "Any";
+        }
+        else
+        {
+            qe["filters"]["misc_filters"]["filters"]["corrupted"]["option"] = (corrupt == "Yes");
+            options += QString::fromStdString(corrupt);
+        }
     }
 
     auto qba = query.dump();

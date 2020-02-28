@@ -165,7 +165,10 @@ export default {
         }
 
         // age
-        obj["age"] = this.getRelTime(now, Date.parse(entry["listing"]["indexed"]));
+        obj["age"] = this.getRelTime(
+          now,
+          Date.parse(entry["listing"]["indexed"])
+        );
 
         lst.push(obj);
       });
@@ -200,6 +203,9 @@ export default {
 <style scoped>
 .price {
   color: #a38d6d;
-  font-weight: bold;
+}
+
+.v-data-table /deep/ td {
+  font-size: 18px !important;
 }
 </style>
