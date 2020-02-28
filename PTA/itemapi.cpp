@@ -1981,8 +1981,6 @@ bool ItemAPI::trySimplePriceCheck(json& data)
 
         auto qba = query.dump();
 
-        qDebug() << QString::fromStdString(qba);
-
         QNetworkRequest request;
         request.setUrl(QUrl(u_trade_search + getLeague()));
         request.setRawHeader("Content-Type", "application/json");
