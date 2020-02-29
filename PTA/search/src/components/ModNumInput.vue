@@ -4,6 +4,7 @@
     dense
     hide-details
     type="number"
+    clearable
     v-model.number="filter[type]"
     v-on:input="filter.enabled = true"
     :disabled="disabled"

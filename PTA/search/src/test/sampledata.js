@@ -99,6 +99,7 @@ let item = {
         "prefillilvl": false,
         "prefillmax": false,
         "prefillmin": true,
+        "prefillrange": 0,
         "prefillnormals": false,
         "prefillpseudos": false,
         "primary_currency": "chaos",

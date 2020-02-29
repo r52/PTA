@@ -98,6 +98,7 @@
             single-line
             dense
             hide-details
+            clearable
             type="number"
             v-model.number="state.item.ilvl"
             @input="state.searchopts.use_ilvl = true"
@@ -186,3 +187,15 @@ export default {
   }
 };
 </script>
+
+<style>
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance:textfield;
+}
+</style>
