@@ -34,7 +34,7 @@
       </v-tabs-items>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="error" @click="close()">Close</v-btn>
+        <v-btn color="error" @click="close()" accesskey="c"><u>C</u>lose</v-btn>
       </v-card-actions>
     </v-content>
   </v-app>

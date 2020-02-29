@@ -128,8 +128,8 @@
       <v-divider />
       <!-- buttons -->
       <v-row align="end" align-content="end" justify="end">
-        <v-btn class="mx-1 mt-1" color="purple" @click="search(true)">Open on pathofexile.com</v-btn>
-        <v-btn class="mx-1 mt-1" color="primary" @click="search(false)">Search</v-btn>
+        <v-btn class="mx-1 mt-1" color="purple" @click="search(true)" accesskey="e">Op<u>e</u>n on pathofexile.com</v-btn>
+        <v-btn class="mx-1 mt-1" color="primary" @click="search(false)" accesskey="s"><u>S</u>earch</v-btn>
       </v-row>
     </v-container>
   </v-form>
