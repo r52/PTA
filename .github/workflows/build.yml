@@ -1,0 +1,69 @@
+name: Windows Build
+
+on:
+  push:
+  pull_request:
+  release:
+    types: [published, prereleased]
+
+env:
+  PACKAGE_NAME: PTA_x64
+  OPENSSL: 'C:\Program Files\OpenSSL\bin'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
+      with:
+        version: 5.12.7
+        modules: qtwebengine
+
+    - name: Build PTA
+      shell: cmd
+      run: msbuild PTA.sln /m /verbosity:normal /p:QtInstall=%Qt5_Dir%
+
+    - name: Clean install and build UI
+      working-directory: ./PTA/search
+      run: |
+        npm ci
+        npm run build
+
+    - name: Package archive
+      shell: pwsh
+      run: |
+        $pkpath = ${env:PACKAGE_NAME}
+        $binpath = "$($pkpath)\PTA.exe"
+        $dllpath = "$($pkpath)\QHotkey.dll"
+        New-Item $pkpath -Type Directory -Force > $null
+        Copy-Item ("x64\Release\PTA.exe") -Destination $binpath -Force
+        Copy-Item ("x64\Release\QHotkey.dll") -Destination $dllpath -Force
+        Copy-Item .\PTA\search\dist\ -Destination ($pkpath + "\templates\price\") -Recurse -Force
+        if (($env:OPENSSL) -and (Test-Path $env:OPENSSL -pathType container)) {
+          Copy-Item ${env:OPENSSL}\libcrypto-1_1-x64.dll -Destination $pkpath -Force
+          Copy-Item ${env:OPENSSL}\libssl-1_1-x64.dll -Destination $pkpath -Force
+        }
+        & windeployqt.exe --release $binpath
+        $pkgname = "$($pkpath).7z"
+        & 7z a -t7z $pkgname .\$pkpath
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ env.PACKAGE_NAME }}
+        path: ${{ env.PACKAGE_NAME }}
+
+    - name: Upload release
+      if: github.event.action == 'published' || github.event.action == 'prereleased'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ${{ env.PACKAGE_NAME }}.7z
+        asset_name: ${{ env.PACKAGE_NAME }}.7z
+        asset_content_type: application/x-7z-compressed
