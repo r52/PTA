@@ -23,6 +23,9 @@ jobs:
         version: 5.12.7
         modules: qtwebengine
 
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1
+
     - name: Build PTA
       shell: cmd
       run: msbuild PTA.sln /m /verbosity:normal /p:QtInstall=%Qt5_Dir%
