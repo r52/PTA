@@ -12,6 +12,7 @@
 #include <QClipboard>
 #include <QMenu>
 #include <QMessageBox>
+#include <QNetworkDiskCache>
 #include <QNetworkReply>
 #include <QPlainTextEdit>
 #include <QToolTip>
@@ -42,9 +43,18 @@ PTA::PTA(LogWindow* log, QWidget* parent) :
     ui.setupUi(this);
 
     // Try to initialize API
+
+    // Enable data caching for faster loads
+    QNetworkDiskCache* diskCache = new QNetworkDiskCache(this);
+
+    auto cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+
+    diskCache->setCacheDirectory(cachePath);
+    m_netmanager->setCache(diskCache);
+
     try
     {
-        m_api = new ItemAPI(this);
+        m_api = new ItemAPI(m_netmanager, this);
     } catch (std::exception e)
     {
         QMessageBox::critical(nullptr, tr("Critical Error"), QString(e.what()), QMessageBox::Abort);
@@ -72,14 +82,14 @@ PTA::PTA(LogWindow* log, QWidget* parent) :
 
     using namespace std::placeholders;
 
-    // Install hook
-    pta::hook::InstallForegroundHookCb(std::bind(&PTA::foregroundEventCb, this, _1));
-
     // Setup functionality
     setupFunctionality();
 
+#ifndef _DEBUG
     // Initialize hooks
+    pta::hook::InstallForegroundHookCb(std::bind(&PTA::foregroundEventCb, this, _1));
     pta::hook::InitializeHooks();
+#endif
 
     checkForUpdates();
 }
@@ -115,18 +125,11 @@ void PTA::showToolTip(QString message)
     QToolTip::showText(QCursor::pos() + QPoint(5, 20), message);
 }
 
-void PTA::showPriceResults(std::shared_ptr<PItem> item, const QString& results)
+void PTA::showPriceWidget(const QString& data)
 {
-#ifndef NDEBUG
-    qDebug() << "Prices copied to clipboard";
-    QGuiApplication::clipboard()->setText(results);
-#endif
-
     showToolTip(QString());
 
-    QString itemjson = m_api->toJson(item.get());
-
-    auto pricedlg = new WebWidget(itemjson, results);
+    auto pricedlg = new WebWidget(m_api, data);
     pricedlg->show();
 }
 
@@ -196,7 +199,7 @@ void PTA::setupFunctionality()
 {
     // UI
     connect(m_api, &ItemAPI::humour, this, &PTA::showToolTip);
-    connect(m_api, &ItemAPI::priceCheckFinished, this, &PTA::showPriceResults);
+    connect(m_api, &ItemAPI::simpleResultsFinished, this, &PTA::showPriceWidget);
 
     connect(&m_macrohandler, &MacroHandler::humour, this, &PTA::showToolTip);
 
@@ -252,49 +255,10 @@ void PTA::setupFunctionality()
 
 void PTA::checkForUpdates()
 {
-    connect(m_netmanager, &QNetworkAccessManager::finished, [](QNetworkReply* reply) {
-        if (reply->error())
-        {
-            qInfo() << reply->errorString();
-            return;
-        }
-
-        QString       answer = reply->readAll();
-        QJsonDocument doc    = QJsonDocument::fromJson(answer.toUtf8());
-
-        if (doc.isNull())
-        {
-            qWarning() << "Error parsing Github API response";
-            return;
-        }
-
-        auto info = doc.array();
-
-        auto latest = info.at(0);
-        auto latver = latest["name"].toString();
-
-        // simple case compare should suffice
-        if (latver > VER_STRING)
-        {
-            auto resp = QMessageBox::question(nullptr,
-                                              tr("PTA Update"),
-                                              tr("PTA version ") + latver + tr(" is available.\n\nWould you like to download it?"),
-                                              QMessageBox::Yes | QMessageBox::No);
-
-            if (resp == QMessageBox::Ok)
-            {
-                QDesktopServices::openUrl(QUrl(latest["html_url"].toString()));
-            }
-        }
-        else
-        {
-            qInfo() << "No updates available. Already on the latest version.";
-        }
-    });
-
     QTimer::singleShot(5000, [&] {
         m_updrequest.setUrl(QUrl("https://api.github.com/repos/r52/PTA/releases"));
-        m_netmanager->get(m_updrequest);
+        auto reply = m_netmanager->get(m_updrequest);
+        connect(reply, &QNetworkReply::finished, [=]() { processUpdates(reply); });
     });
 }
 
@@ -599,22 +563,51 @@ void PTA::processClipboard()
 
     showToolTip("Searching...");
 
-    std::shared_ptr<PItem> item(m_api->parse(itemText));
+    Item item;
 
-    if (!item)
+    if (!m_api->parse(item, itemText))
     {
         showToolTip("Error parsing item text. Check log for more details.");
         qWarning() << "Error parsing item text" << itemText;
         return;
     }
 
+    json data = json::object();
+
+    data[p_item] = item;
+
+    m_api->fillItemOptions(data);
+
+    QString strdata = QString::fromStdString(data.dump());
+
     switch (m_pctype)
     {
-        case PC_SIMPLE:
-            m_api->simplePriceCheck(item);
-            break;
         case PC_ADVANCED:
-            m_api->advancedPriceCheck(item);
+            data["tab"] = "mods";
+
+        case PC_SIMPLE:
+            // If simple price check not handled
+            if (!m_api->trySimplePriceCheck(data))
+            {
+                // If item has filters and is not a map and is not unid'd
+                if (item.contains(p_filters) && item[p_category] != "map" && !item.contains(p_unidentified))
+                {
+                    // Load the price UI for advanced search
+
+                    // Qt fucks up whenever you mess with the clipboard within a QClipboard::dataChanged signal call,
+                    // and QWebEngineView does just that, so invoke it along the event queue instead
+                    // QMetaObject::invokeMethod(this, "showPriceWidget", Qt::QueuedConnection, Q_ARG(QString, strdata));
+                    QTimer::singleShot(10, [=]() { showPriceWidget(strdata); });
+                }
+                else
+                {
+                    showToolTip(tr("Price check is not available for this item type."));
+                    qInfo() << "Price check is not available for this item type.";
+                }
+            }
+            // If simple price check handled, we'll load the UI in another slot,
+            // only if there are results.
+
             break;
         case WIKI_SEARCH:
             m_api->openWiki(item);
@@ -638,6 +631,49 @@ void PTA::handleForegroundChange(bool isPoe)
     if (m_wikiKey)
     {
         m_wikiKey->setRegistered(isPoe);
+    }
+}
+
+void PTA::processUpdates(QNetworkReply* reply)
+{
+    reply->deleteLater();
+
+    if (reply->error())
+    {
+        qInfo() << reply->errorString();
+        return;
+    }
+
+    QString       answer = reply->readAll();
+    QJsonDocument doc    = QJsonDocument::fromJson(answer.toUtf8());
+
+    if (doc.isNull())
+    {
+        qWarning() << "Error parsing Github API response";
+        return;
+    }
+
+    auto info = doc.array();
+
+    auto latest = info.at(0);
+    auto latver = latest["name"].toString();
+
+    // simple case compare should suffice
+    if (latver > VER_STRING)
+    {
+        auto resp = QMessageBox::question(nullptr,
+                                          tr("PTA Update"),
+                                          tr("PTA version ") + latver + tr(" is available.\n\nWould you like to download it?"),
+                                          QMessageBox::Yes | QMessageBox::No);
+
+        if (resp == QMessageBox::Ok)
+        {
+            QDesktopServices::openUrl(QUrl(latest["html_url"].toString()));
+        }
+    }
+    else
+    {
+        qInfo() << "No updates available. Already on the latest version.";
     }
 }
 

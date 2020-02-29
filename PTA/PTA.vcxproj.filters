@@ -46,9 +46,6 @@
     <ClCompile Include="itemapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="statdialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="configdialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -78,9 +75,6 @@
     <QtMoc Include="itemapi.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="statdialog.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
     <QtMoc Include="configdialog.h">
       <Filter>Header Files</Filter>
     </QtMoc>
@@ -101,6 +95,12 @@
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="pta.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
+    <QtRcc Include="..\framelesswindow\darkstyle.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
+    <QtRcc Include="..\framelesswindow\framelesswindow.qrc">
       <Filter>Resource Files</Filter>
     </QtRcc>
   </ItemGroup>

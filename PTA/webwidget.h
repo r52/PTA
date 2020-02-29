@@ -1,4 +1,7 @@
 #pragma once
+#include "pitem.h"
+
+#include <framelesswindow.h>
 
 #include <QWidget>
 #include <QtGui>
@@ -6,52 +9,7 @@
 #include <QtWebEngineWidgets/QWebEngineScript>
 #include <QtWebEngineWidgets/QWebEngineView>
 
-QT_FORWARD_DECLARE_CLASS(QMenu);
-
-// From https://stackoverflow.com/questions/19362455/dark-transparent-layer-over-a-qmainwindow-in-qt
-class OverlayWidget : public QWidget
-{
-    void newParent()
-    {
-        if (!parent())
-            return;
-        parent()->installEventFilter(this);
-        raise();
-    }
-
-public:
-    explicit OverlayWidget(QWidget* parent = {}) : QWidget{parent}
-    {
-        setAttribute(Qt::WA_NoSystemBackground);
-        newParent();
-    }
-
-protected:
-    //! Catches resize and child events from the parent widget
-    bool eventFilter(QObject* obj, QEvent* ev) override
-    {
-        if (obj == parent())
-        {
-            if (ev->type() == QEvent::Resize)
-                resize(static_cast<QResizeEvent*>(ev)->size());
-            else if (ev->type() == QEvent::ChildAdded)
-                raise();
-        }
-        return QWidget::eventFilter(obj, ev);
-    }
-    //! Tracks parent widget changes
-    bool event(QEvent* ev) override
-    {
-        if (ev->type() == QEvent::ParentAboutToChange)
-        {
-            if (parent())
-                parent()->removeEventFilter(this);
-        }
-        else if (ev->type() == QEvent::ParentChange)
-            newParent();
-        return QWidget::event(ev);
-    }
-};
+QT_FORWARD_DECLARE_CLASS(ItemAPI);
 
 class PWebView : public QWebEngineView
 {
@@ -66,39 +24,26 @@ public:
     PWebPage(QWebEngineProfile* profile, QObject* parent = nullptr) : QWebEnginePage{profile, parent} {}
 
 protected:
-    virtual void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString& message, int lineNumber, const QString& sourceID);
+    virtual void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString& message, int lineNumber, const QString& sourceID) override;
 };
 
-class WebWidget : public QWidget
+class WebWidget : public FramelessWindow
 {
     Q_OBJECT
 
 public:
-    explicit WebWidget(QString item, QString results, QWidget* parent = nullptr);
+    explicit WebWidget(ItemAPI* api, const QString& data, QWidget* parent = nullptr);
     ~WebWidget();
-
-    static QString generateDataScript(QString item, QString results);
 
     void saveSettings();
 
-protected:
-    // Overrides
-    virtual void mousePressEvent(QMouseEvent* evt) override;
-    virtual void mouseMoveEvent(QMouseEvent* evt) override;
+    static QString generateDataScript(const QString& data);
 
 private:
     QString getSettingKey(QString key);
 
-    static QString DataScript;
-
     // Web engine widget
     PWebView* webview;
-
-    // Widget overlay
-    OverlayWidget* overlay;
-
-    // Drag and drop pos
-    QPoint dragPosition;
 
     // Page script
     QWebEngineScript script;

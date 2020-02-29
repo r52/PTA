@@ -1,5 +1,6 @@
 # PTA
 [![License](https://img.shields.io/github/license/r52/PTA)](https://github.com/r52/PTA/blob/master/LICENSE)
+![Windows Build](https://github.com/r52/PTA/workflows/Windows%20Build/badge.svg)
 [![Build status](https://ci.appveyor.com/api/projects/status/m0mh6snl47uxdcs1?svg=true)](https://ci.appveyor.com/project/r52/pta)
 
 **PTA** (PoE Trade Assistant) is currently a [PoE-TradeMacro](https://github.com/PoE-TradeMacro/POE-TradeMacro) clone (with fewer features) that operates on the [Official Path of Exile Trade](https://www.pathofexile.com/trade) website instead of third-party alternatives. It hopes to become a full fledged trade assistant tool in the future.
@@ -10,13 +11,18 @@ PTA is licensed under GPL-3.0
 
 ## Installation and Usage
 
-[Download the latest release from Releases](https://github.com/r52/PTA/releases/latest/) **OR** a [development build from the build bot](https://ci.appveyor.com/project/r52/pta/build/artifacts).
+[Download the latest release from Releases](https://github.com/r52/PTA/releases/latest/) **OR** a development build from [here](https://github.com/r52/PTA/actions?query=workflow%3A%22Windows+Build%22) or [here](https://ci.appveyor.com/project/r52/pta/build/artifacts).
 
 Extract the archive and run **PTA.exe**
 
 **If your PC is not running Windows 10 with the latest feature updates or you are getting a VC runtime error, you MUST download and install the [Microsoft Visual C++ Redistributable](https://aka.ms/vs/16/release/VC_redist.x64.exe)!**
 
-PTA provides the **Ctrl+D** and **Ctrl+Alt+D** shortcuts much like [PoE-TradeMacro](https://github.com/PoE-TradeMacro/POE-TradeMacro), which provides simple and advanced (by mods) item searches on www.pathofexile.com/trade. These shortcuts can be re-configured in the settings.
+## Features
+
+- Simple and advanced item searches (**Ctrl+D** and **Ctrl+Alt+D** ala [PoE-TradeMacro](https://github.com/PoE-TradeMacro/POE-TradeMacro)) on www.pathofexile.com/trade
+- Custom macros with Client.txt support. See [wiki](https://github.com/r52/PTA/wiki) for more information.
+
+All shortcuts and macros can be re-configured in the settings.
 
 ## Building
 

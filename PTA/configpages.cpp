@@ -93,33 +93,8 @@ UIPage::UIPage(json& set, QWidget* parent) : QWidget(parent)
     tmpLayout->addWidget(fedit);
     tmpLayout->addWidget(browseButton);
 
-    // ------------------Template Size
-    int default_width  = settings.value(PTA_CONFIG_TEMPLATE_WIDTH, PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH).toInt();
-    int default_height = settings.value(PTA_CONFIG_TEMPLATE_HEIGHT, PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT).toInt();
-
-    QFormLayout* formLayout = new QFormLayout;
-
-    QSpinBox* wEdit = new QSpinBox;
-    wEdit->setRange(1, 8192);
-    wEdit->setSuffix("px");
-    wEdit->setValue(default_width);
-    connect(wEdit, QOverload<int>::of(&QSpinBox::valueChanged), [=, &set](int i) { set[PTA_CONFIG_TEMPLATE_WIDTH] = i; });
-
-    QString wLabel = QString("Template Width (default %1px)").arg(PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH);
-    formLayout->addRow(wLabel, wEdit);
-
-    QSpinBox* hEdit = new QSpinBox;
-    hEdit->setRange(1, 8192);
-    hEdit->setSuffix("px");
-    hEdit->setValue(default_height);
-    connect(hEdit, QOverload<int>::of(&QSpinBox::valueChanged), [=, &set](int i) { set[PTA_CONFIG_TEMPLATE_HEIGHT] = i; });
-
-    QString hLabel = QString("Template Height (default %1px)").arg(PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT);
-    formLayout->addRow(hLabel, hEdit);
-
     QVBoxLayout* configLayout = new QVBoxLayout;
     configLayout->addLayout(tmpLayout);
-    configLayout->addLayout(formLayout);
 
     configGroup->setLayout(configLayout);
 
@@ -405,17 +380,19 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
 
     connect(maxLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_PREFILL_MAX] = (checked == Qt::Checked); });
 
-    // ------------------pre-fill weapon
-    QCheckBox* wepLabel = new QCheckBox(tr("Weapon filters"));
-    wepLabel->setChecked(settings.value(PTA_CONFIG_PREFILL_WEAPON, PTA_CONFIG_DEFAULT_PREFILL_WEAPON).toBool());
+    // ------------------pre-fill range
 
-    connect(wepLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_PREFILL_WEAPON] = (checked == Qt::Checked); });
+    QSpinBox* rEdit = new QSpinBox;
+    rEdit->setRange(0, 100);
+    rEdit->setSuffix("%");
+    rEdit->setValue(settings.value(PTA_CONFIG_PREFILL_RANGE, PTA_CONFIG_DEFAULT_PREFILL_RANGE).toInt());
+    connect(rEdit, QOverload<int>::of(&QSpinBox::valueChanged), [=, &set](int i) { set[PTA_CONFIG_PREFILL_RANGE] = i; });
 
-    // ------------------pre-fill armour
-    QCheckBox* arLabel = new QCheckBox(tr("Armour filters"));
-    arLabel->setChecked(settings.value(PTA_CONFIG_PREFILL_ARMOUR, PTA_CONFIG_DEFAULT_PREFILL_ARMOUR).toBool());
+    QLabel* rLabel = new QLabel(tr("Prefill Range (+/- %)"));
 
-    connect(arLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_PREFILL_ARMOUR] = (checked == Qt::Checked); });
+    QHBoxLayout* rLayout = new QHBoxLayout;
+    rLayout->addWidget(rLabel);
+    rLayout->addWidget(rEdit);
 
     // ------------------pre-fill normals
     QCheckBox* nmLabel = new QCheckBox(tr("Normal mods"));
@@ -446,8 +423,7 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
     QVBoxLayout* selLayout = new QVBoxLayout;
     selLayout->addWidget(minLabel);
     selLayout->addWidget(maxLabel);
-    selLayout->addWidget(wepLabel);
-    selLayout->addWidget(arLabel);
+    selLayout->addLayout(rLayout);
     selLayout->addWidget(nmLabel);
     selLayout->addWidget(psLabel);
     selLayout->addWidget(ilLabel);

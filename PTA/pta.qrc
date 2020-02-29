@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>Resources/data.js</file>
         <file>Resources/pricing.png</file>
         <file>Resources/settings.png</file>
         <file>Resources/ui.png</file>

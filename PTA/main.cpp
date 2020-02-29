@@ -3,6 +3,8 @@
 #include "logwindow.h"
 #include "runguard.h"
 
+#include <darkstyle.h>
+
 #include <QSettings>
 #include <QSplashScreen>
 #include <QtWidgets/QApplication>
@@ -21,6 +23,7 @@ int main(int argc, char* argv[])
     QSettings::setDefaultFormat(QSettings::IniFormat);
 
     QApplication a(argc, argv);
+    a.setStyle(new DarkStyle);
     a.setQuitOnLastWindowClosed(false);
 
     LogWindow* log = new LogWindow();
