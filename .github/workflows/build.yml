@@ -28,7 +28,7 @@ jobs:
 
     - name: Build PTA
       shell: cmd
-      run: msbuild PTA.sln /m /verbosity:normal /p:QtInstall=%Qt5_Dir%
+      run: msbuild PTA.sln /m /verbosity:normal /p:configuration=Release /p:QtInstall=%Qt5_Dir%
 
     - name: Clean install and build UI
       working-directory: ./PTA/search
