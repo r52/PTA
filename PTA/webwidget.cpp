@@ -36,8 +36,6 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : Frame
 
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
 
-    QSettings settings;
-
     webview = new PWebView(this);
     webview->settings()->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
     webview->settings()->setAttribute(QWebEngineSettings::JavascriptCanAccessClipboard, false);
@@ -88,6 +86,7 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : Frame
     setContent(webview);
 
     // Restore settings
+    QSettings settings;
     restoreGeometry(settings.value(getSettingKey("geometry")).toByteArray());
 
     // quick close shortcuts

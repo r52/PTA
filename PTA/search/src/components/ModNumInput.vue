@@ -5,7 +5,7 @@
     hide-details
     type="number"
     clearable
-    v-model.number="filter[type]"
+    v-model.number.lazy="filter[type]"
     v-on:input="filter.enabled = true"
     :disabled="disabled"
     @keypress="isNumber($event)"
@@ -17,11 +17,10 @@
 export default {
   name: "ModNumInput",
 
-  props: ["filter", "type", "settings", "disabled"],
+  props: ["filter", "type", "disabled"],
 
   methods: {
     isNumber: function(evt) {
-      evt = evt ? evt : window.event;
       var charCode = evt.which ? evt.which : evt.keyCode;
       if (
         charCode > 31 &&

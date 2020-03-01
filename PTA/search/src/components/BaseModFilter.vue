@@ -5,18 +5,18 @@
         dense
         hide-details
         class="my-1 py-0 magic--text"
-        v-model="searchopts[type].enabled"
+        v-model.lazy="searchopts[type].enabled"
         :label="label"
       />
     </v-col>
     <v-col cols="1">
-      <mod-num-input type="min" :filter="searchopts[type]" :settings="settings" />
+      <mod-num-input type="min" :filter="searchopts[type]" />
     </v-col>
     <v-col cols="1" align-self="center">
       <p class="text-center my-0 py-0">{{ current }}</p>
     </v-col>
     <v-col cols="1">
-      <mod-num-input type="max" :filter="searchopts[type]" :settings="settings" />
+      <mod-num-input type="max" :filter="searchopts[type]" />
     </v-col>
   </v-row>
 </template>

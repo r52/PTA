@@ -88,7 +88,7 @@ export default {
       return cls;
     },
     capInfluences() {
-      const capl = this.state.item.influences;
+      const capl = [...this.state.item.influences];
       capl.forEach((o, i, a) => {
         a[i] = o.charAt(0).toUpperCase() + o.slice(1);
       });
@@ -116,8 +116,6 @@ export default {
   },
 
   created() {
-    this.$vuetify.theme.dark = true;
-
     this.$api.then(pta => {
       pta.priceCheckFinished.connect(this.processPriceResults);
       pta.predictionReady.connect(this.processPredictionResults);

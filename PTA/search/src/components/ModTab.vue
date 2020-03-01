@@ -96,7 +96,7 @@
             hide-details
             clearable
             type="number"
-            v-model.number="state.item.ilvl"
+            v-model.number.lazy="state.item.ilvl"
             @input="state.searchopts.use_ilvl = true"
             @keypress="isNumber($event)"
             class="my-0 py-0"
@@ -167,7 +167,6 @@ export default {
       return (prop.min + prop.max) / 2;
     },
     isNumber: function(evt) {
-      evt = evt ? evt : window.event;
       var charCode = evt.which ? evt.which : evt.keyCode;
       if (
         charCode > 31 &&
