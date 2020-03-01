@@ -42,13 +42,11 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : Frame
 
     QUrl startFile;
 
-    QString tmplpath = settings.value(PTA_CONFIG_PRICE_TEMPLATE, PTA_CONFIG_DEFAULT_PRICE_TEMPLATE).toString();
-
-    QFileInfo tmplFile(tmplpath);
+    QFileInfo tmplFile(PTA_CONFIG_DEFAULT_PRICE_TEMPLATE);
 
     if (!tmplFile.exists())
     {
-        qWarning() << "Template file does not exist.";
+        qWarning() << "Template file" << PTA_CONFIG_DEFAULT_PRICE_TEMPLATE << "does not exist. Ensure that PTA has been properly extracted.";
     }
 
     QString startFilePath = tmplFile.absoluteFilePath();

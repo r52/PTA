@@ -18,7 +18,7 @@ environment:
   nodejs_version: "LTS"
 install:
   - ps: Install-Product node $env:nodejs_version
-  - cmd: cd "C:\projects\pta\PTA\search\" && npm install
+  - cmd: cd "C:\projects\pta\PTA\search\" && npm ci
 build_script:
   - cmd: msbuild "C:\projects\pta\PTA.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=%QTDIR%
   - cmd: cd "C:\projects\pta\PTA\search\" && npm run build

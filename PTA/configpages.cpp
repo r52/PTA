@@ -52,6 +52,7 @@ GeneralPage::GeneralPage(json& set, QWidget* parent) : QWidget(parent)
     setLayout(mainLayout);
 }
 
+/*
 UIPage::UIPage(json& set, QWidget* parent) : QWidget(parent)
 {
     QSettings settings;
@@ -103,6 +104,7 @@ UIPage::UIPage(json& set, QWidget* parent) : QWidget(parent)
     mainLayout->addStretch(1);
     setLayout(mainLayout);
 }
+*/
 
 HotkeyPage::HotkeyPage(json& set, QWidget* parent) : QWidget(parent)
 {

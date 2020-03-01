@@ -12,7 +12,7 @@ enum pta_log_level_t
 constexpr auto PTA_CONFIG_LOGLEVEL = "global/loglevel";
 constexpr auto PTA_CONFIG_LOGFILE  = "global/logfile";
 
-constexpr auto PTA_CONFIG_PRICE_TEMPLATE = "ui/pricetemplate";
+// constexpr auto PTA_CONFIG_PRICE_TEMPLATE = "ui/pricetemplate";
 
 constexpr auto PTA_CONFIG_SIMPLE_CHECK_HOTKEY         = "hotkey/simplecheck";
 constexpr auto PTA_CONFIG_SIMPLE_CHECK_HOTKEY_ENABLED = "hotkey/simplecheck/enabled";
@@ -44,7 +44,7 @@ constexpr auto PTA_CONFIG_CUSTOM_MACROS = "macro/list";
 constexpr auto PTA_CONFIG_CLIENTLOG_PATH = "client/path";
 
 // defaults
-constexpr auto PTA_CONFIG_DEFAULT_PRICE_TEMPLATE  = "templates/price/index.html";
+constexpr auto PTA_CONFIG_DEFAULT_PRICE_TEMPLATE  = "search/dist/index.html";
 constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_WIDTH  = 820;
 constexpr auto PTA_CONFIG_DEFAULT_TEMPLATE_HEIGHT = 870;
 

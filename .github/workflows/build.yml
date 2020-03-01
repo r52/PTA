@@ -45,7 +45,7 @@ jobs:
         New-Item $pkpath -Type Directory -Force > $null
         Copy-Item ("x64\Release\PTA.exe") -Destination $binpath -Force
         Copy-Item ("x64\Release\QHotkey.dll") -Destination $dllpath -Force
-        Copy-Item .\PTA\search\dist\ -Destination ($pkpath + "\templates\price\") -Recurse -Force
+        Copy-Item .\PTA\search\dist\ -Destination ($pkpath + "\search\dist\") -Recurse -Force
         if (($env:OPENSSL) -and (Test-Path $env:OPENSSL -pathType container)) {
           Copy-Item ${env:OPENSSL}\libcrypto-1_1-x64.dll -Destination $pkpath -Force
           Copy-Item ${env:OPENSSL}\libssl-1_1-x64.dll -Destination $pkpath -Force

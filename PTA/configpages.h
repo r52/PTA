@@ -17,6 +17,7 @@ public:
     GeneralPage(json& set, QWidget* parent = 0);
 };
 
+/*
 class UIPage : public QWidget
 {
     Q_OBJECT
@@ -24,6 +25,7 @@ class UIPage : public QWidget
 public:
     UIPage(json& set, QWidget* parent = 0);
 };
+*/
 
 class HotkeyPage : public QWidget
 {

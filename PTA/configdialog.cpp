@@ -21,7 +21,7 @@ ConfigDialog::ConfigDialog(ItemAPI* api)
 
     pagesWidget = new QStackedWidget;
     pagesWidget->addWidget(new GeneralPage(results));
-    pagesWidget->addWidget(new UIPage(results));
+    // pagesWidget->addWidget(new UIPage(results));
     pagesWidget->addWidget(new HotkeyPage(results));
     pagesWidget->addWidget(new PriceCheckPage(results, api));
     pagesWidget->addWidget(new MacrosPage(results));
@@ -63,11 +63,13 @@ void ConfigDialog::createIcons()
     generalButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     generalButton->setIcon(QIcon(":/Resources/settings.png"));
 
+    /*
     QListWidgetItem* uiButton = new QListWidgetItem(contentsWidget);
     uiButton->setText(tr("UI"));
     uiButton->setTextAlignment(Qt::AlignHCenter);
     uiButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     uiButton->setIcon(QIcon(":/Resources/ui.png"));
+    */
 
     QListWidgetItem* hotkeyButton = new QListWidgetItem(contentsWidget);
     hotkeyButton->setText(tr("Hotkey"));
