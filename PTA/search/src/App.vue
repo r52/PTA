@@ -34,7 +34,9 @@
       </v-tabs-items>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="error" @click="close()" accesskey="c"><u>C</u>lose</v-btn>
+        <v-btn color="error" @click="close()" accesskey="c">
+          <u>C</u>lose
+        </v-btn>
       </v-card-actions>
     </v-content>
   </v-app>
@@ -107,7 +109,14 @@ export default {
     processPriceResults(res) {
       let jres = JSON.parse(res);
       this.state.results = jres;
-      this.state.tab = "results";
+
+      if (this.state.results.forcetab) {
+        this.state.tab = "results";
+      }
+    },
+    processPredictionResults(res) {
+      let jres = JSON.parse(res);
+      this.state.prediction = jres;
     }
   },
 
@@ -116,6 +125,7 @@ export default {
 
     this.$api.then(pta => {
       pta.priceCheckFinished.connect(this.processPriceResults);
+      pta.predictionReady.connect(this.processPredictionResults);
     });
   }
 };

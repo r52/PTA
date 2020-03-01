@@ -199,7 +199,7 @@ void PTA::setupFunctionality()
 {
     // UI
     connect(m_api, &ItemAPI::humour, this, &PTA::showToolTip);
-    connect(m_api, &ItemAPI::simpleResultsFinished, this, &PTA::showPriceWidget);
+    connect(m_api, &ItemAPI::openSearchUI, this, &PTA::showPriceWidget);
 
     connect(&m_macrohandler, &MacroHandler::humour, this, &PTA::showToolTip);
 
@@ -578,35 +578,40 @@ void PTA::processClipboard()
 
     m_api->fillItemOptions(data);
 
-    QString strdata = QString::fromStdString(data.dump());
+    bool openUI   = true;
+    bool forcetab = true;
 
     switch (m_pctype)
     {
         case PC_ADVANCED:
             data["tab"] = "mods";
+            forcetab    = false;
 
         case PC_SIMPLE:
-            // If simple price check not handled
-            if (!m_api->trySimplePriceCheck(data))
+            // If item has filters and is not a map and is not unid'd
+            if (item.contains(p_filters) && item[p_filters].size() && item[p_category] != "map" && !item.contains(p_unidentified))
             {
-                // If item has filters and is not a map and is not unid'd
-                if (item.contains(p_filters) && item[p_category] != "map" && !item.contains(p_unidentified))
-                {
-                    // Load the price UI for advanced search
+                // Load the price UI for advanced search
 
-                    // Qt fucks up whenever you mess with the clipboard within a QClipboard::dataChanged signal call,
-                    // and QWebEngineView does just that, so invoke it along the event queue instead
-                    // QMetaObject::invokeMethod(this, "showPriceWidget", Qt::QueuedConnection, Q_ARG(QString, strdata));
-                    QTimer::singleShot(10, [=]() { showPriceWidget(strdata); });
-                }
-                else
-                {
-                    showToolTip(tr("Price check is not available for this item type."));
-                    qInfo() << "Price check is not available for this item type.";
-                }
+                // Qt fucks up whenever you mess with the clipboard within a QClipboard::dataChanged signal call,
+                // and QWebEngineView does just that, so invoke it along the event queue instead
+
+                openUI = false;
+                QMetaObject::invokeMethod(
+                    this, [=] { showPriceWidget(QString::fromStdString(data.dump())); }, Qt::QueuedConnection);
             }
-            // If simple price check handled, we'll load the UI in another slot,
-            // only if there are results.
+
+            // Delay simple search attempt by 1000ms if we already have a window open
+            QTimer::singleShot((openUI ? 0 : 1000), [=] {
+                if (!m_api->trySimplePriceCheck(data, openUI, forcetab))
+                {
+                    if (openUI)
+                    {
+                        showToolTip(tr("Price check is not available for this item type."));
+                        qInfo() << "Price check is not available for this item type.";
+                    }
+                }
+            });
 
             break;
         case WIKI_SEARCH:

@@ -34,6 +34,8 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : Frame
 
     setAttribute(Qt::WA_DeleteOnClose);
 
+    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+
     QSettings settings;
 
     webview = new PWebView(this);
