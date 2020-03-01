@@ -354,6 +354,13 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
 
     connect(dupeLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_REMOVE_DUPES] = (checked == Qt::Checked); });
 
+    // ------------------poeprices.info
+
+    QCheckBox* ppiLabel = new QCheckBox(tr("Perform poeprices.info price prediction"));
+    ppiLabel->setChecked(settings.value(PTA_CONFIG_POEPRICES, PTA_CONFIG_DEFAULT_POEPRICES).toBool());
+
+    connect(ppiLabel, &QCheckBox::stateChanged, [=, &set](int checked) { set[PTA_CONFIG_POEPRICES] = (checked == Qt::Checked); });
+
     // End price group
 
     QVBoxLayout* priceLayout = new QVBoxLayout;
@@ -364,6 +371,7 @@ PriceCheckPage::PriceCheckPage(json& set, ItemAPI* api, QWidget* parent) : QWidg
     priceLayout->addWidget(olLabel);
     priceLayout->addWidget(boLabel);
     priceLayout->addWidget(dupeLabel);
+    priceLayout->addWidget(ppiLabel);
 
     priceGroup->setLayout(priceLayout);
 

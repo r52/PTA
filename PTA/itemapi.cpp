@@ -1776,6 +1776,9 @@ bool ItemAPI::trySimplePriceCheck(json data, bool openui, bool forcetab)
 
     QSettings settings;
 
+    // poeprices.info
+    bool use_poeprices = settings.value(PTA_CONFIG_POEPRICES, PTA_CONFIG_DEFAULT_POEPRICES).toBool();
+
     auto query = R"(
     {
         "query": {
@@ -2031,7 +2034,7 @@ bool ItemAPI::trySimplePriceCheck(json data, bool openui, bool forcetab)
 
         return true;
     }
-    else if (item[p_rarity] != "Magic")
+    else if (use_poeprices && item[p_rarity] != "Magic")
     {
         // poeprices.info
 
