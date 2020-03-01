@@ -601,8 +601,8 @@ void PTA::processClipboard()
                     this, [=] { showPriceWidget(QString::fromStdString(data.dump())); }, Qt::QueuedConnection);
             }
 
-            // Delay simple search attempt by 1000ms if we already have a window open
-            QTimer::singleShot((openUI ? 0 : 1000), [=] {
+            // Delay simple search attempt if we already have a window open
+            QTimer::singleShot((openUI ? 0 : 500), [=] {
                 if (!m_api->trySimplePriceCheck(data, openUI, forcetab))
                 {
                     if (openUI)
