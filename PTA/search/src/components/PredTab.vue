@@ -2,9 +2,11 @@
   <div>
     <h1 class="subtitle-1 text-center">Price Prediction via poeprices.info</h1>
     <p
-      class="text-center my-1 price"
+      class="text-center my-1 price title"
     >{{ state.prediction.min.toPrecision(4) }} ~ {{ state.prediction.max.toPrecision(4) }} {{ state.prediction.currency }}</p>
-    <p class="text-center my-1">Confidence: {{ state.prediction.pred_confidence_score.toPrecision(4) }} %</p>
+    <p
+      class="text-center my-1"
+    >Confidence: {{ state.prediction.pred_confidence_score.toPrecision(4) }} %</p>
     <v-data-table :headers="headers" :items="listings" class="elevation-1"></v-data-table>
     <p class="text-center my-1">Please consider supporting poeprices.info</p>
   </div>
@@ -52,6 +54,5 @@ export default {
 <style scoped>
 .price {
   color: #a38d6d;
-  font-weight: bold;
 }
 </style>

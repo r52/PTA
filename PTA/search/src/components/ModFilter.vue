@@ -5,7 +5,7 @@
         dense
         hide-details
         class="my-1 py-0 magic--text"
-        v-model="filter.enabled"
+        v-model.lazy="filter.enabled"
         :label="`(${filter.type}) ${filter.text}`"
       />
     </v-col>
@@ -13,7 +13,6 @@
       <mod-num-input
         type="min"
         :filter="filter"
-        :settings="settings"
         :disabled="filter.value.length < 1 || filter.value.length > 2"
       />
     </v-col>
@@ -25,7 +24,6 @@
       <mod-num-input
         type="max"
         :filter="filter"
-        :settings="settings"
         :disabled="filter.value.length < 1 || filter.value.length > 2"
       />
     </v-col>

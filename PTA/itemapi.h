@@ -31,15 +31,16 @@ public:
 
     void openWiki(const Item& item);
 
-    bool trySimplePriceCheck(json& data);
+    bool trySimplePriceCheck(json data, bool openui, bool forcetab);
 
 public slots:
     void advancedPriceCheck(const QString& str, bool openonsite);
 
 signals:
     void humour(const QString& msg);
-    void simpleResultsFinished(const QString& results);
+    void openSearchUI(const QString& results);
     void priceCheckFinished(const QString& results);
+    void predictionReady(const QString& results);
 
 private:
     int         readPropInt(QString prop);
@@ -54,9 +55,9 @@ private:
     void parseProp(Item& item, QString prop);
     bool parseStat(Item& item, QString stat, QTextStream& stream);
 
-    void processPriceResults(json data, json response, const QString& optstr, const QString& format);
+    void processPriceResults(json data, json response, const QString& optstr, const QString& format, bool openui, bool forcetab);
 
-    void doCurrencySearch(json& data);
+    void doCurrencySearch(json& data, bool openui, bool forcetab);
 
     bool synchronizedGetJSON(const QNetworkRequest& req, json& result);
 

@@ -1231,7 +1231,7 @@ bool ItemAPI::parseStat(Item& item, QString stat, QTextStream& stream)
     return true;
 }
 
-void ItemAPI::processPriceResults(json data, json response, const QString& optstr, const QString& format)
+void ItemAPI::processPriceResults(json data, json response, const QString& optstr, const QString& format, bool openui, bool forcetab)
 {
     bool   done  = false;
     size_t start = 0, end = 0;
@@ -1326,19 +1326,23 @@ void ItemAPI::processPriceResults(json data, json response, const QString& optst
     endRes["options"] = optstr.toStdString();
     endRes["format"]  = format.toStdString();
 
-    if (format == "simple" || format == "exchange")
+    if (openui)
     {
         data[p_results] = endRes;
-
-        emit simpleResultsFinished(QString::fromStdString(data.dump()));
+        emit openSearchUI(QString::fromStdString(data.dump()));
     }
     else
     {
+        if (forcetab)
+        {
+            endRes["forcetab"] = true;
+        }
+
         emit priceCheckFinished(QString::fromStdString(endRes.dump()));
     }
 }
 
-void ItemAPI::doCurrencySearch(json& data)
+void ItemAPI::doCurrencySearch(json& data, bool openui, bool forcetab)
 {
     Item& item = data[p_item];
 
@@ -1452,7 +1456,7 @@ void ItemAPI::doCurrencySearch(json& data)
         }
 
         // else process the results
-        processPriceResults(data, resp, options, "exchange");
+        processPriceResults(data, resp, options, "exchange", openui, forcetab);
         return;
     }
 }
@@ -1758,7 +1762,7 @@ void ItemAPI::fillItemOptions(json& data)
     }
 }
 
-bool ItemAPI::trySimplePriceCheck(json& data)
+bool ItemAPI::trySimplePriceCheck(json data, bool openui, bool forcetab)
 {
     Item& item = data[p_item];
 
@@ -1766,11 +1770,14 @@ bool ItemAPI::trySimplePriceCheck(json& data)
     // Otherwise, try a regular search
     if (item[p_category] == "currency" && c_currencyMap.contains(item[p_type]))
     {
-        doCurrencySearch(data);
+        doCurrencySearch(data, openui, forcetab);
         return true;
     }
 
     QSettings settings;
+
+    // poeprices.info
+    bool use_poeprices = settings.value(PTA_CONFIG_POEPRICES, PTA_CONFIG_DEFAULT_POEPRICES).toBool();
 
     auto query = R"(
     {
@@ -2022,12 +2029,12 @@ bool ItemAPI::trySimplePriceCheck(json& data)
             }
 
             // else process the results
-            processPriceResults(data, resp, options, "simple");
+            processPriceResults(data, resp, options, "simple", openui, forcetab);
         });
 
         return true;
     }
-    else if (item[p_rarity] != "Magic")
+    else if (use_poeprices && item[p_rarity] != "Magic")
     {
         // poeprices.info
 
@@ -2095,7 +2102,14 @@ bool ItemAPI::trySimplePriceCheck(json& data)
             data["prediction"] = resp;
 
             // else process the results
-            emit simpleResultsFinished(QString::fromStdString(data.dump()));
+            if (openui)
+            {
+                emit openSearchUI(QString::fromStdString(data.dump()));
+            }
+            else
+            {
+                emit predictionReady(QString::fromStdString(resp.dump()));
+            }
         });
 
         return true;
@@ -2109,7 +2123,7 @@ void ItemAPI::advancedPriceCheck(const QString& str, bool openonsite)
     json  data = json::parse(str.toStdString());
     Item& item = data[p_item];
 
-    if (!item.contains(p_filters) || item[p_category] == "map")
+    if (!item.contains(p_filters) || !item[p_filters].size() || item[p_category] == "map")
     {
         // Cannot advanced search items with no filters
         emit humour(tr("Advanced search is unavailable for this item type"));
@@ -2417,7 +2431,7 @@ void ItemAPI::advancedPriceCheck(const QString& str, bool openonsite)
         }
 
         // else process the results
-        processPriceResults(data, resp, options, "advanced");
+        processPriceResults(data, resp, options, "advanced", false, false);
     });
 }
 

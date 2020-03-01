@@ -34,7 +34,7 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : Frame
 
     setAttribute(Qt::WA_DeleteOnClose);
 
-    QSettings settings;
+    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
 
     webview = new PWebView(this);
     webview->settings()->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
@@ -86,6 +86,7 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : Frame
     setContent(webview);
 
     // Restore settings
+    QSettings settings;
     restoreGeometry(settings.value(getSettingKey("geometry")).toByteArray());
 
     // quick close shortcuts
