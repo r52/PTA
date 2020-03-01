@@ -8,10 +8,7 @@
         </h1>
         <h1 class="subtitle-1 unidentifiedItem" v-if="state.item.unidentified">Unidentified</h1>
         <h1 class="subtitle-1 corruptedItem" v-if="state.item.corrupted">Corrupted</h1>
-        <h1
-          class="subtitle-1 influenceItem"
-          v-if="state.item.influences"
-        >{{ capitalizeList(state.item.influences) }}</h1>
+        <h1 class="subtitle-1 influenceItem" v-if="state.item.influences">{{ capInfluences }}</h1>
         <h1 class="subtitle-1 green--text">{{ state.settings.league }}</h1>
       </v-card-title>
 
@@ -44,8 +41,6 @@
 
 <script>
 import ModTab from "./components/ModTab.vue";
-import PredTab from "./components/PredTab.vue";
-import ResultTab from "./components/ResultTab.vue";
 
 let dtm = {};
 
@@ -68,8 +63,8 @@ export default {
 
   components: {
     ModTab,
-    PredTab,
-    ResultTab
+    PredTab: () => import("./components/PredTab.vue"),
+    ResultTab: () => import("./components/ResultTab.vue")
   },
 
   data() {
@@ -91,20 +86,20 @@ export default {
       }
 
       return cls;
+    },
+    capInfluences() {
+      const capl = this.state.item.influences;
+      capl.forEach((o, i, a) => {
+        a[i] = o.charAt(0).toUpperCase() + o.slice(1);
+      });
+
+      return capl.join(", ");
     }
   },
 
   methods: {
     close: () => {
       window.close();
-    },
-    capitalizeList: l => {
-      const capl = [...l];
-      capl.forEach((o, i, a) => {
-        a[i] = o.charAt(0).toUpperCase() + o.slice(1);
-      });
-
-      return capl.join(", ");
     },
     processPriceResults(res) {
       let jres = JSON.parse(res);
@@ -151,37 +146,30 @@ html {
 }
 
 .Unique {
-  border-color: #af6025;
   color: #af6025;
 }
 
 .Magic {
-  border-color: #88f;
   color: #88f;
 }
 
 .Normal {
-  border-color: #c8c8c8;
   color: #c8c8c8;
 }
 
 .Rare {
-  border-color: rgb(255, 255, 119);
   color: rgb(255, 255, 119);
 }
 
 .prophecy {
-  border-color: #b54bff;
   color: #b54bff;
 }
 
 .gem {
-  border-color: #1ba29b;
   color: #1ba29b;
 }
 
 .card {
-  border-color: #111;
   color: #eee;
 }
 </style>

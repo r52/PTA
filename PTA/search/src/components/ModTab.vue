@@ -78,11 +78,7 @@
       <!-- misc option checkboxes -->
       <v-row align="center" align-content="center" justify="space-between" no-gutters>
         <div class="d-inline-flex">
-          <v-combobox
-            v-model="state.searchopts.use_corrupted"
-            :items="corrupts"
-            label="Corrupted"
-          />
+          <v-combobox v-model="state.searchopts.use_corrupted" :items="corrupts" label="Corrupted" />
           <mod-checkbox
             v-if="state.item.sockets"
             v-model="state.searchopts.use_sockets"
@@ -128,8 +124,13 @@
       <v-divider />
       <!-- buttons -->
       <v-row align="end" align-content="end" justify="end">
-        <v-btn class="mx-1 mt-1" color="purple" @click="search(true)" accesskey="e">Op<u>e</u>n on pathofexile.com</v-btn>
-        <v-btn class="mx-1 mt-1" color="primary" @click="search(false)" accesskey="s"><u>S</u>earch</v-btn>
+        <v-btn class="mx-1 mt-1" color="purple" @click="search(true)" accesskey="e">
+          Op
+          <u>e</u>n on pathofexile.com
+        </v-btn>
+        <v-btn class="mx-1 mt-1" color="primary" @click="search(false)" accesskey="s">
+          <u>S</u>earch
+        </v-btn>
       </v-row>
     </v-container>
   </v-form>
@@ -189,13 +190,13 @@ export default {
 </script>
 
 <style>
-input[type=number]::-webkit-outer-spin-button,
-input[type=number]::-webkit-inner-spin-button {
-    -webkit-appearance: none !important;
-    margin: 0;
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0;
 }
 
-input[type=number] {
-    -moz-appearance:textfield;
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 </style>

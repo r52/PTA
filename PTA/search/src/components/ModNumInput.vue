@@ -26,7 +26,8 @@ export default {
       if (
         charCode > 31 &&
         (charCode < 48 || charCode > 57) &&
-        charCode !== 46 && charCode !== 45
+        charCode !== 46 &&
+        charCode !== 45
       ) {
         evt.preventDefault();
       } else {
