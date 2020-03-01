@@ -507,6 +507,7 @@ json ItemAPI::readSockets(QString prop)
     sockets["B"]     = 0;
     sockets["W"]     = 0;
     sockets["A"]     = 0;
+    sockets["D"]     = 0;
 
     auto llist = prop.split(" ", QString::SkipEmptyParts);
 
@@ -796,7 +797,8 @@ bool ItemAPI::parseStat(Item& item, QString stat, QTextStream& stream)
     QString orig_stat = stat;
 
     // Special rule for A Master Seeks Help
-    if (item.contains(p_category) && item[p_category].get<std::string>() == "prophecy" && item[p_name].get<std::string>() == "A Master Seeks Help")
+    if (item.contains(p_category) && !item[p_category].is_null() && item[p_category].get<std::string>() == "prophecy" &&
+        item[p_name].get<std::string>() == "A Master Seeks Help")
     {
         QRegularExpression      re("^You will find (\\w+) and complete her mission.$");
         QRegularExpressionMatch match = re.match(stat);
@@ -869,7 +871,7 @@ bool ItemAPI::parseStat(Item& item, QString stat, QTextStream& stream)
     }
 
     // Vaal gems
-    if (item.contains(p_category) && item[p_category].get<std::string>() == "gem" && stat.startsWith("Vaal "))
+    if (item.contains(p_category) && !item[p_category].is_null() && item[p_category].get<std::string>() == "gem" && stat.startsWith("Vaal "))
     {
         item[p_type] = stat.toStdString();
         return true;
@@ -1579,7 +1581,7 @@ bool ItemAPI::parse(Item& item, QString itemText)
         item[p_type] = std::regex_replace(item[p_type].get<std::string>(), std::regex("Shaped "), "");
     }
 
-    if (!item.contains(p_category) && m_uniques.contains(item[p_type].get<std::string>()))
+    if ((!item.contains(p_category) || item[p_category].is_null()) && m_uniques.contains(item[p_type].get<std::string>()))
     {
         auto search = m_uniques.find(item[p_type]);
         if (search != m_uniques.end())
@@ -1595,7 +1597,7 @@ bool ItemAPI::parse(Item& item, QString itemText)
         }
     }
 
-    if (!item.contains(p_category))
+    if (!item.contains(p_category) || item[p_category].is_null())
     {
         auto base = c_baseMap.find(item[p_type].get<std::string>());
         if (base != c_baseMap.end())
@@ -1834,7 +1836,7 @@ bool ItemAPI::trySimplePriceCheck(json data, bool openui, bool forcetab)
     }
 
     // Force category
-    if (item.contains(p_category))
+    if (item.contains(p_category) && !item[p_category].is_null())
     {
         std::string category = item[p_category];
         std::transform(category.begin(), category.end(), category.begin(), ::tolower);
@@ -2195,7 +2197,7 @@ void ItemAPI::advancedPriceCheck(const QString& str, bool openonsite)
     query["query"]["filters"]["type_filters"]["filters"]["rarity"]["option"] = rarity;
 
     // Force category
-    if (item.contains(p_category))
+    if (item.contains(p_category) && !item[p_category].is_null())
     {
         std::string category = item[p_category];
         std::transform(category.begin(), category.end(), category.begin(), ::tolower);
@@ -2431,7 +2433,7 @@ void ItemAPI::advancedPriceCheck(const QString& str, bool openonsite)
         }
 
         // else process the results
-        processPriceResults(data, resp, options, "advanced", false, false);
+        processPriceResults(data, resp, options, "advanced", false, true);
     });
 }
 
