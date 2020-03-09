@@ -31,13 +31,13 @@ const QUrl u_repoe_mods("https://raw.githubusercontent.com/brather1ng/RePoE/mast
 
 // pta
 const QUrl u_pta_armourlocals("https://raw.githubusercontent.com/r52/pta-data/master/data/armour_locals.json");
-const QUrl u_pta_basecat("https://raw.githubusercontent.com/r52/pta-data/master/PTA/data/base_categories.json");
-const QUrl u_pta_currency("https://raw.githubusercontent.com/r52/pta-data/master/PTA/data/currency.json");
-const QUrl u_pta_disc("https://raw.githubusercontent.com/r52/pta-data/master/PTA/data/discriminators.json");
-const QUrl u_pta_enchantrules("https://raw.githubusercontent.com/r52/pta-data/master/PTA/data/enchant_rules.json");
-const QUrl u_pta_pseudorules("https://raw.githubusercontent.com/r52/pta-data/master/PTA/data/pseudo_rules.json");
-const QUrl u_pta_weaponlocals("https://raw.githubusercontent.com/r52/pta-data/master/PTA/data/weapon_locals.json");
-const QUrl u_pta_excludes("https://raw.githubusercontent.com/r52/pta-data/master/PTA/data/excludes.json");
+const QUrl u_pta_basecat("https://raw.githubusercontent.com/r52/pta-data/master/data/base_categories.json");
+const QUrl u_pta_currency("https://raw.githubusercontent.com/r52/pta-data/master/data/currency.json");
+const QUrl u_pta_disc("https://raw.githubusercontent.com/r52/pta-data/master/data/discriminators.json");
+const QUrl u_pta_enchantrules("https://raw.githubusercontent.com/r52/pta-data/master/data/enchant_rules.json");
+const QUrl u_pta_pseudorules("https://raw.githubusercontent.com/r52/pta-data/master/data/pseudo_rules.json");
+const QUrl u_pta_weaponlocals("https://raw.githubusercontent.com/r52/pta-data/master/data/weapon_locals.json");
+const QUrl u_pta_excludes("https://raw.githubusercontent.com/r52/pta-data/master/data/excludes.json");
 
 // trade site
 const QString u_trade_fetch("https://www.pathofexile.com/api/trade/fetch/%1?query=%2");
