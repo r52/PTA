@@ -883,15 +883,20 @@ bool ItemAPI::parseStat(Item& item, QString stat, QTextStream& stream)
     if (stat.endsWith("(crafted)"))
     {
         stat_type = "crafted";
+        stat.replace(" (crafted)", "");
     }
 
     if (stat.endsWith("(implicit)"))
     {
         stat_type = "implicit";
+        stat.replace(" (implicit)", "");
     }
 
-    stat.replace(" (crafted)", "");
-    stat.replace(" (implicit)", "");
+    if (stat.endsWith("(enchant)"))
+    {
+        stat_type = "enchant";
+        stat.replace(" (enchant)", "");
+    }
 
     // Match numerics
     QRegularExpression   re("([\\+\\-]?[\\d\\.]+)");
@@ -1170,30 +1175,6 @@ bool ItemAPI::parseStat(Item& item, QString stat, QTextStream& stream)
                 filter["text"]    = entry["text"];
                 filter["value"]   = val;
                 filter[p_enabled] = false;
-            }
-
-            // Peek next line
-            QString peek;
-
-            int pos = stream.pos();
-
-            if (pos != -1)
-            {
-                peek = stream.read(3);
-                stream.seek(pos);
-            }
-
-            if (item[p_filters].size() < 2 && peek == "---")
-            {
-                // First stat with a section break, try to look for an enchant
-                if (entry["type"] == "enchant")
-                {
-                    filter["id"]      = entry["id"];
-                    filter["type"]    = entry["type"];
-                    filter["text"]    = entry["text"];
-                    filter["value"]   = val;
-                    filter[p_enabled] = false;
-                }
             }
         }
     }
