@@ -2272,8 +2272,13 @@ void ItemAPI::advancedPriceCheck(const QString& str, bool openonsite)
         }
     }
 
-    // Checked mods
-    for (auto& [k, e] : item[p_filters].items())
+    // Checked mods/pseudos
+    auto mods = json::object();
+
+    mods.update(item[p_filters]);
+    mods.update(item[p_pseudos]);
+
+    for (auto& [k, e] : mods.items())
     {
         // set id
         e["id"] = k;
