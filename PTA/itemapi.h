@@ -35,12 +35,14 @@ public:
 
 public slots:
     void advancedPriceCheck(const QString& str, bool openonsite);
+    void emitUIReady(const QString& str, bool forcetab);
 
 signals:
     void humour(const QString& msg);
     void openSearchUI(const QString& results);
     void priceCheckFinished(const QString& results);
     void predictionReady(const QString& results);
+    void searchUIReady(const QString& str, bool forcetab);
 
 private:
     int         readPropInt(QString prop);

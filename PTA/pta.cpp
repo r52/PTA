@@ -200,6 +200,10 @@ void PTA::setupFunctionality()
     // UI
     connect(m_api, &ItemAPI::humour, this, &PTA::showToolTip);
     connect(m_api, &ItemAPI::openSearchUI, this, &PTA::showPriceWidget);
+    connect(m_api, &ItemAPI::searchUIReady, [=](const QString& str, bool forcetab) {
+        json data = json::parse(str.toStdString());
+        m_api->trySimplePriceCheck(data, false, forcetab);
+    });
 
     connect(&m_macrohandler, &MacroHandler::humour, this, &PTA::showToolTip);
 
@@ -591,27 +595,30 @@ void PTA::processClipboard()
             // If item has filters and is not a map and is not unid'd
             if (item.contains(p_filters) && item[p_filters].size() && item[p_category] != "map" && !item.contains(p_unidentified))
             {
-                // Load the price UI for advanced search
+                // Load the price UI for advanced search regardless
 
                 // Qt fucks up whenever you mess with the clipboard within a QClipboard::dataChanged signal call,
                 // and QWebEngineView does just that, so invoke it along the event queue instead
 
                 openUI = false;
+
+                data["simplepref"] = {{"forcetab", forcetab}};
+
                 QMetaObject::invokeMethod(
                     this, [=] { showPriceWidget(QString::fromStdString(data.dump())); }, Qt::QueuedConnection);
             }
 
-            // Delay simple search attempt if we already have a window open
-            QTimer::singleShot((openUI ? 0 : 500), [=] {
-                if (!m_api->trySimplePriceCheck(data, openUI, forcetab))
-                {
-                    if (openUI)
+            // Open UI with simple search results if we don't already have it open
+            if (openUI)
+            {
+                QTimer::singleShot(0, [=] {
+                    if (!m_api->trySimplePriceCheck(data, true, forcetab))
                     {
                         showToolTip(tr("Price check is not available for this item type."));
                         qInfo() << "Price check is not available for this item type.";
                     }
-                }
-            });
+                });
+            }
 
             break;
         case WIKI_SEARCH:

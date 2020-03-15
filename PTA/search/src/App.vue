@@ -6,9 +6,15 @@
           {{ state.item.name }}
           {{ state.item.type }}
         </h1>
-        <h1 class="subtitle-1 unidentifiedItem" v-if="state.item.unidentified">Unidentified</h1>
-        <h1 class="subtitle-1 corruptedItem" v-if="state.item.corrupted">Corrupted</h1>
-        <h1 class="subtitle-1 influenceItem" v-if="state.item.influences">{{ capInfluences }}</h1>
+        <h1 class="subtitle-1 unidentifiedItem" v-if="state.item.unidentified">
+          Unidentified
+        </h1>
+        <h1 class="subtitle-1 corruptedItem" v-if="state.item.corrupted">
+          Corrupted
+        </h1>
+        <h1 class="subtitle-1 influenceItem" v-if="state.item.influences">
+          {{ capInfluences }}
+        </h1>
         <h1 class="subtitle-1 green--text">{{ state.settings.league }}</h1>
       </v-card-title>
 
@@ -119,6 +125,13 @@ export default {
     this.$api.then(pta => {
       pta.priceCheckFinished.connect(this.processPriceResults);
       pta.predictionReady.connect(this.processPredictionResults);
+
+      if ("simplepref" in this.state) {
+        pta.emitUIReady(
+          JSON.stringify(this.state),
+          this.state.simplepref.forcetab
+        );
+      }
     });
   }
 };

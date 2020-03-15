@@ -2120,6 +2120,11 @@ bool ItemAPI::trySimplePriceCheck(json data, bool openui, bool forcetab)
     return false;
 }
 
+void ItemAPI::emitUIReady(const QString& str, bool forcetab)
+{
+    emit searchUIReady(str, forcetab);
+}
+
 void ItemAPI::advancedPriceCheck(const QString& str, bool openonsite)
 {
     json  data = json::parse(str.toStdString());
