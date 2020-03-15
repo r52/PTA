@@ -1,5 +1,10 @@
 <template>
-  <v-row align="center" align-content="center" justify="space-between" no-gutters>
+  <v-row
+    align="center"
+    align-content="center"
+    justify="space-between"
+    no-gutters
+  >
     <v-col cols="6">
       <v-switch
         dense
@@ -13,7 +18,7 @@
       <mod-num-input type="min" :filter="searchopts[type]" />
     </v-col>
     <v-col cols="1" align-self="center">
-      <p class="text-center my-0 py-0">{{ current }}</p>
+      <p class="text-center my-0 py-0">{{ current.toFixed(2) }}</p>
     </v-col>
     <v-col cols="1">
       <mod-num-input type="max" :filter="searchopts[type]" />
