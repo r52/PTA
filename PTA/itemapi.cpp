@@ -2280,8 +2280,15 @@ void ItemAPI::advancedPriceCheck(const QString& str, bool openonsite)
     // Checked mods/pseudos
     auto mods = json::object();
 
-    mods.update(item[p_filters]);
-    mods.update(item[p_pseudos]);
+    if (item.contains(p_filters) && !item[p_filters].is_null())
+    {
+        mods.update(item[p_filters]);
+    }
+
+    if (item.contains(p_pseudos) && !item[p_pseudos].is_null())
+    {
+        mods.update(item[p_pseudos]);
+    }
 
     for (auto& [k, e] : mods.items())
     {
