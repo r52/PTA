@@ -60,7 +60,7 @@ protected:
 private:
     Ui::FramelessWindow* ui;
     QRect                m_StartGeometry;
-    const quint8         CONST_DRAG_BORDER_SIZE = 15;
+    const quint8         CONST_DRAG_BORDER_SIZE = 20;
     bool                 m_bMousePressed;
     bool                 m_bDragTop;
     bool                 m_bDragLeft;

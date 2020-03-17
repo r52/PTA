@@ -126,10 +126,8 @@ void FramelessWindow::styleWindow(bool bActive, bool bNoState)
         {
             layout()->setMargin(15);
             ui->windowTitlebar->setStyleSheet(QStringLiteral("#windowTitlebar{border: 0px none palette(shadow); "
-                                                             "border-top-left-radius:5px; border-top-right-radius:5px; "
                                                              "background-color:palette(shadow); height:20px;}"));
-            ui->windowFrame->setStyleSheet(QStringLiteral("#windowFrame{border:1px solid palette(highlight); border-radius:5px "
-                                                          "5px 5px 5px; background-color:palette(Window);}"));
+            ui->windowFrame->setStyleSheet(QStringLiteral("#windowFrame{border:1px solid palette(highlight); background-color:palette(Window);}"));
 
             // QGraphicsDropShadowEffect* windowShadow = new QGraphicsDropShadowEffect;
             // windowShadow->setBlurRadius(9.0);
@@ -142,10 +140,8 @@ void FramelessWindow::styleWindow(bool bActive, bool bNoState)
         {
             layout()->setMargin(0);
             ui->windowTitlebar->setStyleSheet(QStringLiteral("#windowTitlebar{border: 0px none palette(shadow); "
-                                                             "border-top-left-radius:0px; border-top-right-radius:0px; "
                                                              "background-color:palette(shadow); height:20px;}"));
-            ui->windowFrame->setStyleSheet(QStringLiteral("#windowFrame{border:1px solid palette(dark); border-radius:0px 0px "
-                                                          "0px 0px; background-color:palette(Window);}"));
+            ui->windowFrame->setStyleSheet(QStringLiteral("#windowFrame{border:1px solid palette(dark); background-color:palette(Window);}"));
 
             // ui->windowFrame->setGraphicsEffect(nullptr);
         } // if (bNoState) else maximize
@@ -156,10 +152,8 @@ void FramelessWindow::styleWindow(bool bActive, bool bNoState)
         {
             layout()->setMargin(15);
             ui->windowTitlebar->setStyleSheet(QStringLiteral("#windowTitlebar{border: 0px none palette(shadow); "
-                                                             "border-top-left-radius:5px; border-top-right-radius:5px; "
                                                              "background-color:palette(dark); height:20px;}"));
-            ui->windowFrame->setStyleSheet(QStringLiteral("#windowFrame{border:1px solid #000000; border-radius:5px 5px 5px "
-                                                          "5px; background-color:palette(Window);}"));
+            ui->windowFrame->setStyleSheet(QStringLiteral("#windowFrame{border:1px solid #000000; background-color:palette(Window);}"));
 
             // QGraphicsDropShadowEffect* windowShadow = new QGraphicsDropShadowEffect;
             // windowShadow->setBlurRadius(9.0);
@@ -172,10 +166,8 @@ void FramelessWindow::styleWindow(bool bActive, bool bNoState)
         {
             layout()->setMargin(0);
             ui->windowTitlebar->setStyleSheet(QStringLiteral("#titlebarWidget{border: 0px none palette(shadow); "
-                                                             "border-top-left-radius:0px; border-top-right-radius:0px; "
                                                              "background-color:palette(dark); height:20px;}"));
-            ui->windowFrame->setStyleSheet(QStringLiteral("#windowFrame{border:1px solid palette(shadow); border-radius:0px "
-                                                          "0px 0px 0px; background-color:palette(Window);}"));
+            ui->windowFrame->setStyleSheet(QStringLiteral("#windowFrame{border:1px solid palette(shadow); background-color:palette(Window);}"));
 
             // ui->windowFrame->setGraphicsEffect(nullptr);
         } // if (bNoState) { else maximize
