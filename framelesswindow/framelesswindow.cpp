@@ -124,7 +124,7 @@ void FramelessWindow::styleWindow(bool bActive, bool bNoState)
     {
         if (bNoState)
         {
-            layout()->setMargin(15);
+            layout()->setMargin(0);
             ui->windowTitlebar->setStyleSheet(QStringLiteral("#windowTitlebar{border: 0px none palette(shadow); "
                                                              "background-color:palette(shadow); height:20px;}"));
             ui->windowFrame->setStyleSheet(QStringLiteral("#windowFrame{border:1px solid palette(highlight); background-color:palette(Window);}"));
@@ -150,7 +150,7 @@ void FramelessWindow::styleWindow(bool bActive, bool bNoState)
     {
         if (bNoState)
         {
-            layout()->setMargin(15);
+            layout()->setMargin(0);
             ui->windowTitlebar->setStyleSheet(QStringLiteral("#windowTitlebar{border: 0px none palette(shadow); "
                                                              "background-color:palette(dark); height:20px;}"));
             ui->windowFrame->setStyleSheet(QStringLiteral("#windowFrame{border:1px solid #000000; background-color:palette(Window);}"));
