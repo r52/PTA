@@ -95,6 +95,9 @@ WebWidget::WebWidget(ItemAPI* api, const QString& data, QWidget* parent) : Frame
 
     auto qshc = new QShortcut(QKeySequence(Qt::Key_Q), this);
     connect(qshc, &QShortcut::activated, [=] { close(); });
+
+    // Force focus the webview
+    webview->setFocus();
 }
 
 WebWidget::~WebWidget()
