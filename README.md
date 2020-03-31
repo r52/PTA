@@ -1,4 +1,4 @@
-**Looking for PTA? Check out [PTA-Next](https://github.com/r52/pta-next) instead!**
+### **Looking for PTA updates? Check out [PTA-Next](https://github.com/r52/pta-next) instead!**
 
 # PTA
 
