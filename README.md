@@ -1,3 +1,5 @@
+**Looking for PTA? Check out [PTA-Next](https://github.com/r52/pta-next) instead!**
+
 # PTA
 
 [![License](https://img.shields.io/github/license/r52/PTA)](https://github.com/r52/PTA/blob/master/LICENSE)
